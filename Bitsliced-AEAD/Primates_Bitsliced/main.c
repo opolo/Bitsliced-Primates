@@ -41,7 +41,7 @@ int main(int argc, const char * argv[]) {
 }
 
 
-void encrypt(){
+void sencrypt(){
     //const byte *plaintext, byte *ciphertext, const byte *ad, const byte *key
     //In the AVX2 instruction set, there is a total of 16x 256bit registers (called YMM registers) for the AVX2 instructions.
     //In bitsliced format, we place one bit of each byte in each register, thus in total we can store 5x256 = 1280 bits, by using
@@ -66,7 +66,24 @@ void encrypt(){
  
  Assumes that the length of the YMMs array is atleast 5.
 */
-int transpose(byte *m, int mL, __m256i *YMMs){
+int transpose(byte *m, int mL, __m256i *YMM_regs){
+    
+    
+    int currentBit = 0;
+    
+    //Allocate space for the partial bitsliced data, we arrange and load up in registers.
+    int* YMM_memory = (int *) malloc(160); //1280bits = 160bytes.
+    
+    //Set all the allocated memory to 0.
+    memset(YMM_memory, 0, 160);
+    
+    //Load bits into memory in a bitsliced arrangement.
+    //Load either all the data (if 4x280 bits is given), else "as much as is easy possible" before padding.
+    while (currentBit <= mL){
+        
+    }
+    
+    
     
     int64 YMMvar[5];
     int currentPrimateBit = 0;

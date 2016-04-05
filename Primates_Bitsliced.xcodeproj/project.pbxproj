@@ -6,10 +6,6 @@
 	objectVersion = 46;
 	objects = {
 
-/* Begin PBXBuildFile section */
-		B29540AF1C8C437300E4FE89 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = B2960FC41C86203400AB550A /* main.c */; };
-/* End PBXBuildFile section */
-
 /* Begin PBXCopyFilesBuildPhase section */
 		B2960FBF1C86203400AB550A /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
@@ -23,8 +19,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		B2761C1A1C971462002E3DA5 /* PRIMATE120.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = PRIMATE120.c; sourceTree = "<group>"; };
+		B2761C1B1C971462002E3DA5 /* PRIMATE120.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PRIMATE120.h; sourceTree = "<group>"; };
+		B29540B21C90B79000E4FE89 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 		B2960FC11C86203400AB550A /* Primates_Bitsliced */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Primates_Bitsliced; sourceTree = BUILT_PRODUCTS_DIR; };
-		B2960FC41C86203400AB550A /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 		B2960FE41C862CE000AB550A /* api.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = api.h; sourceTree = "<group>"; };
 		B2960FE51C862CE000AB550A /* crypto_aead.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = crypto_aead.h; sourceTree = "<group>"; };
 		B2960FE61C862CE000AB550A /* encrypt.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = encrypt.cpp; sourceTree = "<group>"; };
@@ -73,6 +71,13 @@
 		B296101B1C862CE000AB550A /* primate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = primate.h; sourceTree = "<group>"; };
 		B296101C1C862CE000AB550A /* ref.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ref.cpp; sourceTree = "<group>"; };
 		B296101D1C862CE000AB550A /* ref.suo */ = {isa = PBXFileReference; lastKnownFileType = file; path = ref.suo; sourceTree = "<group>"; };
+		B2F85EE11CB2F5E8002D70E2 /* api.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = api.h; sourceTree = "<group>"; };
+		B2F85EE21CB2F5E8002D70E2 /* brg_endian.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = brg_endian.h; sourceTree = "<group>"; };
+		B2F85EE31CB2F5E8002D70E2 /* brg_types.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = brg_types.h; sourceTree = "<group>"; };
+		B2F85EE41CB2F5E8002D70E2 /* groestl-asm-avx2-gather.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "groestl-asm-avx2-gather.h"; sourceTree = "<group>"; };
+		B2F85EE51CB2F5E8002D70E2 /* hash.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = hash.c; sourceTree = "<group>"; };
+		B2F85EE61CB2F5E8002D70E2 /* hash.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hash.h; sourceTree = "<group>"; };
+		B2F85EE71CB2F5E8002D70E2 /* implementors */ = {isa = PBXFileReference; lastKnownFileType = text; path = implementors; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -86,11 +91,30 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		B29540B01C90B79000E4FE89 /* Bitsliced-AEAD */ = {
+			isa = PBXGroup;
+			children = (
+				B29540B11C90B79000E4FE89 /* Primates_Bitsliced */,
+			);
+			path = "Bitsliced-AEAD";
+			sourceTree = "<group>";
+		};
+		B29540B11C90B79000E4FE89 /* Primates_Bitsliced */ = {
+			isa = PBXGroup;
+			children = (
+				B29540B21C90B79000E4FE89 /* main.c */,
+				B2761C1A1C971462002E3DA5 /* PRIMATE120.c */,
+				B2761C1B1C971462002E3DA5 /* PRIMATE120.h */,
+			);
+			path = Primates_Bitsliced;
+			sourceTree = "<group>";
+		};
 		B2960FB81C86203300AB550A = {
 			isa = PBXGroup;
 			children = (
-				B2960FE01C862CE000AB550A /* Reference_implementations */,
-				B2960FC31C86203400AB550A /* Primates_Bitsliced */,
+				B2F85EE01CB2F5E8002D70E2 /* Grøstl-AVX2 */,
+				B29540B01C90B79000E4FE89 /* Bitsliced-AEAD */,
+				B2960FE01C862CE000AB550A /* Ref_TestVectorImplementations */,
 				B2960FC21C86203400AB550A /* Products */,
 			);
 			sourceTree = "<group>";
@@ -103,19 +127,12 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		B2960FC31C86203400AB550A /* Primates_Bitsliced */ = {
-			isa = PBXGroup;
-			children = (
-				B2960FC41C86203400AB550A /* main.c */,
-			);
-			path = Primates_Bitsliced;
-			sourceTree = "<group>";
-		};
-		B2960FE01C862CE000AB550A /* Reference_implementations */ = {
+		B2960FE01C862CE000AB550A /* Ref_TestVectorImplementations */ = {
 			isa = PBXGroup;
 			children = (
 				B2960FE11C862CE000AB550A /* crypto_aead */,
 			);
+			name = Ref_TestVectorImplementations;
 			path = Reference_implementations;
 			sourceTree = "<group>";
 		};
@@ -270,6 +287,20 @@
 			path = ref;
 			sourceTree = "<group>";
 		};
+		B2F85EE01CB2F5E8002D70E2 /* Grøstl-AVX2 */ = {
+			isa = PBXGroup;
+			children = (
+				B2F85EE11CB2F5E8002D70E2 /* api.h */,
+				B2F85EE21CB2F5E8002D70E2 /* brg_endian.h */,
+				B2F85EE31CB2F5E8002D70E2 /* brg_types.h */,
+				B2F85EE41CB2F5E8002D70E2 /* groestl-asm-avx2-gather.h */,
+				B2F85EE51CB2F5E8002D70E2 /* hash.c */,
+				B2F85EE61CB2F5E8002D70E2 /* hash.h */,
+				B2F85EE71CB2F5E8002D70E2 /* implementors */,
+			);
+			path = "Grøstl-AVX2";
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -326,7 +357,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B29540AF1C8C437300E4FE89 /* main.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

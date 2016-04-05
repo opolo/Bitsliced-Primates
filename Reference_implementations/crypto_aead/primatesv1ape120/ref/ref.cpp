@@ -22,14 +22,19 @@ int main()
      
 	const unsigned char k[CRYPTO_KEYBYTES]={0,1,2,3,4,5,6,7,8,9,10,11,12,13,14};
 	const unsigned char npub[CRYPTO_NPUBBYTES]={1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
-	unsigned char m[256];
+	unsigned char m[50];
 	unsigned char ad[256];
 	unsigned char c[256+CRYPTO_ABYTES];
 	unsigned long long clen;
 	unsigned long long mlenT;
-
 	unsigned char mT[256];
-	/*
+
+    for (int i = 0; i < 50; i++){
+        m[i] = 0;
+        ad[i] = 0;
+    }
+    
+    /*
 	unsigned long long mlen = 0;
 	unsigned long long adlen = 0;
 	crypto_aead_encrypt(c,&clen,m,mlen,ad,adlen,NULL,npub,k);
@@ -47,8 +52,8 @@ int main()
 		printf("authentication failed!!");
 	*/
 	
-    crypto_aead_encrypt(c,&clen,m,256,ad,256,NULL,npub,k);
-    cor = crypto_aead_decrypt(mT,&mlenT,NULL,c,clen,ad,256,npub,k);
+    crypto_aead_encrypt(c,&clen,m,50,ad,50,NULL,npub,k);
+    cor = crypto_aead_decrypt(mT,&mlenT,NULL,c,clen,ad,50,npub,k);
 	
     printf("message: %s \n", m);
     printf("associated data: %s \n", ad);
