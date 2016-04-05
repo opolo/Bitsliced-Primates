@@ -1,9 +1,0 @@
-﻿  Test.c
-c:\hobby\thesis\bitsliced-aead\primates_bitsliced_vs\ape120_bitsliced\test.c(10): warning C4047: 'function': 'const unsigned char **' differs in levels of indirection from 'const unsigned char [4][30]'
-c:\hobby\thesis\bitsliced-aead\primates_bitsliced_vs\ape120_bitsliced\test.c(10): warning C4024: 'primates120_encrypt': different types for formal and actual parameter 1
-c:\hobby\thesis\bitsliced-aead\primates_bitsliced_vs\ape120_bitsliced\test.c(10): warning C4047: 'function': 'const unsigned char **' differs in levels of indirection from 'const unsigned char [4][100]'
-c:\hobby\thesis\bitsliced-aead\primates_bitsliced_vs\ape120_bitsliced\test.c(10): warning C4024: 'primates120_encrypt': different types for formal and actual parameter 2
-c:\hobby\thesis\bitsliced-aead\primates_bitsliced_vs\ape120_bitsliced\test.c(10): warning C4047: 'function': 'const unsigned char **' differs in levels of indirection from 'const unsigned char [4][15]'
-c:\hobby\thesis\bitsliced-aead\primates_bitsliced_vs\ape120_bitsliced\test.c(10): warning C4024: 'primates120_encrypt': different types for formal and actual parameter 6
-c:\hobby\thesis\bitsliced-aead\primates_bitsliced_vs\ape120_bitsliced\test.c(5): warning C4305: 'initializing': truncation from 'int' to 'const unsigned char'
-  APE120_Bitsliced.vcxproj -> C:\Hobby\Thesis\Bitsliced-AEAD\Primates_Bitsliced_VS\APE120_Bitsliced\Debug\APE120_Bitsliced.exe
