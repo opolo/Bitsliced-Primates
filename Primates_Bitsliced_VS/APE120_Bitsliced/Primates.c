@@ -36,10 +36,13 @@ void primates120_encrypt(const unsigned char *k[4],
 
 	//XOR the nonce in rate-size chuncks to the rate-part of the state and do primate permutation.
 	//The rate-size is 40 bits and the nonce is 120 bits. 
-	for (int nonce_rate_part = 0; nonce_rate_part < 3; nonce_rate_party += 3) {
-	
+	for (int nonce_rate_part = 0; nonce_rate_part < 3; nonce_rate_part++) {
+				//TODO: asas
 	}
 
+}
+
+void primate120_encrypt_permutate_state(__m256i YMM) {
 }
 
 void transpose_nonce_to_u64(const unsigned char *n, u64 transposedNonce[5]) {
