@@ -8,7 +8,7 @@ void transpose_nonce_to_u64(const unsigned char *n, u64 transposedNonce[5][3]);
 void print_keys(const unsigned char *k[4]);
 void transpose_key_to_u64(const unsigned char *k[4], u64 transposedKey[5][4]);
 
-void primates120_encrypt(const unsigned char *k[4],
+void primates120_encrypt(const unsigned char k[4][keyLength],
 						 const unsigned char *m[4], u64 mlen[4],
 						 const unsigned char *ad[4], u64 adlen[4],
 						 const unsigned char *npub[4]) {
@@ -197,11 +197,11 @@ void transpose_key_to_u64(const unsigned char *k[4], u64 transposedKey[5][4]) {
 
 //void print_YMMs(__m256i YMM[5]) {}
 
-void print_keys(const unsigned char *k[4]) {
-	printf("Key 0: %s ", k[0]);
-	printf("Key 1: %s ", k[1]);
-	printf("Key 2: %s ", k[2]);
-	printf("Key 3: %s ", k[3]);
+void print_keys(const unsigned char k[4][keyLength]) {
+	printf("Key 0: %s \n", k[0]);
+	printf("Key 1: %s \n", k[1]);
+	printf("Key 2: %s \n", k[2]);
+	printf("Key 3: %s \n", k[3]);
 }
 
 void print_u64s_as_binary(u64 transposedData[5][4]) {

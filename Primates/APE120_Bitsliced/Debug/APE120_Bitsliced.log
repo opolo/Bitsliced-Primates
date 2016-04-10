@@ -1,9 +1,43 @@
 ﻿  Test.c
-c:\hobby\thesis\bitsliced-aead\primates_bitsliced_vs\ape120_bitsliced\test.c(10): warning C4047: 'function': 'const unsigned char **' differs in levels of indirection from 'const unsigned char [4][30]'
-c:\hobby\thesis\bitsliced-aead\primates_bitsliced_vs\ape120_bitsliced\test.c(10): warning C4024: 'primates120_encrypt': different types for formal and actual parameter 1
-c:\hobby\thesis\bitsliced-aead\primates_bitsliced_vs\ape120_bitsliced\test.c(10): warning C4047: 'function': 'const unsigned char **' differs in levels of indirection from 'const unsigned char [4][100]'
-c:\hobby\thesis\bitsliced-aead\primates_bitsliced_vs\ape120_bitsliced\test.c(10): warning C4024: 'primates120_encrypt': different types for formal and actual parameter 2
-c:\hobby\thesis\bitsliced-aead\primates_bitsliced_vs\ape120_bitsliced\test.c(10): warning C4047: 'function': 'const unsigned char **' differs in levels of indirection from 'const unsigned char [4][15]'
-c:\hobby\thesis\bitsliced-aead\primates_bitsliced_vs\ape120_bitsliced\test.c(10): warning C4024: 'primates120_encrypt': different types for formal and actual parameter 6
-c:\hobby\thesis\bitsliced-aead\primates_bitsliced_vs\ape120_bitsliced\test.c(5): warning C4305: 'initializing': truncation from 'int' to 'const unsigned char'
-  APE120_Bitsliced.vcxproj -> C:\Hobby\Thesis\Bitsliced-AEAD\Primates_Bitsliced_VS\APE120_Bitsliced\Debug\APE120_Bitsliced.exe
+c:\hobby\thesis\primates\ape120_bitsliced\test.c(10): warning C4047: 'function': 'const unsigned char **' differs in levels of indirection from 'const unsigned char [4][30]'
+c:\hobby\thesis\primates\ape120_bitsliced\test.c(10): warning C4024: 'primates120_encrypt': different types for formal and actual parameter 1
+c:\hobby\thesis\primates\ape120_bitsliced\test.c(10): warning C4047: 'function': 'const unsigned char **' differs in levels of indirection from 'unsigned char [4][100]'
+c:\hobby\thesis\primates\ape120_bitsliced\test.c(10): warning C4024: 'primates120_encrypt': different types for formal and actual parameter 2
+c:\hobby\thesis\primates\ape120_bitsliced\test.c(10): warning C4047: 'function': 'const unsigned char **' differs in levels of indirection from 'const unsigned char [4][15]'
+c:\hobby\thesis\primates\ape120_bitsliced\test.c(10): warning C4024: 'primates120_encrypt': different types for formal and actual parameter 6
+  Primates.c
+c:\hobby\thesis\primates\ape120_bitsliced\primates.c(14): warning C4028: formal parameter 1 different from declaration
+c:\hobby\thesis\primates\ape120_bitsliced\primates.c(20): warning C4550: expression evaluates to a function which is missing an argument list
+c:\hobby\thesis\primates\ape120_bitsliced\primates.c(28): warning C4047: 'function': 'const unsigned char **' differs in levels of indirection from 'const unsigned char (*)[30]'
+c:\hobby\thesis\primates\ape120_bitsliced\primates.c(28): warning C4024: 'print_keys': different types for formal and actual parameter 1
+c:\hobby\thesis\primates\ape120_bitsliced\primates.c(33): warning C4090: 'function': different 'const' qualifiers
+c:\hobby\thesis\primates\ape120_bitsliced\primates.c(33): warning C4047: 'function': 'u64 (*)[4]' differs in levels of indirection from 'u64 [5]'
+c:\hobby\thesis\primates\ape120_bitsliced\primates.c(33): warning C4024: 'transpose_key_to_u64': different types for formal and actual parameter 2
+c:\hobby\thesis\primates\ape120_bitsliced\primates.c(45): warning C4047: 'function': 'u64 (*)[3]' differs in levels of indirection from 'u64 [5]'
+c:\hobby\thesis\primates\ape120_bitsliced\primates.c(45): warning C4024: 'transpose_nonce_to_u64': different types for formal and actual parameter 2
+c:\hobby\thesis\primates\ape120_bitsliced\primates.c(139): warning C4047: '=': 'unsigned char' differs in levels of indirection from 'const unsigned char *'
+c:\hobby\thesis\primates\ape120_bitsliced\primates.c(149): warning C4047: '=': 'unsigned char' differs in levels of indirection from 'const unsigned char *'
+c:\hobby\thesis\primates\ape120_bitsliced\primates.c(159): warning C4047: '=': 'unsigned char' differs in levels of indirection from 'const unsigned char *'
+c:\hobby\thesis\primates\ape120_bitsliced\primates.c(169): warning C4047: '=': 'unsigned char' differs in levels of indirection from 'const unsigned char *'
+c:\hobby\thesis\primates\ape120_bitsliced\primates.c(179): warning C4047: '=': 'unsigned char' differs in levels of indirection from 'const unsigned char *'
+c:\hobby\thesis\primates\ape120_bitsliced\primates.c(200): warning C4028: formal parameter 1 different from declaration
+c:\hobby\thesis\primates\ape120_bitsliced\primates.c(215): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  c:\program files (x86)\windows kits\10\include\10.0.10240.0\ucrt\string.h(90): note: see declaration of 'strcat'
+c:\hobby\thesis\primates\ape120_bitsliced\primates.c(217): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  c:\program files (x86)\windows kits\10\include\10.0.10240.0\ucrt\string.h(90): note: see declaration of 'strcat'
+c:\hobby\thesis\primates\ape120_bitsliced\primates.c(219): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  c:\program files (x86)\windows kits\10\include\10.0.10240.0\ucrt\string.h(90): note: see declaration of 'strcat'
+c:\hobby\thesis\primates\ape120_bitsliced\primates.c(221): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  c:\program files (x86)\windows kits\10\include\10.0.10240.0\ucrt\string.h(90): note: see declaration of 'strcat'
+c:\hobby\thesis\primates\ape120_bitsliced\primates.c(208): warning C4101: 'reg': unreferenced local variable
+c:\hobby\thesis\primates\ape120_bitsliced\primates.c(232): warning C4047: 'function': 'const char *' differs in levels of indirection from 'int'
+c:\hobby\thesis\primates\ape120_bitsliced\primates.c(232): warning C4024: 'strcat': different types for formal and actual parameter 2
+c:\hobby\thesis\primates\ape120_bitsliced\primates.c(233): warning C4047: 'function': 'const char *' differs in levels of indirection from 'int'
+c:\hobby\thesis\primates\ape120_bitsliced\primates.c(233): warning C4024: 'strcat': different types for formal and actual parameter 2
+c:\hobby\thesis\primates\ape120_bitsliced\primates.c(232): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  c:\program files (x86)\windows kits\10\include\10.0.10240.0\ucrt\string.h(90): note: see declaration of 'strcat'
+c:\hobby\thesis\primates\ape120_bitsliced\primates.c(233): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  c:\program files (x86)\windows kits\10\include\10.0.10240.0\ucrt\string.h(90): note: see declaration of 'strcat'
+  Generating Code...
+c:\hobby\thesis\primates\ape120_bitsliced\primates.c(38): warning C4752: found Intel(R) Advanced Vector Extensions; consider using /arch:AVX
+  APE120_Bitsliced.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\Debug\APE120_Bitsliced.exe
