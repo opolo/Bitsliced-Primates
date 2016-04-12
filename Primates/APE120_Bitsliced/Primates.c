@@ -3,15 +3,22 @@
 #include <stdio.h>
 #include <string.h>
 
+ 
+
 void u64_to_string(char *str, u64 number);
 void transpose_nonce_to_u64(const unsigned char *n, u64 transposedNonce[5][3]);
-void print_keys(const unsigned char *k[4]);
+
+void print_keys(const unsigned char k[4][keyLength]);
+void print_nonces(const unsigned char npub[4][NonceLength]);
+void print_YMMs(__m256i *YMMs);
+void print_ad(const unsigned char *ad[4], u64 adlen[4]);
+
 void transpose_key_to_u64(const unsigned char *k[4], u64 transposedKey[5][4]);
 
 void primates120_encrypt(const unsigned char k[4][keyLength],
 						 const unsigned char *m[4], u64 mlen[4],
 						 const unsigned char *ad[4], u64 adlen[4],
-						 const unsigned char *npub[4]) {
+						 const unsigned char npub[4][NonceLength]) {
 	//Declarations
 	__m256i YMM[5]; //YMM registers
 	u64 transposedData[4][5]; //4x blocks with individual keys/nonces. 5x registers
@@ -26,6 +33,9 @@ void primates120_encrypt(const unsigned char k[4][keyLength],
 
 	//TEST 
 	print_keys(k);
+	print_nonces(npub);
+	print_ad(ad, adlen);
+	print_YMMs(YMM);
 	//ENDTEST 
 
 	//Transpose keys to bitsliced format.
@@ -36,7 +46,7 @@ void primates120_encrypt(const unsigned char k[4][keyLength],
 	//Load transposed keys into registers.
 	for (int YMM_no = 0; YMM_no < 5; YMM_no++) {
 		YMM[YMM_no] = _mm256_set_epi64x(transposedData[0][YMM_no], transposedData[1][YMM_no],
-			transposedData[2][YMM_no], transposedData[4][YMM_no]);
+			transposedData[2][YMM_no], transposedData[4][YMM_no]); //Maby use 
 	}
 
 	//Transpose nonces to bitsliced format
@@ -204,6 +214,47 @@ void print_keys(const unsigned char k[4][keyLength]) {
 	printf("Key 3: %s \n", k[3]);
 }
 
+void print_nonces(const unsigned char npub[4][NonceLength]) {
+	printf("Nonce 0: %s \n", npub[0]);
+	printf("Nonce 1: %s \n", npub[1]);
+	printf("Nonce 2: %s \n", npub[2]);
+	printf("Nonce 3: %s \n", npub[3]);
+}
+
+void print_ad(const unsigned char *ad[4], u64 adlen[4]) {
+	if (adlen == 0) {
+		printf("No associated data \n");
+		return;
+	}
+
+	if (adlen[0] != 0)
+		printf("Ass. Data 0: %s \n", ad[0]);
+	if (adlen[1] != 0)
+		printf("Ass. Data 1: %s \n", ad[1]);
+	if (adlen[2] != 0)
+		printf("Ass. Data 2: %s \n", ad[2]);
+	if (adlen[3] != 0)
+		printf("Ass. Data 3: %s \n", ad[3]);
+}
+
+void print_YMMs(__m256i *YMMs) {
+	unsigned char *YMM0 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 32byte, 32byte aligned
+	unsigned char *YMM1 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 32byte, 32byte aligned
+	unsigned char *YMM2 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 32byte, 32byte aligned
+	unsigned char *YMM3 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 32byte, 32byte aligned
+	unsigned char *YMM4 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 32byte, 32byte aligned
+
+
+	_mm256_store_si256(YMM0, YMMs[0]);
+	_mm256_store_si256(YMM1, YMMs[1]);
+	_mm256_store_si256(YMM2, YMMs[2]);
+	_mm256_store_si256(YMM3, YMMs[3]);
+	_mm256_store_si256(YMM4, YMMs[4]);
+
+	printf("YMM 0: %02X \n", YMM0);
+}
+
+
 void print_u64s_as_binary(u64 transposedData[5][4]) {
 	char reg[YMMCount][YMMLength];
 
@@ -219,7 +270,7 @@ void print_u64s_as_binary(u64 transposedData[5][4]) {
 		strcat(registerString, tempString);
 		u64_to_string(tempString, transposedData[YMM_no][3]);
 		strcat(registerString, tempString);
-
+		
 		printf("Reg %i: %s \n", YMM_no, registerString);
 	}
 }
