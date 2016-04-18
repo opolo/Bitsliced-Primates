@@ -6,131 +6,421 @@
  
 
 void u64_to_string(char *str, u64 number);
-void transpose_nonce_to_u64(const unsigned char *n, u64 transposedNonce[5][3]);
+void transpose_nonce_to_u64(const unsigned char n[4][NonceLength], u64 transposedNonce[5][4][3]);
+void transpose_data_to_u64_ratesize(const unsigned char *data[4], u64 dataLen[4], u64 transposedData[5][4], u64 dataTransposedProgress[4], u64 sectionLengthWithoutPadding[4]);
 
 void print_keys(const unsigned char k[4][keyLength]);
+void print_keys_hex(const unsigned char k[4][keyLength]);
 void print_nonces(const unsigned char npub[4][NonceLength]);
-void print_YMMs(__m256i *YMMs);
+void print_nonces_hex(const unsigned char npub[4][NonceLength]);
 void print_ad(const unsigned char *ad[4], u64 adlen[4]);
+void print_ad_hex(const unsigned char *ad[4], u64 adlen[4]);
+void print_YMMs(__m256i *YMMs);
+void primate(__m256i state[5]);
 
-void transpose_key_to_u64(const unsigned char *k[4], u64 transposedKey[5][4]);
+void transpose_key_to_u64(const unsigned char k[4][keyLength], u64 transposedKey[5][4]);
 
 void primates120_encrypt(const unsigned char k[4][keyLength],
-						 const unsigned char *m[4], u64 mlen[4],
-						 const unsigned char *ad[4], u64 adlen[4],
-						 const unsigned char npub[4][NonceLength]) {
-	//Declarations
-	__m256i YMM[5]; //YMM registers
-	u64 transposedData[4][5]; //4x blocks with individual keys/nonces. 5x registers
+	const unsigned char *m[4], u64 mlen[4],
+	const unsigned char *ad[4], u64 adlen[4],
+	const unsigned char npub[4][NonceLength],
+	unsigned *ciphertexts[4],
+	unsigned char tag[4][keyLength]) {
 
-	//Prepare registers
+	//Declarations
+	__m256i YMM[5]; //YMM state registers
+	u64 transposedKey[5][4]; //5x registers with 4x states in them
+	u64 transposedData[5][4]; //5x registers with 4x states in them
+	u64 transposedNonce[5][4][3]; //5x regs, 4x states, 3x nonce sections for each.
+
+	//Prepare
 	_mm256_zeroall;
 	memset(transposedData, 0, sizeof(transposedData));
+	memset(transposedNonce, 0, sizeof(transposedNonce));
+	memset(transposedKey, 0, sizeof(transposedKey));
 
 	//Implementation note: Each YMM is 256 bits. Each primate state takes up 56 bits in each YMM.
 	//Thus there is room for a total of 4 primate states. To make the implementation more efficient, we align
 	//each state with 64 bits. There will still only be space in the vector for a total of 4 states anyway.
 
 	//TEST 
-	print_keys(k);
-	print_nonces(npub);
-	print_ad(ad, adlen);
-	print_YMMs(YMM);
+	print_keys_hex(k);
+	print_nonces_hex(npub);
+	print_ad_hex(ad, adlen);
 	//ENDTEST 
 
 	//Transpose keys to bitsliced format.
-	for (int key_no = 0; key_no < 4; key_no++) {
-		transpose_key_to_u64(k[key_no], transposedData[key_no]);
-	}
+	transpose_key_to_u64(k, transposedKey);
 
 	//Load transposed keys into registers.
 	for (int YMM_no = 0; YMM_no < 5; YMM_no++) {
-		YMM[YMM_no] = _mm256_set_epi64x(transposedData[0][YMM_no], transposedData[1][YMM_no],
-			transposedData[2][YMM_no], transposedData[4][YMM_no]); //Maby use 
+		YMM[YMM_no] = _mm256_set_epi64x(transposedKey[YMM_no][0],
+			transposedKey[YMM_no][1],
+			transposedKey[YMM_no][2],
+			transposedKey[YMM_no][3]); //Maby use 
 	}
 
 	//Transpose nonces to bitsliced format
-	memset(transposedData, 0, sizeof(transposedData));
-	for (int nonce_no = 0; nonce_no < 4; nonce_no++) {
-		transpose_nonce_to_u64(npub[nonce_no], transposedData[nonce_no]);
-	}
+	transpose_nonce_to_u64(npub, transposedNonce);
 
 	//XOR the nonce in rate-size chuncks to the rate-part of the state and do primate permutation.
-	//The rate-size is 40 bits and the nonce is 120 bits. 
+	//The rate-size is 40 bits and the nonce is 120 bits, so 3 times will we do it.
+	//each state is kept in 5 ymms, and there are 4 states, so 20 XORs per round, and 60 in total.
 	//Note: The nonce is 120 bits long, but stored in 4x u64's (=256 bits). This is okay as the rest of the u64's are zeroed. 
-	for (int nonce_rate_part = 0; nonce_rate_part < 3; nonce_rate_part++) {
-	//	YMM[0] = _mm256_xor_si256(YMM[0], _mm256_set_epi64x());
-	//	YMM[1] = ;
-		//YMM[2] = ;
-//		YMM[3] = ;
-	//	YMM[4] = ;
+	for (int nonceSection = 0; nonceSection < 3; nonceSection++) {
 
-		//primate120_encrypt_permutate_state(YMM);
+		//YMM0, [ymm][state][nonce-sect]
+		__m256i nonce = _mm256_set_epi64x(transposedNonce[0][0][nonceSection], transposedNonce[0][0][nonceSection],
+			transposedNonce[0][0][nonceSection], transposedNonce[0][0][nonceSection]);
+		YMM[0] = _mm256_xor_si256(nonce, YMM[0]);
+
+		//YMM1, [ymm][state][nonce-sect]
+		nonce = _mm256_set_epi64x(transposedNonce[1][0][nonceSection], transposedNonce[1][0][nonceSection],
+			transposedNonce[1][0][nonceSection], transposedNonce[1][0][nonceSection]);
+		YMM[1] = _mm256_xor_si256(nonce, YMM[1]);
+
+		//YMM2, [ymm][state][nonce-sect]
+		nonce = _mm256_set_epi64x(transposedNonce[2][0][nonceSection], transposedNonce[2][0][nonceSection],
+			transposedNonce[2][0][nonceSection], transposedNonce[2][0][nonceSection]);
+		YMM[2] = _mm256_xor_si256(nonce, YMM[2]);
+
+		//YMM3, [ymm][state][nonce-sect]
+		nonce = _mm256_set_epi64x(transposedNonce[3][0][nonceSection], transposedNonce[3][0][nonceSection],
+			transposedNonce[3][0][nonceSection], transposedNonce[3][0][nonceSection]);
+		YMM[3] = _mm256_xor_si256(nonce, YMM[3]);
+
+		//YMM4, [ymm][state][nonce-sect]
+		nonce = _mm256_set_epi64x(transposedNonce[4][0][nonceSection], transposedNonce[4][0][nonceSection],
+			transposedNonce[4][0][nonceSection], transposedNonce[4][0][nonceSection]);
+		YMM[4] = _mm256_xor_si256(nonce, YMM[4]);
+
+		primate120_encrypt_permutate_state(YMM);
 	}
-	
+
+	//Handle associated data. If any is present, we do this - else we skip the step.
+	if (adlen != 0) {
+		u64 transposedDataProgress = 0;
+		__m256i adYMM;
+		while (transposedDataProgress < adlen) {
+			transpose_data_to_u64_ratesize(ad, adlen, transposedData, transposedDataProgress, 0);
+
+			//XOR ad to state
+			for (int YMMReg = 0; YMMReg < 5; YMMReg++) {
+				adYMM = _mm256_set_epi64x(transposedData[YMMReg][0], transposedData[YMMReg][1],
+					transposedData[YMMReg][2], transposedData[YMMReg][3]);
+				YMM[YMMReg] = _mm256_xor_si256(YMM[YMMReg], adYMM);
+			}
+			primate(YMM);
+		}
+
+		memset(transposedData, 0, sizeof(transposedData));
+	}
+
+
+	//XOR state with [0]^(b-1) | 1 //i.e. xor last bit with 1.
+	YMM[4] = _mm256_xor_si256(YMM[4], _mm256_set1_epi64x(0, 0, 0, 1));
+
+	//Var to store length of last block.
+	u64 lastBlockLengths[4];
+
+	//Handle message
+	if (mlen != 0) {
+		u64 transposedDataProgress = 0;
+		__m256i mYMM;
+
+		while (transposedDataProgress < mlen) {
+			transpose_data_to_u64_ratesize(m, mlen, transposedData, transposedDataProgress, lastBlockLengths);
+
+			//XOR m to state
+			for (int YMMReg = 0; YMMReg < 5; YMMReg++) {
+				mYMM = _mm256_set_epi64x(transposedData[YMMReg][0], transposedData[YMMReg][1],
+										 transposedData[YMMReg][2], transposedData[YMMReg][3]);
+				YMM[YMMReg] = _mm256_xor_si256(YMM[YMMReg], mYMM);
+			}
+
+			//Primate permutation
+			primate(YMM);
+
+			//detranspose rate part (5 bytes) of current state and store in corresponding place in C. 
+			unsigned char detransposedRatePart[5]; 
+			convert_rateparts_to_bytes(YMM, detransposedRatePart[5]);
+			memcpy(ciphertexts[0][transposedDataProgress - 5], detransposedRatePart[0], 5);
+			memcpy(ciphertexts[1][transposedDataProgress - 5], detransposedRatePart[1], 5);
+			memcpy(ciphertexts[2][transposedDataProgress - 5], detransposedRatePart[2], 5);
+			memcpy(ciphertexts[3][transposedDataProgress - 5], detransposedRatePart[3], 5);
+		}
+
+		//encryption done. Last state's capacity is our tag, 
+		//and we need to do something weird about the secondlast block TODO (...whatever it is)
+		unsigned char tags[4][keyLength];
+		convert_capacityparts_to_bytes(YMM, tags);
+		memcpy(tag[0], tags[0], keyLength);
+		memcpy(tag[1], tags[1], keyLength);
+		memcpy(tag[2], tags[2], keyLength);
+		memcpy(tag[3], tags[3], keyLength);
+	}
+
+
+}
+
+void convert_capacityparts_to_bytes(__m256i YMMs[5], unsigned char deTransposedBytes[4][keyLength]) {
+	//In each YMM, the capacities is stored at the bits, 0-48, 64-112, 128-176, 192-240.
+	//The MSB of each element is stored in YMM5.
+	//The first element of the capacity is stored in the last bit of the YMMs (right?)	
+	unsigned char *YMM0 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 32byte, 32byte aligned
+	unsigned char *YMM1 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 32byte, 32byte aligned
+	unsigned char *YMM2 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 32byte, 32byte aligned
+	unsigned char *YMM3 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 32byte, 32byte aligned
+	unsigned char *YMM4 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 32byte, 32byte aligned
+
+	_mm256_store_si256(YMM0, YMMs[0]);
+	_mm256_store_si256(YMM1, YMMs[1]);
+	_mm256_store_si256(YMM2, YMMs[2]);
+	_mm256_store_si256(YMM3, YMMs[3]);
+	_mm256_store_si256(YMM4, YMMs[4]);
+
+	for (int state = 0; state < 4; state++) {
+		int byte_offset = 0;
+		int YMM_bit_offset = state * 64;
+
+		//detranspose all 30 capacity bytes of a state
+		for (int YMM_bit = 0; YMM_bit < 48; YMM_bit += 8) {
+			deTransposedBytes[state][0 + byte_offset] =
+				(YMM0[YMM_bit + YMM_bit_offset] & 1) |
+				(YMM1[YMM_bit + YMM_bit_offset] & 2) |
+				(YMM2[YMM_bit + YMM_bit_offset] & 4) |
+				(YMM3[YMM_bit + YMM_bit_offset] & 8) |
+				(YMM4[YMM_bit + YMM_bit_offset] & 16) |
+				(YMM0[YMM_bit + YMM_bit_offset + 1] & 1) |
+				(YMM1[YMM_bit + YMM_bit_offset + 1] & 2) |
+				(YMM2[YMM_bit + YMM_bit_offset + 1] & 4);
+
+			deTransposedBytes[state][1 + byte_offset] =
+				(YMM3[YMM_bit + YMM_bit_offset + 1] & 8) |
+				(YMM4[YMM_bit + YMM_bit_offset + 1] & 16) |
+				(YMM0[YMM_bit + YMM_bit_offset + 2] & 1) |
+				(YMM1[YMM_bit + YMM_bit_offset + 2] & 2) |
+				(YMM2[YMM_bit + YMM_bit_offset + 2] & 4) |
+				(YMM3[YMM_bit + YMM_bit_offset + 2] & 8) |
+				(YMM4[YMM_bit + YMM_bit_offset + 2] & 16) |
+				(YMM0[YMM_bit + YMM_bit_offset + 3] & 1);
+
+			deTransposedBytes[state][2 + byte_offset] =
+				(YMM1[YMM_bit + YMM_bit_offset + 3] & 2) |
+				(YMM2[YMM_bit + YMM_bit_offset + 3] & 4) |
+				(YMM3[YMM_bit + YMM_bit_offset + 3] & 8) |
+				(YMM4[YMM_bit + YMM_bit_offset + 3] & 16) |
+				(YMM0[YMM_bit + YMM_bit_offset + 4] & 1) |
+				(YMM1[YMM_bit + YMM_bit_offset + 4] & 2) |
+				(YMM2[YMM_bit + YMM_bit_offset + 4] & 4) |
+				(YMM3[YMM_bit + YMM_bit_offset + 4] & 8);
+
+			deTransposedBytes[state][3 + byte_offset] =
+				(YMM4[YMM_bit + YMM_bit_offset + 4] & 16) |
+				(YMM0[YMM_bit + YMM_bit_offset + 5] & 1) |
+				(YMM1[YMM_bit + YMM_bit_offset + 5] & 2) |
+				(YMM2[YMM_bit + YMM_bit_offset + 5] & 4) |
+				(YMM3[YMM_bit + YMM_bit_offset + 5] & 8) |
+				(YMM4[YMM_bit + YMM_bit_offset + 5] & 16) |
+				(YMM0[YMM_bit + YMM_bit_offset + 6] & 1) |
+				(YMM1[YMM_bit + YMM_bit_offset + 6] & 2);
+
+			deTransposedBytes[state][4 + byte_offset] =
+				(YMM2[YMM_bit + YMM_bit_offset + 6] & 4) |
+				(YMM3[YMM_bit + YMM_bit_offset + 6] & 8) |
+				(YMM4[YMM_bit + YMM_bit_offset + 6] & 16) |
+				(YMM0[YMM_bit + YMM_bit_offset + 7] & 1) |
+				(YMM1[YMM_bit + YMM_bit_offset + 7] & 2) |
+				(YMM2[YMM_bit + YMM_bit_offset + 7] & 4) |
+				(YMM3[YMM_bit + YMM_bit_offset + 7] & 8) |
+				(YMM4[YMM_bit + YMM_bit_offset + 7] & 16);
+
+			byte_offset += 5;
+		}
+	}
+	_aligned_free(YMM0);
+	_aligned_free(YMM1);
+	_aligned_free(YMM2);
+	_aligned_free(YMM3);
+	_aligned_free(YMM4);
+}
+
+void convert_rateparts_to_bytes(__m256i YMM[5], unsigned char deTransposedBytes[4]) {
+	////In each YMM, the rates are stored at the bits, 49-55, 113-119, 177-183, 241-247.
+	//The MSB of each element is stored in YMM5.
+	//The first element of the capacity is stored in the last bit of the YMMs (right?)
+
+	//TODO
+}
+
+void primate(__m256i state[5]) {
+	//TODO
 }
 
 /*
-* This functions accepts 4 nonces of minimum length 15 bytes and transposes the bits from these
-* into a multidimensional array of size n[YMM_no][nonce-section]. Each nonce-section is 40 bits.
+We need to transpose chunks of the data of sizes that are equal to the rate-part (40 bits) of the primate-cipher.
+Thus we transpose 5 bytes of each AD at a time.
 */
-void transpose_nonce_to_u64(const unsigned char *n, u64 transposedNonce[5][3]) {
+void transpose_data_to_u64_ratesize(const unsigned char *data[4], u64 dataLen[4], u64 transposedData[5][4], u64 dataTransposedProgress[4], u64 sectionLengthWithoutPadding[4]) {
+	
 	unsigned char singleByte;
-	int offset = 0;
 
-	for (int index = 0; index < NonceLength; index += 5) {
-		singleByte = n[index];
-		transposedNonce[0][offset] = (transposedNonce[0][offset] << 1) | (singleByte & 1); //1. bit
-		transposedNonce[1][offset] = (transposedNonce[1][offset] << 1) | ((singleByte >> 1) & 1);
-		transposedNonce[2][offset] = (transposedNonce[2][offset] << 1) | ((singleByte >> 2) & 1);
-		transposedNonce[3][offset] = (transposedNonce[3][offset] << 1) | ((singleByte >> 3) & 1);
-		transposedNonce[4][offset] = (transposedNonce[4][offset] << 1) | ((singleByte >> 4) & 1);
-		transposedNonce[0][offset] = (transposedNonce[0][offset] << 1) | ((singleByte >> 5) & 1);
-		transposedNonce[1][offset] = (transposedNonce[1][offset] << 1) | ((singleByte >> 6) & 1);
-		transposedNonce[2][offset] = (transposedNonce[2][offset] << 1) | ((singleByte >> 7) & 1);
+	//Transpose associated data for each state
+	for (int stateNo = 0; stateNo < 4; stateNo++) {
+		unsigned char dataArray[5];
 
-		singleByte = n[index + 1];
-		transposedNonce[3][offset] = (transposedNonce[0][offset] << 1) | (singleByte & 1); //9. bit
-		transposedNonce[4][offset] = (transposedNonce[1][offset] << 1) | ((singleByte >> 1) & 1);
-		transposedNonce[0][offset] = (transposedNonce[2][offset] << 1) | ((singleByte >> 2) & 1);
-		transposedNonce[1][offset] = (transposedNonce[3][offset] << 1) | ((singleByte >> 3) & 1);
-		transposedNonce[2][offset] = (transposedNonce[4][offset] << 1) | ((singleByte >> 4) & 1);
-		transposedNonce[3][offset] = (transposedNonce[0][offset] << 1) | ((singleByte >> 5) & 1);
-		transposedNonce[4][offset] = (transposedNonce[1][offset] << 1) | ((singleByte >> 6) & 1);
-		transposedNonce[0][offset] = (transposedNonce[2][offset] << 1) | ((singleByte >> 7) & 1);
+		//Are there less than 5 bytes, but atleast one still not transposed? (i.e. we need padding)
+		if (dataLen[stateNo] > dataTransposedProgress[stateNo] && dataLen[stateNo] < dataTransposedProgress[stateNo] + 5) {
+			switch (dataLen[stateNo] - dataTransposedProgress[stateNo]) {
+			case 1: //Pad after first byte
+				dataArray[0] = data[4][dataTransposedProgress[stateNo]];
+				dataArray[1] = 256; //1000 0000
+				dataArray[2] = 0; dataArray[3] = 0; dataArray[4] = 0;
+				if (sectionLengthWithoutPadding != 0) sectionLengthWithoutPadding[stateNo] = 1;
+				break;
+			case 2: //Pad after second
+				dataArray[0] = data[4][dataTransposedProgress[stateNo]];
+				dataArray[1] = data[4][dataTransposedProgress[stateNo] + 1];
+				dataArray[2] = 256; dataArray[3] = 0; dataArray[4] = 0;
+				if (sectionLengthWithoutPadding != 0) sectionLengthWithoutPadding[stateNo] = 2;
+				break;
+			case 3: //Pad after third
+				dataArray[0] = data[4][dataTransposedProgress[stateNo]];
+				dataArray[1] = data[4][dataTransposedProgress[stateNo] + 1];
+				dataArray[2] = data[4][dataTransposedProgress[stateNo] + 2];
+				dataArray[3] = 256; dataArray[4] = 0;
+				if (sectionLengthWithoutPadding != 0) sectionLengthWithoutPadding[stateNo] = 3;
+				break;
+			case 4: //Pad after fourth
+				dataArray[0] = data[4][dataTransposedProgress[stateNo]];
+				dataArray[1] = data[4][dataTransposedProgress[stateNo] + 1];
+				dataArray[2] = data[4][dataTransposedProgress[stateNo] + 2];
+				dataArray[3] = data[4][dataTransposedProgress[stateNo] + 3];
+				dataArray[4] = 256;
+				if (sectionLengthWithoutPadding != 0) sectionLengthWithoutPadding[stateNo] = 4;
+				break;
+			default:
+				printf("Something went wrong when padding");
+			}
+		}
 
-		singleByte = n[index + 2];
-		transposedNonce[1][offset] = (transposedNonce[0][offset] << 1) | (singleByte & 1); //17. bit
-		transposedNonce[2][offset] = (transposedNonce[1][offset] << 1) | ((singleByte >> 1) & 1);
-		transposedNonce[3][offset] = (transposedNonce[2][offset] << 1) | ((singleByte >> 2) & 1);
-		transposedNonce[4][offset] = (transposedNonce[3][offset] << 1) | ((singleByte >> 3) & 1);
-		transposedNonce[0][offset] = (transposedNonce[4][offset] << 1) | ((singleByte >> 4) & 1);
-		transposedNonce[1][offset] = (transposedNonce[0][offset] << 1) | ((singleByte >> 5) & 1);
-		transposedNonce[2][offset] = (transposedNonce[1][offset] << 1) | ((singleByte >> 6) & 1);
-		transposedNonce[3][offset] = (transposedNonce[2][offset] << 1) | ((singleByte >> 7) & 1); 
+		//Are there still bytes left to transpose for this state? Then transpose next five (padding included)
+		if (dataLen[stateNo] > dataTransposedProgress[stateNo] + 4) {
+			if (sectionLengthWithoutPadding != 0) sectionLengthWithoutPadding[stateNo] = 5;
+			singleByte = dataArray[0];
+			transposedData[0][stateNo] = (transposedData[0][stateNo] << 1) | (singleByte & 1); //1. bit
+			transposedData[1][stateNo] = (transposedData[1][stateNo] << 1) | ((singleByte >> 1) & 1);
+			transposedData[2][stateNo] = (transposedData[2][stateNo] << 1) | ((singleByte >> 2) & 1);
+			transposedData[3][stateNo] = (transposedData[3][stateNo] << 1) | ((singleByte >> 3) & 1);
+			transposedData[4][stateNo] = (transposedData[4][stateNo] << 1) | ((singleByte >> 4) & 1);
+			transposedData[0][stateNo] = (transposedData[0][stateNo] << 1) | ((singleByte >> 5) & 1);
+			transposedData[1][stateNo] = (transposedData[1][stateNo] << 1) | ((singleByte >> 6) & 1);
+			transposedData[2][stateNo] = (transposedData[2][stateNo] << 1) | ((singleByte >> 7) & 1);
 
-		singleByte = n[index + 3];
-		transposedNonce[4][offset] = (transposedNonce[0][offset] << 1) | (singleByte & 1); //25. bit
-		transposedNonce[0][offset] = (transposedNonce[1][offset] << 1) | ((singleByte >> 1) & 1);
-		transposedNonce[1][offset] = (transposedNonce[2][offset] << 1) | ((singleByte >> 2) & 1);
-		transposedNonce[2][offset] = (transposedNonce[3][offset] << 1) | ((singleByte >> 3) & 1);
-		transposedNonce[3][offset] = (transposedNonce[4][offset] << 1) | ((singleByte >> 4) & 1);
-		transposedNonce[4][offset] = (transposedNonce[0][offset] << 1) | ((singleByte >> 5) & 1);
-		transposedNonce[0][offset] = (transposedNonce[1][offset] << 1) | ((singleByte >> 6) & 1);
-		transposedNonce[1][offset] = (transposedNonce[2][offset] << 1) | ((singleByte >> 7) & 1);
+			singleByte = dataArray[1];
+			transposedData[3][stateNo] = (transposedData[3][stateNo] << 1) | (singleByte & 1); //9. bit
+			transposedData[4][stateNo] = (transposedData[4][stateNo] << 1) | ((singleByte >> 1) & 1);
+			transposedData[0][stateNo] = (transposedData[0][stateNo] << 1) | ((singleByte >> 2) & 1);
+			transposedData[1][stateNo] = (transposedData[1][stateNo] << 1) | ((singleByte >> 3) & 1);
+			transposedData[2][stateNo] = (transposedData[2][stateNo] << 1) | ((singleByte >> 4) & 1);
+			transposedData[3][stateNo] = (transposedData[3][stateNo] << 1) | ((singleByte >> 5) & 1);
+			transposedData[4][stateNo] = (transposedData[4][stateNo] << 1) | ((singleByte >> 6) & 1);
+			transposedData[0][stateNo] = (transposedData[0][stateNo] << 1) | ((singleByte >> 7) & 1);
 
-		singleByte = n[index + 4];
-		transposedNonce[2][offset] = (transposedNonce[0][offset] << 1) | (singleByte & 1); //33. bit
-		transposedNonce[3][offset] = (transposedNonce[1][offset] << 1) | ((singleByte >> 1) & 1);
-		transposedNonce[4][offset] = (transposedNonce[2][offset] << 1) | ((singleByte >> 2) & 1);
-		transposedNonce[0][offset] = (transposedNonce[3][offset] << 1) | ((singleByte >> 3) & 1);
-		transposedNonce[1][offset] = (transposedNonce[4][offset] << 1) | ((singleByte >> 4) & 1);
-		transposedNonce[2][offset] = (transposedNonce[0][offset] << 1) | ((singleByte >> 5) & 1);
-		transposedNonce[3][offset] = (transposedNonce[1][offset] << 1) | ((singleByte >> 6) & 1);
-		transposedNonce[4][offset] = (transposedNonce[2][offset] << 1) | ((singleByte >> 7) & 1); //40. bit
+			singleByte = dataArray[2];
+			transposedData[1][stateNo] = (transposedData[1][stateNo] << 1) | (singleByte & 1); //17. bit
+			transposedData[2][stateNo] = (transposedData[2][stateNo] << 1) | ((singleByte >> 1) & 1);
+			transposedData[3][stateNo] = (transposedData[3][stateNo] << 1) | ((singleByte >> 2) & 1);
+			transposedData[4][stateNo] = (transposedData[4][stateNo] << 1) | ((singleByte >> 3) & 1);
+			transposedData[0][stateNo] = (transposedData[0][stateNo] << 1) | ((singleByte >> 4) & 1);
+			transposedData[1][stateNo] = (transposedData[1][stateNo] << 1) | ((singleByte >> 5) & 1);
+			transposedData[2][stateNo] = (transposedData[2][stateNo] << 1) | ((singleByte >> 6) & 1);
+			transposedData[3][stateNo] = (transposedData[3][stateNo] << 1) | ((singleByte >> 7) & 1);
 
-		//Increment offset for next nonce-section in this loop.
-		offset++;
+			singleByte = dataArray[3];
+			transposedData[4][stateNo] = (transposedData[4][stateNo] << 1) | (singleByte & 1); //25. bit
+			transposedData[0][stateNo] = (transposedData[0][stateNo] << 1) | ((singleByte >> 1) & 1);
+			transposedData[1][stateNo] = (transposedData[1][stateNo] << 1) | ((singleByte >> 2) & 1);
+			transposedData[2][stateNo] = (transposedData[2][stateNo] << 1) | ((singleByte >> 3) & 1);
+			transposedData[3][stateNo] = (transposedData[3][stateNo] << 1) | ((singleByte >> 4) & 1);
+			transposedData[4][stateNo] = (transposedData[4][stateNo] << 1) | ((singleByte >> 5) & 1);
+			transposedData[0][stateNo] = (transposedData[0][stateNo] << 1) | ((singleByte >> 6) & 1);
+			transposedData[1][stateNo] = (transposedData[1][stateNo] << 1) | ((singleByte >> 7) & 1);
+
+			singleByte = dataArray[4];
+			transposedData[1][stateNo] = (transposedData[2][stateNo] << 1) | (singleByte & 1); //33. bit
+			transposedData[2][stateNo] = (transposedData[3][stateNo] << 1) | ((singleByte >> 1) & 1);
+			transposedData[4][stateNo] = (transposedData[4][stateNo] << 1) | ((singleByte >> 2) & 1);
+			transposedData[0][stateNo] = (transposedData[0][stateNo] << 1) | ((singleByte >> 3) & 1);
+			transposedData[1][stateNo] = (transposedData[1][stateNo] << 1) | ((singleByte >> 4) & 1);
+			transposedData[2][stateNo] = (transposedData[2][stateNo] << 1) | ((singleByte >> 5) & 1);
+			transposedData[3][stateNo] = (transposedData[3][stateNo] << 1) | ((singleByte >> 6) & 1);
+			transposedData[4][stateNo] = (transposedData[4][stateNo] << 1) | ((singleByte >> 7) & 1); //40. bit
+		}
+		dataTransposedProgress[stateNo] += 5;
+	}
+}
+
+/*
+* This functions accepts 4 nonces of minimum length 15 bytes (= 120 bits) and transposes the bits from these
+* into a multidimensional array of size n[YMM_no][stateNo][keysection]. Each nonce-section is 40 bits.
+*/
+void transpose_nonce_to_u64(const unsigned char n[4][NonceLength], u64 transposedNonce[5][4][3]) {
+	unsigned char singleByte;
+
+	for (int stateNo = 0; stateNo < 4; stateNo++) {
+		for (int nonceSect = 0; nonceSect < 3; nonceSect++) {
+			
+			singleByte = n[stateNo][0 + (nonceSect * 5)];
+			transposedNonce[0][stateNo][nonceSect] = (transposedNonce[0][stateNo][nonceSect] << 1) | (singleByte & 1); //1. bit
+			transposedNonce[1][stateNo][nonceSect] = (transposedNonce[1][stateNo][nonceSect] << 1) | ((singleByte >> 1) & 1);
+			transposedNonce[2][stateNo][nonceSect] = (transposedNonce[2][stateNo][nonceSect] << 1) | ((singleByte >> 2) & 1);
+			transposedNonce[3][stateNo][nonceSect] = (transposedNonce[3][stateNo][nonceSect] << 1) | ((singleByte >> 3) & 1);
+			transposedNonce[4][stateNo][nonceSect] = (transposedNonce[4][stateNo][nonceSect] << 1) | ((singleByte >> 4) & 1);
+			transposedNonce[0][stateNo][nonceSect] = (transposedNonce[0][stateNo][nonceSect] << 1) | ((singleByte >> 5) & 1);
+			transposedNonce[1][stateNo][nonceSect] = (transposedNonce[1][stateNo][nonceSect] << 1) | ((singleByte >> 6) & 1);
+			transposedNonce[2][stateNo][nonceSect] = (transposedNonce[2][stateNo][nonceSect] << 1) | ((singleByte >> 7) & 1);
+
+			singleByte = n[stateNo][1 + (nonceSect * 5)];
+			transposedNonce[3][stateNo][nonceSect] = (transposedNonce[3][stateNo][nonceSect] << 1) | (singleByte & 1); //9. bit
+			transposedNonce[4][stateNo][nonceSect] = (transposedNonce[4][stateNo][nonceSect] << 1) | ((singleByte >> 1) & 1);
+			transposedNonce[0][stateNo][nonceSect] = (transposedNonce[0][stateNo][nonceSect] << 1) | ((singleByte >> 2) & 1);
+			transposedNonce[1][stateNo][nonceSect] = (transposedNonce[1][stateNo][nonceSect] << 1) | ((singleByte >> 3) & 1);
+			transposedNonce[2][stateNo][nonceSect] = (transposedNonce[2][stateNo][nonceSect] << 1) | ((singleByte >> 4) & 1);
+			transposedNonce[3][stateNo][nonceSect] = (transposedNonce[3][stateNo][nonceSect] << 1) | ((singleByte >> 5) & 1);
+			transposedNonce[4][stateNo][nonceSect] = (transposedNonce[4][stateNo][nonceSect] << 1) | ((singleByte >> 6) & 1);
+			transposedNonce[0][stateNo][nonceSect] = (transposedNonce[0][stateNo][nonceSect] << 1) | ((singleByte >> 7) & 1);
+
+			singleByte = n[stateNo][2 + (nonceSect * 5)];
+			transposedNonce[1][stateNo][nonceSect] = (transposedNonce[1][stateNo][nonceSect] << 1) | (singleByte & 1); //17. bit
+			transposedNonce[2][stateNo][nonceSect] = (transposedNonce[2][stateNo][nonceSect] << 1) | ((singleByte >> 1) & 1);
+			transposedNonce[3][stateNo][nonceSect] = (transposedNonce[3][stateNo][nonceSect] << 1) | ((singleByte >> 2) & 1);
+			transposedNonce[4][stateNo][nonceSect] = (transposedNonce[4][stateNo][nonceSect] << 1) | ((singleByte >> 3) & 1);
+			transposedNonce[0][stateNo][nonceSect] = (transposedNonce[0][stateNo][nonceSect] << 1) | ((singleByte >> 4) & 1);
+			transposedNonce[1][stateNo][nonceSect] = (transposedNonce[1][stateNo][nonceSect] << 1) | ((singleByte >> 5) & 1);
+			transposedNonce[2][stateNo][nonceSect] = (transposedNonce[2][stateNo][nonceSect] << 1) | ((singleByte >> 6) & 1);
+			transposedNonce[3][stateNo][nonceSect] = (transposedNonce[3][stateNo][nonceSect] << 1) | ((singleByte >> 7) & 1);
+		
+			singleByte = n[stateNo][3 + (nonceSect * 5)];
+			transposedNonce[4][stateNo][nonceSect] = (transposedNonce[4][stateNo][nonceSect] << 1) | (singleByte & 1); //25. bit
+			transposedNonce[0][stateNo][nonceSect] = (transposedNonce[0][stateNo][nonceSect] << 1) | ((singleByte >> 1) & 1);
+			transposedNonce[1][stateNo][nonceSect] = (transposedNonce[1][stateNo][nonceSect] << 1) | ((singleByte >> 2) & 1);
+			transposedNonce[2][stateNo][nonceSect] = (transposedNonce[2][stateNo][nonceSect] << 1) | ((singleByte >> 3) & 1);
+			transposedNonce[3][stateNo][nonceSect] = (transposedNonce[3][stateNo][nonceSect] << 1) | ((singleByte >> 4) & 1);
+			transposedNonce[4][stateNo][nonceSect] = (transposedNonce[4][stateNo][nonceSect] << 1) | ((singleByte >> 5) & 1);
+			transposedNonce[0][stateNo][nonceSect] = (transposedNonce[0][stateNo][nonceSect] << 1) | ((singleByte >> 6) & 1);
+			transposedNonce[1][stateNo][nonceSect] = (transposedNonce[1][stateNo][nonceSect] << 1) | ((singleByte >> 7) & 1);
+
+			singleByte = n[stateNo][4 + (nonceSect * 5)];
+			transposedNonce[2][stateNo][nonceSect] = (transposedNonce[2][stateNo][nonceSect] << 1) | (singleByte & 1); //33 bit.
+			transposedNonce[3][stateNo][nonceSect] = (transposedNonce[3][stateNo][nonceSect] << 1) | ((singleByte >> 1) & 1);
+			transposedNonce[4][stateNo][nonceSect] = (transposedNonce[4][stateNo][nonceSect] << 1) | ((singleByte >> 2) & 1);
+			transposedNonce[0][stateNo][nonceSect] = (transposedNonce[0][stateNo][nonceSect] << 1) | ((singleByte >> 3) & 1);
+			transposedNonce[1][stateNo][nonceSect] = (transposedNonce[1][stateNo][nonceSect] << 1) | ((singleByte >> 4) & 1);
+			transposedNonce[2][stateNo][nonceSect] = (transposedNonce[2][stateNo][nonceSect] << 1) | ((singleByte >> 5) & 1);
+			transposedNonce[3][stateNo][nonceSect] = (transposedNonce[3][stateNo][nonceSect] << 1) | ((singleByte >> 6) & 1);
+			transposedNonce[4][stateNo][nonceSect] = (transposedNonce[4][stateNo][nonceSect] << 1) | ((singleByte >> 7) & 1); //40. bit
+		}
 	}
 }
 
@@ -138,63 +428,68 @@ void transpose_nonce_to_u64(const unsigned char *n, u64 transposedNonce[5][3]) {
 * This function takes 4 keys and transpose them into a register with the dimensions:
 * k[register_no][key_no]
 */
-void transpose_key_to_u64(const unsigned char *k[4], u64 transposedKey[5][4]) {
+void transpose_key_to_u64(const unsigned char k[4][keyLength], u64 transposedKey[5][4]) {
 
-	unsigned char singleByte;
-	int offset = 0;
+	unsigned char singleByte;	
+	int offset;
+	unsigned char *k_single;
 
-	//We expect that the key is 240 bits = 30 bytes long.
-	for (int index = 0; index < keyLength; index += 5) {
+	for (int keyNo = 0; keyNo < 4; keyNo++) {
+		k_single = k[keyNo];
+		offset = keyNo;
+		//We expect that the key is 240 bits = 30 bytes long.
+		for (int index = 0; index < keyLength; index += 5) {
 
-		singleByte = k[index];
-		transposedKey[0][offset] = (transposedKey[0][offset] << 1) | (singleByte & 1); //first bit
-		transposedKey[1][offset] = (transposedKey[1][offset] << 1) | ((singleByte >> 1) & 1);
-		transposedKey[2][offset] = (transposedKey[2][offset] << 1) | ((singleByte >> 2) & 1);
-		transposedKey[3][offset] = (transposedKey[3][offset] << 1) | ((singleByte >> 3) & 1);
-		transposedKey[4][offset] = (transposedKey[4][offset] << 1) | ((singleByte >> 4) & 1);
-		transposedKey[0][offset] = (transposedKey[0][offset] << 1) | ((singleByte >> 5) & 1);
-		transposedKey[1][offset] = (transposedKey[1][offset] << 1) | ((singleByte >> 6) & 1);
-		transposedKey[2][offset] = (transposedKey[2][offset] << 1) | ((singleByte >> 7) & 1); //eight bit
+			singleByte = k_single[index];
+			transposedKey[0][offset] = (transposedKey[0][offset] << 1) | (singleByte & 1); //first bit
+			transposedKey[1][offset] = (transposedKey[1][offset] << 1) | ((singleByte >> 1) & 1);
+			transposedKey[2][offset] = (transposedKey[2][offset] << 1) | ((singleByte >> 2) & 1);
+			transposedKey[3][offset] = (transposedKey[3][offset] << 1) | ((singleByte >> 3) & 1);
+			transposedKey[4][offset] = (transposedKey[4][offset] << 1) | ((singleByte >> 4) & 1);
+			transposedKey[0][offset] = (transposedKey[0][offset] << 1) | ((singleByte >> 5) & 1);
+			transposedKey[1][offset] = (transposedKey[1][offset] << 1) | ((singleByte >> 6) & 1);
+			transposedKey[2][offset] = (transposedKey[2][offset] << 1) | ((singleByte >> 7) & 1); //eight bit
 
-		singleByte = k[index + 1];
-		transposedKey[3][offset] = (transposedKey[0][offset] << 1) | (singleByte & 1); //first bit
-		transposedKey[4][offset] = (transposedKey[1][offset] << 1) | ((singleByte >> 1) & 1);
-		transposedKey[0][offset] = (transposedKey[2][offset] << 1) | ((singleByte >> 2) & 1);
-		transposedKey[1][offset] = (transposedKey[3][offset] << 1) | ((singleByte >> 3) & 1);
-		transposedKey[2][offset] = (transposedKey[4][offset] << 1) | ((singleByte >> 4) & 1);
-		transposedKey[3][offset] = (transposedKey[0][offset] << 1) | ((singleByte >> 5) & 1);
-		transposedKey[4][offset] = (transposedKey[1][offset] << 1) | ((singleByte >> 6) & 1);
-		transposedKey[0][offset] = (transposedKey[2][offset] << 1) | ((singleByte >> 7) & 1); //eight bit
+			singleByte = k_single[index + 1];
+			transposedKey[3][offset] = (transposedKey[3][offset] << 1) | (singleByte & 1); //first bit
+			transposedKey[4][offset] = (transposedKey[4][offset] << 1) | ((singleByte >> 1) & 1);
+			transposedKey[0][offset] = (transposedKey[0][offset] << 1) | ((singleByte >> 2) & 1);
+			transposedKey[1][offset] = (transposedKey[1][offset] << 1) | ((singleByte >> 3) & 1);
+			transposedKey[2][offset] = (transposedKey[2][offset] << 1) | ((singleByte >> 4) & 1);
+			transposedKey[3][offset] = (transposedKey[3][offset] << 1) | ((singleByte >> 5) & 1);
+			transposedKey[4][offset] = (transposedKey[4][offset] << 1) | ((singleByte >> 6) & 1);
+			transposedKey[0][offset] = (transposedKey[0][offset] << 1) | ((singleByte >> 7) & 1); //eight bit
 
-		singleByte = k[index + 2];
-		transposedKey[1][offset] = (transposedKey[0][offset] << 1) | (singleByte & 1); //first bit
-		transposedKey[2][offset] = (transposedKey[1][offset] << 1) | ((singleByte >> 1) & 1);
-		transposedKey[3][offset] = (transposedKey[2][offset] << 1) | ((singleByte >> 2) & 1);
-		transposedKey[4][offset] = (transposedKey[3][offset] << 1) | ((singleByte >> 3) & 1);
-		transposedKey[0][offset] = (transposedKey[4][offset] << 1) | ((singleByte >> 4) & 1);
-		transposedKey[1][offset] = (transposedKey[0][offset] << 1) | ((singleByte >> 5) & 1);
-		transposedKey[2][offset] = (transposedKey[1][offset] << 1) | ((singleByte >> 6) & 1);
-		transposedKey[3][offset] = (transposedKey[2][offset] << 1) | ((singleByte >> 7) & 1); //eight bit
+			singleByte = k_single[index + 2];
+			transposedKey[1][offset] = (transposedKey[1][offset] << 1) | (singleByte & 1); //first bit
+			transposedKey[2][offset] = (transposedKey[2][offset] << 1) | ((singleByte >> 1) & 1);
+			transposedKey[3][offset] = (transposedKey[3][offset] << 1) | ((singleByte >> 2) & 1);
+			transposedKey[4][offset] = (transposedKey[4][offset] << 1) | ((singleByte >> 3) & 1);
+			transposedKey[0][offset] = (transposedKey[0][offset] << 1) | ((singleByte >> 4) & 1);
+			transposedKey[1][offset] = (transposedKey[1][offset] << 1) | ((singleByte >> 5) & 1);
+			transposedKey[2][offset] = (transposedKey[2][offset] << 1) | ((singleByte >> 6) & 1);
+			transposedKey[3][offset] = (transposedKey[3][offset] << 1) | ((singleByte >> 7) & 1); //eight bit
 
-		singleByte = k[index + 3];
-		transposedKey[4][offset] = (transposedKey[0][offset] << 1) | (singleByte & 1); //first bit
-		transposedKey[0][offset] = (transposedKey[1][offset] << 1) | ((singleByte >> 1) & 1);
-		transposedKey[1][offset] = (transposedKey[2][offset] << 1) | ((singleByte >> 2) & 1);
-		transposedKey[2][offset] = (transposedKey[3][offset] << 1) | ((singleByte >> 3) & 1);
-		transposedKey[3][offset] = (transposedKey[4][offset] << 1) | ((singleByte >> 4) & 1);
-		transposedKey[4][offset] = (transposedKey[0][offset] << 1) | ((singleByte >> 5) & 1);
-		transposedKey[0][offset] = (transposedKey[1][offset] << 1) | ((singleByte >> 6) & 1);
-		transposedKey[1][offset] = (transposedKey[2][offset] << 1) | ((singleByte >> 7) & 1); //eight bit
+			singleByte = k_single[index + 3];
+			transposedKey[4][offset] = (transposedKey[4][offset] << 1) | (singleByte & 1); //first bit
+			transposedKey[0][offset] = (transposedKey[0][offset] << 1) | ((singleByte >> 1) & 1);
+			transposedKey[1][offset] = (transposedKey[1][offset] << 1) | ((singleByte >> 2) & 1);
+			transposedKey[2][offset] = (transposedKey[2][offset] << 1) | ((singleByte >> 3) & 1);
+			transposedKey[3][offset] = (transposedKey[3][offset] << 1) | ((singleByte >> 4) & 1);
+			transposedKey[4][offset] = (transposedKey[4][offset] << 1) | ((singleByte >> 5) & 1);
+			transposedKey[0][offset] = (transposedKey[0][offset] << 1) | ((singleByte >> 6) & 1);
+			transposedKey[1][offset] = (transposedKey[1][offset] << 1) | ((singleByte >> 7) & 1); //eight bit
 
-		singleByte = k[index + 4];
-		transposedKey[2][offset] = (transposedKey[0][offset] << 1) | (singleByte & 1); //first bit
-		transposedKey[3][offset] = (transposedKey[1][offset] << 1) | ((singleByte >> 1) & 1);
-		transposedKey[4][offset] = (transposedKey[2][offset] << 1) | ((singleByte >> 2) & 1);
-		transposedKey[0][offset] = (transposedKey[3][offset] << 1) | ((singleByte >> 3) & 1);
-		transposedKey[1][offset] = (transposedKey[4][offset] << 1) | ((singleByte >> 4) & 1);
-		transposedKey[2][offset] = (transposedKey[0][offset] << 1) | ((singleByte >> 5) & 1);
-		transposedKey[3][offset] = (transposedKey[1][offset] << 1) | ((singleByte >> 6) & 1);
-		transposedKey[4][offset] = (transposedKey[2][offset] << 1) | ((singleByte >> 7) & 1); //eight bit
+			singleByte = k_single[index + 4];
+			transposedKey[2][offset] = (transposedKey[2][offset] << 1) | (singleByte & 1); //first bit
+			transposedKey[3][offset] = (transposedKey[3][offset] << 1) | ((singleByte >> 1) & 1);
+			transposedKey[4][offset] = (transposedKey[4][offset] << 1) | ((singleByte >> 2) & 1);
+			transposedKey[0][offset] = (transposedKey[0][offset] << 1) | ((singleByte >> 3) & 1);
+			transposedKey[1][offset] = (transposedKey[1][offset] << 1) | ((singleByte >> 4) & 1);
+			transposedKey[2][offset] = (transposedKey[2][offset] << 1) | ((singleByte >> 5) & 1);
+			transposedKey[3][offset] = (transposedKey[3][offset] << 1) | ((singleByte >> 6) & 1);
+			transposedKey[4][offset] = (transposedKey[4][offset] << 1) | ((singleByte >> 7) & 1); //eight bit
+		}
 	}
 }
 
@@ -207,6 +502,18 @@ void transpose_key_to_u64(const unsigned char *k[4], u64 transposedKey[5][4]) {
 
 //void print_YMMs(__m256i YMM[5]) {}
 
+void print_keys_hex(const unsigned char k[4][keyLength]) {
+	
+	for (int strNo = 0; strNo < 4; strNo++) {
+		const char *s = k[strNo];
+		printf("Key %i : ", strNo);
+		
+		for (int byte = 0; byte < keyLength; byte++) {
+			printf("%02x ", s[byte]);
+		}
+		printf("\n");
+	}
+}
 void print_keys(const unsigned char k[4][keyLength]) {
 	printf("Key 0: %s \n", k[0]);
 	printf("Key 1: %s \n", k[1]);
@@ -214,6 +521,18 @@ void print_keys(const unsigned char k[4][keyLength]) {
 	printf("Key 3: %s \n", k[3]);
 }
 
+void print_nonces_hex(const unsigned char npub[4][NonceLength]) {
+
+	for (int strNo = 0; strNo < 4; strNo++) {
+		const char *s = npub[strNo];
+		printf("Nonce %i : ", strNo);
+
+		for (int byte = 0; byte < NonceLength; byte++) {
+			printf("%02x ", s[byte]);
+		}
+		printf("\n");
+	}
+}
 void print_nonces(const unsigned char npub[4][NonceLength]) {
 	printf("Nonce 0: %s \n", npub[0]);
 	printf("Nonce 1: %s \n", npub[1]);
@@ -221,6 +540,27 @@ void print_nonces(const unsigned char npub[4][NonceLength]) {
 	printf("Nonce 3: %s \n", npub[3]);
 }
 
+void print_ad_hex(const unsigned char *ad[4], u64 adlen[4]) {
+	if (adlen == 0) {
+		printf("No associated data with any current encryption \n");
+		return;
+	}
+
+	for (int strNo = 0; strNo < 4; strNo++) {
+		const char *s = ad[strNo];
+		printf("Ass. Data %i : ", strNo);
+
+		if (adlen[strNo] != 0) {
+			for (int byte = 0; byte < adlen[strNo]; byte++) {
+				printf("%02x ", s[byte]);
+			}
+		}
+		else {
+			printf("No data.");
+		}
+		printf("\n");
+	}
+}
 void print_ad(const unsigned char *ad[4], u64 adlen[4]) {
 	if (adlen == 0) {
 		printf("No associated data \n");
