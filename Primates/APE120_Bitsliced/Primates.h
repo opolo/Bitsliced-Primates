@@ -3,6 +3,7 @@
 #define PrimateRounds 12
 #define keyLength 30 //Bytes = 240 bits
 #define NonceLength 15 //Bytes
+#define RateSize 5 //Bytes
 
 typedef unsigned long long u64;
 

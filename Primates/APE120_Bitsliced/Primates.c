@@ -164,7 +164,8 @@ void primates120_encrypt(const unsigned char k[4][keyLength],
 }
 
 void convert_capacityparts_to_bytes(__m256i YMMs[5], unsigned char deTransposedBytes[4][keyLength]) {
-	//In each YMM, the capacities is stored at the bits, 0-48, 64-112, 128-176, 192-240.
+	//In each YMM, the capacities is stored at the bits, 0-47 (bytes index 0-5), 64-111 (bytes index 8-13), 
+	//128-175 (16-21) , 192-239 (24-29).
 	//The MSB of each element is stored in YMM5.
 	//The first element of the capacity is stored in the last bit of the YMMs (right?)	
 	unsigned char *YMM0 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 32byte, 32byte aligned
@@ -180,62 +181,62 @@ void convert_capacityparts_to_bytes(__m256i YMMs[5], unsigned char deTransposedB
 	_mm256_store_si256(YMM4, YMMs[4]);
 
 	for (int state = 0; state < 4; state++) {
-		int byte_offset = 0;
-		int YMM_bit_offset = state * 64;
+		int YMM_byte_offset = state * 8;
 
 		//detranspose all 30 capacity bytes of a state
-		for (int YMM_bit = 0; YMM_bit < 48; YMM_bit += 8) {
-			deTransposedBytes[state][0 + byte_offset] =
-				(YMM0[YMM_bit + YMM_bit_offset] & 1) |
-				(YMM1[YMM_bit + YMM_bit_offset] & 2) |
-				(YMM2[YMM_bit + YMM_bit_offset] & 4) |
-				(YMM3[YMM_bit + YMM_bit_offset] & 8) |
-				(YMM4[YMM_bit + YMM_bit_offset] & 16) |
-				(YMM0[YMM_bit + YMM_bit_offset + 1] & 1) |
-				(YMM1[YMM_bit + YMM_bit_offset + 1] & 2) |
-				(YMM2[YMM_bit + YMM_bit_offset + 1] & 4);
+		for (int detransposed_byte = 0; detransposed_byte < 30; detransposed_byte += 5) {
+			
+			deTransposedBytes[state][0 + detransposed_byte] =
+				(YMM0[YMM_byte_offset] & 1) |
+				(YMM1[YMM_byte_offset] & 1) << 1 |
+				(YMM2[YMM_byte_offset] & 1) << 2 |
+				(YMM3[YMM_byte_offset] & 1) << 3 |
+				(YMM4[YMM_byte_offset] & 1) << 4 |
+				(YMM0[YMM_byte_offset] & 2) << 5 |
+				(YMM1[YMM_byte_offset] & 2) << 6 |
+				(YMM2[YMM_byte_offset] & 2) << 7;
 
-			deTransposedBytes[state][1 + byte_offset] =
-				(YMM3[YMM_bit + YMM_bit_offset + 1] & 8) |
-				(YMM4[YMM_bit + YMM_bit_offset + 1] & 16) |
-				(YMM0[YMM_bit + YMM_bit_offset + 2] & 1) |
-				(YMM1[YMM_bit + YMM_bit_offset + 2] & 2) |
-				(YMM2[YMM_bit + YMM_bit_offset + 2] & 4) |
-				(YMM3[YMM_bit + YMM_bit_offset + 2] & 8) |
-				(YMM4[YMM_bit + YMM_bit_offset + 2] & 16) |
-				(YMM0[YMM_bit + YMM_bit_offset + 3] & 1);
+			deTransposedBytes[state][1 + detransposed_byte] =
+				(YMM3[YMM_byte_offset] & 2) |
+				(YMM4[YMM_byte_offset] & 2) << 1 |
+				(YMM0[YMM_byte_offset] & 3) << 2 |
+				(YMM1[YMM_byte_offset] & 3) << 3 |
+				(YMM2[YMM_byte_offset] & 3) << 4 |
+				(YMM3[YMM_byte_offset] & 3) << 5 |
+				(YMM4[YMM_byte_offset] & 3) << 6 |
+				(YMM0[YMM_byte_offset] & 4) << 7;
 
-			deTransposedBytes[state][2 + byte_offset] =
-				(YMM1[YMM_bit + YMM_bit_offset + 3] & 2) |
-				(YMM2[YMM_bit + YMM_bit_offset + 3] & 4) |
-				(YMM3[YMM_bit + YMM_bit_offset + 3] & 8) |
-				(YMM4[YMM_bit + YMM_bit_offset + 3] & 16) |
-				(YMM0[YMM_bit + YMM_bit_offset + 4] & 1) |
-				(YMM1[YMM_bit + YMM_bit_offset + 4] & 2) |
-				(YMM2[YMM_bit + YMM_bit_offset + 4] & 4) |
-				(YMM3[YMM_bit + YMM_bit_offset + 4] & 8);
+			deTransposedBytes[state][2 + detransposed_byte] =
+				(YMM1[YMM_byte_offset] & 4) |
+				(YMM2[YMM_byte_offset] & 4) << 1 |
+				(YMM3[YMM_byte_offset] & 4) << 2 |
+				(YMM4[YMM_byte_offset] & 4) << 3 |
+				(YMM0[YMM_byte_offset] & 5) << 4 |
+				(YMM1[YMM_byte_offset] & 5) << 5 |
+				(YMM2[YMM_byte_offset] & 5) << 6 |
+				(YMM3[YMM_byte_offset] & 5) << 7;
 
-			deTransposedBytes[state][3 + byte_offset] =
-				(YMM4[YMM_bit + YMM_bit_offset + 4] & 16) |
-				(YMM0[YMM_bit + YMM_bit_offset + 5] & 1) |
-				(YMM1[YMM_bit + YMM_bit_offset + 5] & 2) |
-				(YMM2[YMM_bit + YMM_bit_offset + 5] & 4) |
-				(YMM3[YMM_bit + YMM_bit_offset + 5] & 8) |
-				(YMM4[YMM_bit + YMM_bit_offset + 5] & 16) |
-				(YMM0[YMM_bit + YMM_bit_offset + 6] & 1) |
-				(YMM1[YMM_bit + YMM_bit_offset + 6] & 2);
+			deTransposedBytes[state][3 + detransposed_byte] =
+				(YMM4[YMM_byte_offset] & 5) |
+				(YMM0[YMM_byte_offset] & 6) << 1 |
+				(YMM1[YMM_byte_offset] & 6) << 2 |
+				(YMM2[YMM_byte_offset] & 6) << 3 |
+				(YMM3[YMM_byte_offset] & 6) << 4 |
+				(YMM4[YMM_byte_offset] & 6) << 5 |
+				(YMM0[YMM_byte_offset] & 7) << 6 |
+				(YMM1[YMM_byte_offset] & 7) << 7;
 
-			deTransposedBytes[state][4 + byte_offset] =
-				(YMM2[YMM_bit + YMM_bit_offset + 6] & 4) |
-				(YMM3[YMM_bit + YMM_bit_offset + 6] & 8) |
-				(YMM4[YMM_bit + YMM_bit_offset + 6] & 16) |
-				(YMM0[YMM_bit + YMM_bit_offset + 7] & 1) |
-				(YMM1[YMM_bit + YMM_bit_offset + 7] & 2) |
-				(YMM2[YMM_bit + YMM_bit_offset + 7] & 4) |
-				(YMM3[YMM_bit + YMM_bit_offset + 7] & 8) |
-				(YMM4[YMM_bit + YMM_bit_offset + 7] & 16);
+			deTransposedBytes[state][4 + detransposed_byte] =
+				(YMM2[YMM_byte_offset] & 7) |
+				(YMM3[YMM_byte_offset] & 7) << 1 |
+				(YMM4[YMM_byte_offset] & 7) << 2 |
+				(YMM0[YMM_byte_offset] & 8) << 3 |
+				(YMM1[YMM_byte_offset] & 8) << 4 |
+				(YMM2[YMM_byte_offset] & 8) << 5 |
+				(YMM3[YMM_byte_offset] & 8) << 6 |
+				(YMM4[YMM_byte_offset] & 8) << 7;
 
-			byte_offset += 5;
+			YMM_byte_offset++;
 		}
 	}
 	_aligned_free(YMM0);
@@ -245,12 +246,85 @@ void convert_capacityparts_to_bytes(__m256i YMMs[5], unsigned char deTransposedB
 	_aligned_free(YMM4);
 }
 
-void convert_rateparts_to_bytes(__m256i YMM[5], unsigned char deTransposedBytes[4]) {
-	////In each YMM, the rates are stored at the bits, 49-55, 113-119, 177-183, 241-247.
+void convert_rateparts_to_bytes(__m256i YMMs[5], unsigned char deTransposedBytes[4][RateSize]) {
+	
+	//In each YMM, the rates are stored at the bits, 48-55 (byte index 6), 112-119 (byte index 14), 
+	//176-183 (byte index 22), 240-247 (byte index 30).
+	
 	//The MSB of each element is stored in YMM5.
 	//The first element of the capacity is stored in the last bit of the YMMs (right?)
+	unsigned char *YMM0 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 30byte, 32byte aligned
+	unsigned char *YMM1 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 30byte, 32byte aligned
+	unsigned char *YMM2 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 30byte, 32byte aligned
+	unsigned char *YMM3 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 30byte, 32byte aligned
+	unsigned char *YMM4 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 30byte, 32byte aligned
 
-	//TODO
+	_mm256_store_si256(YMM0, YMMs[0]);
+	_mm256_store_si256(YMM1, YMMs[1]);
+	_mm256_store_si256(YMM2, YMMs[2]);
+	_mm256_store_si256(YMM3, YMMs[3]);
+	_mm256_store_si256(YMM4, YMMs[4]);
+
+	for (int state = 0; state < 4; state++) {
+		int byte_offset = 6 + state * 64;
+
+		deTransposedBytes[state][0] =
+			(YMM0[byte_offset] & 1) |
+			(YMM1[byte_offset] & 1) << 1 |
+			(YMM2[byte_offset] & 1) << 2 |
+			(YMM3[byte_offset] & 1) << 3 |
+			(YMM4[byte_offset] & 1) << 4 |
+			(YMM0[byte_offset] & 2) << 5 |
+			(YMM1[byte_offset] & 2) << 6 |
+			(YMM2[byte_offset] & 2) << 7;
+		
+		deTransposedBytes[state][1] =
+			(YMM3[byte_offset] & 2) |
+			(YMM4[byte_offset] & 2) << 1 |
+			(YMM0[byte_offset] & 3) << 2 |
+			(YMM1[byte_offset] & 3) << 3 |
+			(YMM2[byte_offset] & 3) << 4 |
+			(YMM3[byte_offset] & 3) << 5 |
+			(YMM4[byte_offset] & 3) << 6 |
+			(YMM0[byte_offset] & 4) << 7;
+
+		deTransposedBytes[state][2] =
+			(YMM1[byte_offset] & 4) |
+			(YMM2[byte_offset] & 4) << 1 |
+			(YMM3[byte_offset] & 4) << 2 |
+			(YMM4[byte_offset] & 4) << 3 |
+			(YMM0[byte_offset] & 5) << 4 |
+			(YMM1[byte_offset] & 5) << 5 |
+			(YMM2[byte_offset] & 5) << 6 |
+			(YMM3[byte_offset] & 5) << 7;
+
+		deTransposedBytes[state][3] =
+			(YMM4[byte_offset] & 5) |
+			(YMM0[byte_offset] & 6) << 1 |
+			(YMM1[byte_offset] & 6) << 2 |
+			(YMM2[byte_offset] & 6) << 3 |
+			(YMM3[byte_offset] & 6) << 4 |
+			(YMM4[byte_offset] & 6) << 5 |
+			(YMM0[byte_offset] & 7) << 6 |
+			(YMM1[byte_offset] & 7) << 7;
+
+		deTransposedBytes[state][4] =
+			(YMM2[byte_offset] & 7) |
+			(YMM3[byte_offset] & 7) << 1 |
+			(YMM4[byte_offset] & 7) << 2 |
+			(YMM0[byte_offset] & 8) << 3 |
+			(YMM1[byte_offset] & 8) << 4 |
+			(YMM2[byte_offset] & 8) << 5 |
+			(YMM3[byte_offset] & 8) << 6 |
+			(YMM4[byte_offset] & 8) << 7;
+	}
+
+	_aligned_free(YMM0);
+	_aligned_free(YMM1);
+	_aligned_free(YMM2);
+	_aligned_free(YMM3);
+	_aligned_free(YMM4);
+
 }
 
 void primate(__m256i state[5]) {
