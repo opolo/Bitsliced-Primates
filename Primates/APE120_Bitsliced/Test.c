@@ -1,10 +1,13 @@
 #include "Primates.h"
 
+//One row = 40 bits. 
+//First row is rate. Key is only added afterwards (i.e. as the capacity), which begins at row 1, that should be all 1, then all 0, then all 1, etc.
+#define rowNumberedKey {0xFF}, {0xFF}, {0xFF}, {0xFF}, {0xFF}, {0x0}, {0x0}, {0x0}, {0x0}, {0x0}, {0xFF}, {0xFF}, {0xFF}, {0xFF}, {0xFF}, {0x0}, {0x0}, {0x0}, {0x0}, {0x0}, {0xFF}, {0xFF}, {0xFF}, {0xFF}, {0xFF}, {0xFF}, {0x0}, {0x0}, {0x0}, {0x00}
 
 void main() {
 
 	//constant length
-	const unsigned char keys[4][keyLength] = { { 0x1 }, { 0x0 }, { 0x0, 0x0 }, {0x0} }; //max value 255 = 1 byte
+	const unsigned char keys[4][keyLength] = { { rowNumberedKey }, {rowNumberedKey}, {rowNumberedKey}, {rowNumberedKey} };
 	const unsigned char nonces[4][NonceLength] = { {0x0}, { 0x0 }, { 0x0 }, { 0x0 , 0x1 } };
 	
 	//variable length

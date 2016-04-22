@@ -2,6 +2,7 @@
 #include "Primates.h"
 #include <stdio.h>
 #include <string.h>
+#include "Debug.h"
 
  
 
@@ -9,14 +10,10 @@ void u64_to_string(char *str, u64 number);
 void transpose_nonce_to_u64(const unsigned char n[4][NonceLength], u64 transposedNonce[5][4][3]);
 void transpose_data_to_u64_ratesize(const unsigned char *data[4], u64 dataLen[4], u64 transposedData[5][4], u64 dataTransposedProgress[4], u64 sectionLengthWithoutPadding[4]);
 
-void print_keys(const unsigned char k[4][keyLength]);
-void print_keys_hex(const unsigned char k[4][keyLength]);
-void print_nonces(const unsigned char npub[4][NonceLength]);
-void print_nonces_hex(const unsigned char npub[4][NonceLength]);
-void print_ad(const unsigned char *ad[4], u64 adlen[4]);
-void print_ad_hex(const unsigned char *ad[4], u64 adlen[4]);
-void print_YMMs(__m256i *YMMs);
-void primate(__m256i state[5]);
+void primate(__m256i *state);
+
+void convert_capacityparts_to_bytes(__m256i *YMMs, unsigned char deTransposedBytes[4][keyLength]);
+void convert_rateparts_to_bytes(__m256i *YMMs, unsigned char deTransposedBytes[4][RateSize]);
 
 void transpose_key_to_u64(const unsigned char k[4][keyLength], u64 transposedKey[5][4]);
 
@@ -60,6 +57,9 @@ void primates120_encrypt(const unsigned char k[4][keyLength],
 			transposedKey[YMM_no][3]); //Maby use 
 	}
 
+	//TEST
+	print_state_as_binary(YMM, 0);
+
 	//Transpose nonces to bitsliced format
 	transpose_nonce_to_u64(npub, transposedNonce);
 
@@ -94,7 +94,7 @@ void primates120_encrypt(const unsigned char k[4][keyLength],
 			transposedNonce[4][0][nonceSection], transposedNonce[4][0][nonceSection]);
 		YMM[4] = _mm256_xor_si256(nonce, YMM[4]);
 
-		primate120_encrypt_permutate_state(YMM);
+		//primate120_encrypt_permutate_state(YMM);
 	}
 
 	//Handle associated data. If any is present, we do this - else we skip the step.
@@ -118,7 +118,7 @@ void primates120_encrypt(const unsigned char k[4][keyLength],
 
 
 	//XOR state with [0]^(b-1) | 1 //i.e. xor last bit with 1.
-	YMM[4] = _mm256_xor_si256(YMM[4], _mm256_set1_epi64x(0, 0, 0, 1));
+	YMM[4] = _mm256_xor_si256(YMM[4], _mm256_set1_epi64x(1));
 
 	//Var to store length of last block.
 	u64 lastBlockLengths[4];
@@ -163,7 +163,7 @@ void primates120_encrypt(const unsigned char k[4][keyLength],
 
 }
 
-void convert_capacityparts_to_bytes(__m256i YMMs[5], unsigned char deTransposedBytes[4][keyLength]) {
+void convert_capacityparts_to_bytes(__m256i *YMMs, unsigned char deTransposedBytes[4][keyLength]) {
 	//In each YMM, the capacities is stored at the bits, 0-47 (bytes index 0-5), 64-111 (bytes index 8-13), 
 	//128-175 (16-21) , 192-239 (24-29).
 	//The MSB of each element is stored in YMM5.
@@ -246,7 +246,7 @@ void convert_capacityparts_to_bytes(__m256i YMMs[5], unsigned char deTransposedB
 	_aligned_free(YMM4);
 }
 
-void convert_rateparts_to_bytes(__m256i YMMs[5], unsigned char deTransposedBytes[4][RateSize]) {
+void convert_rateparts_to_bytes(__m256i *YMMs, unsigned char deTransposedBytes[4][RateSize]) {
 	
 	//In each YMM, the rates are stored at the bits, 48-55 (byte index 6), 112-119 (byte index 14), 
 	//176-183 (byte index 22), 240-247 (byte index 30).
@@ -327,7 +327,7 @@ void convert_rateparts_to_bytes(__m256i YMMs[5], unsigned char deTransposedBytes
 
 }
 
-void primate(__m256i states[5]) {
+void primate(__m256i *states) {
 	for (int round = 0; round < PrimateRounds; round++) {
 		//Constant addition
 		//XOR a roundconstant to the second element of the second row (47th element of the capacity <-- probably wrong qqq)
@@ -606,128 +606,6 @@ void transpose_key_to_u64(const unsigned char k[4][keyLength], u64 transposedKey
 			transposedKey[3][offset] = (transposedKey[3][offset] << 1) | ((singleByte >> 6) & 1);
 			transposedKey[4][offset] = (transposedKey[4][offset] << 1) | ((singleByte >> 7) & 1); //eight bit
 		}
-	}
-}
-
-
-
-/* EVERYTHING BELOW IS FOR TESTING AND NOT MEANT FOR THE ACTUAL IMPLEMENTATION*/
-
-#define YMMCount 5
-#define YMMLength 256
-
-//void print_YMMs(__m256i YMM[5]) {}
-
-void print_keys_hex(const unsigned char k[4][keyLength]) {
-	
-	for (int strNo = 0; strNo < 4; strNo++) {
-		const char *s = k[strNo];
-		printf("Key %i : ", strNo);
-		
-		for (int byte = 0; byte < keyLength; byte++) {
-			printf("%02x ", s[byte]);
-		}
-		printf("\n");
-	}
-}
-void print_keys(const unsigned char k[4][keyLength]) {
-	printf("Key 0: %s \n", k[0]);
-	printf("Key 1: %s \n", k[1]);
-	printf("Key 2: %s \n", k[2]);
-	printf("Key 3: %s \n", k[3]);
-}
-
-void print_nonces_hex(const unsigned char npub[4][NonceLength]) {
-
-	for (int strNo = 0; strNo < 4; strNo++) {
-		const char *s = npub[strNo];
-		printf("Nonce %i : ", strNo);
-
-		for (int byte = 0; byte < NonceLength; byte++) {
-			printf("%02x ", s[byte]);
-		}
-		printf("\n");
-	}
-}
-void print_nonces(const unsigned char npub[4][NonceLength]) {
-	printf("Nonce 0: %s \n", npub[0]);
-	printf("Nonce 1: %s \n", npub[1]);
-	printf("Nonce 2: %s \n", npub[2]);
-	printf("Nonce 3: %s \n", npub[3]);
-}
-
-void print_ad_hex(const unsigned char *ad[4], u64 adlen[4]) {
-	if (adlen == 0) {
-		printf("No associated data with any current encryption \n");
-		return;
-	}
-
-	for (int strNo = 0; strNo < 4; strNo++) {
-		const char *s = ad[strNo];
-		printf("Ass. Data %i : ", strNo);
-
-		if (adlen[strNo] != 0) {
-			for (int byte = 0; byte < adlen[strNo]; byte++) {
-				printf("%02x ", s[byte]);
-			}
-		}
-		else {
-			printf("No data.");
-		}
-		printf("\n");
-	}
-}
-void print_ad(const unsigned char *ad[4], u64 adlen[4]) {
-	if (adlen == 0) {
-		printf("No associated data \n");
-		return;
-	}
-
-	if (adlen[0] != 0)
-		printf("Ass. Data 0: %s \n", ad[0]);
-	if (adlen[1] != 0)
-		printf("Ass. Data 1: %s \n", ad[1]);
-	if (adlen[2] != 0)
-		printf("Ass. Data 2: %s \n", ad[2]);
-	if (adlen[3] != 0)
-		printf("Ass. Data 3: %s \n", ad[3]);
-}
-
-void print_YMMs(__m256i *YMMs) {
-	unsigned char *YMM0 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 32byte, 32byte aligned
-	unsigned char *YMM1 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 32byte, 32byte aligned
-	unsigned char *YMM2 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 32byte, 32byte aligned
-	unsigned char *YMM3 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 32byte, 32byte aligned
-	unsigned char *YMM4 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 32byte, 32byte aligned
-
-
-	_mm256_store_si256(YMM0, YMMs[0]);
-	_mm256_store_si256(YMM1, YMMs[1]);
-	_mm256_store_si256(YMM2, YMMs[2]);
-	_mm256_store_si256(YMM3, YMMs[3]);
-	_mm256_store_si256(YMM4, YMMs[4]);
-
-	printf("YMM 0: %02X \n", YMM0);
-}
-
-
-void print_u64s_as_binary(u64 transposedData[5][4]) {
-	char reg[YMMCount][YMMLength];
-
-	for (int YMM_no = 0; YMM_no < YMMCount; YMM_no++) {
-		char registerString[256];
-		char tempString[64];
-
-		u64_to_string(tempString, transposedData[YMM_no][0]);
-		strcat(registerString, tempString);
-		u64_to_string(tempString, transposedData[YMM_no][1]);
-		strcat(registerString, tempString);
-		u64_to_string(tempString, transposedData[YMM_no][2]);
-		strcat(registerString, tempString);
-		u64_to_string(tempString, transposedData[YMM_no][3]);
-		strcat(registerString, tempString);
-		
-		printf("Reg %i: %s \n", YMM_no, registerString);
 	}
 }
 

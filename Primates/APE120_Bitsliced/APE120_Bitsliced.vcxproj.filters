@@ -21,9 +21,15 @@
     <ClCompile Include="Test.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Debug.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Primates.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Debug.h">
       <Filter>Resource Files</Filter>
     </ClInclude>
   </ItemGroup>
