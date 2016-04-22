@@ -1,27 +1,47 @@
 #include "Primates.h"
 
-//One row = 40 bits. 
-//First row is rate. Key is only added afterwards (i.e. as the capacity), which begins at row 1, that should be all 1, then all 0, then all 1, etc.
-#define rowNumberedKey {0xFF}, {0xFF}, {0xFF}, {0xFF}, {0xFF}, {0x0}, {0x0}, {0x0}, {0x0}, {0x0}, {0xFF}, {0xFF}, {0xFF}, {0xFF}, {0xFF}, {0x0}, {0x0}, {0x0}, {0x0}, {0x0}, {0xFF}, {0xFF}, {0xFF}, {0xFF}, {0xFF}, {0xFF}, {0x0}, {0x0}, {0x0}, {0x00}
+//1 key section = 2 rows in the primate state.
+#define P120KeySec1	  {0x00},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},		{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0}, 
+#define P120KeySec2	  {0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},		{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},
+#define P120KeySec3	  {0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},		{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x00}, {0x0},	{0xFF}
+
+//1 nonce section = 1 row (the rate-row) in the primate state 
+#define P120NonceSec1 {0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},
+#define P120NonceSec2 {0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},
+#define P120NonceSec3 {0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0}
+
+//1 rate section = 1 row (the rate-row) in the primate state 
+#define ADSec1		  {0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},
+#define ADSec2		  {0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},
+#define ADSec3		  {0xFF},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0xFF},	{0x0}
+#define ADLen		  24 //Should always be based on the size of above
 
 void main() {
 
 	//constant length
-	const unsigned char keys[4][keyLength] = { { rowNumberedKey }, {rowNumberedKey}, {rowNumberedKey}, {rowNumberedKey} };
-	const unsigned char nonces[4][NonceLength] = { {0x0}, { 0x0 }, { 0x0 }, { 0x0 , 0x1 } };
+	const unsigned char keys[4][keyLength] = { { P120KeySec1 P120KeySec2 P120KeySec3 }, { P120KeySec1 P120KeySec2 P120KeySec3 }, { P120KeySec1 P120KeySec2 P120KeySec3 }, { P120KeySec1 P120KeySec2 P120KeySec3 } };
+	const unsigned char nonces[4][NonceLength] = { { P120NonceSec1 P120NonceSec2 P120NonceSec3 }, 
+												   { P120NonceSec1 P120NonceSec2 P120NonceSec3 }, 
+												   { P120NonceSec1 P120NonceSec2 P120NonceSec3 }, 
+												   { P120NonceSec1 P120NonceSec2 P120NonceSec3 } };
 	
 	//variable length
 	unsigned char *msg[4]; 
-	msg[0] = "My"; msg[1] = "name";
-	msg[2] = "is"; msg[3] = "Jonas";
+	msg[0] = 0x1; msg[1] = 0x2;
+	msg[2] = 0x3; msg[3] = 0x4;
 	u64 mLengths[4] = { { 2 },{ 4 },{ 2 },{ 5 } };
 
 	const unsigned char *ad[4];
-	ad[0] = "0";
-	ad[1] = "";
-	ad[2] = "12";
-	ad[3] = "";
-	u64 adLengths[4] = { { 1 },{ 0 },{ 2 },{ 0 } };
+	const unsigned char ad0[ADLen] = { ADSec1 ADSec2 ADSec3 };
+	const unsigned char ad1[ADLen] = { ADSec1 ADSec2 ADSec3 };
+	const unsigned char ad2[ADLen] = { ADSec1 ADSec2 ADSec3 };
+	const unsigned char ad3[ADLen] = { ADSec1 ADSec2 ADSec3 };
+	ad[0] = &ad0;
+	ad[1] = &ad1;
+	ad[2] = &ad2;
+	ad[3] = &ad3;
+
+	u64 adLengths[4] = { { ADLen },{ ADLen },{ ADLen },{ ADLen } };
 	
 
 	primates120_encrypt(keys, msg, mLengths, ad, adLengths, nonces);

@@ -32,5 +32,8 @@
     <ClInclude Include="Debug.h">
       <Filter>Resource Files</Filter>
     </ClInclude>
+    <ClInclude Include="Parameters.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,9 +1,9 @@
 #pragma once
 
 #define PrimateRounds 12
-#define keyLength 30 //Bytes = 240 bits
-#define NonceLength 15 //Bytes
-#define RateSize 5 //Bytes
+#define keyLength 48
+#define NonceLength 24 //Bytes
+#define RateSize 8 //Bytes
 
 #define PrimateRounds 12 //p1
 
