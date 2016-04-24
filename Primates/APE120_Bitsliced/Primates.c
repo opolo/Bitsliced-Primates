@@ -376,7 +376,8 @@ void primates120_decrypt(const unsigned char k[4][keyLength],
 	__m256i YMM_IV[5];
 	__m256i YMM_V[5];
 	__m256i YMM_M[5];
-	__m256i ratemask = _mm256_set1_epi64x(71776119061217280, 71776119061217280, 71776119061217280, 71776119061217280);
+	__m256i ratemask = _mm256_set1_epi64x(71776119061217280);
+	__m256i capacitymask = _mm256_set1_epi64x(281474976710655);
 	u64 transposedData[5][4]; //5x registers with 4x states in them
 	u64 transposedNonce[5][4][3]; //5x regs, 4x states, 3x nonce sections for each.
 	u64 transposedKey[5][4]; //5x registers with 4x states in them
@@ -463,21 +464,67 @@ void primates120_decrypt(const unsigned char k[4][keyLength],
 		YMM_V[3] = _mm256_xor_si256(YMM_V[3], _mm256_and_si256(YMM_M[3], ratemask)); //Is it neccessary to use the rate-mask in these?
 		YMM_V[4] = _mm256_xor_si256(YMM_V[4], _mm256_xor_si256(temp, _mm256_and_si256(YMM_M[4], ratemask))); //Is it neccessary to use the rate-mask in these?
 		 
-		//detranspose M[w] from registers and store to message output
+		//detranspose M[w] from registers and store to message
 		unsigned char temp_rate[4][RateSize] = { 0 };
 		detranspose_rate_to_bytes(YMM_M, temp_rate);
-		
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 8; j++) {
+				int index = j + cLen - 8;
+				m[i][index] = temp_rate[i][j];
+			}
+		}
 
+		//decipher all remaining cipherblocks
+		cipherBackwards[0] -= 16; cipherBackwards[1] -= 16; cipherBackwards[2] -= 16; cipherBackwards[3] -= 16;
+		while (cipherBackwards[0] > 0 && cipherBackwards[1] > 0 && cipherBackwards[2] > 0 && cipherBackwards[3] > 0) {
+			p1_inv(YMM_V);
+			transpose_data_to_ratesize_u64(ciphertexts, cLen, transposedData, cipherBackwards, 0); //Increments cipherBackwards with 8, be aware of that
+			cipherBackwards[0] -= 8; cipherBackwards[1] -= 8; cipherBackwards[2] -= 8; cipherBackwards[3] -= 8;
+			__m256i cipher_temp[5];
+			for (int i = 0; i < 5; i++) {
+				//load current cipher-blocks to ymm
+				cipher_temp[i] = _mm256_set_epi64x(transposedData[i][0], transposedData[i][1], transposedData[i][2], transposedData[i][3]);
 
+				//XOR V_r with relevant C-block and store as plaintextmessage block
+				YMM_M[i] = _mm256_xor_si256(cipher_temp[i], YMM_V[i]);
+
+				//use new rate with old capacity as new V
+				YMM_V[i] = _mm256_xor_si256(cipher_temp[i], _mm256_and_si256(YMM_V[i], capacitymask));
+			}
+
+			//Store the plaintextblock.
+			detranspose_rate_to_bytes(YMM_M, temp_rate);
+			for (int state = 0; state < 4; state++) {
+				for (int index = 0; index < 8; index++) {
+					m[state][index + cipherBackwards[0]] = temp_rate[state][index];
+				}
+			}
+
+			cipherBackwards[0] -= 8; cipherBackwards[1] -= 8; cipherBackwards[2] -= 8; cipherBackwards[3] -= 8;
+		}
 	}
 
-		p1_inv(YMM_V, )
+	YMM_V[0] = _mm256_xor_si256(_mm256_and_si256(YMM_V[0], capacitymask), _mm256_set1_epi64x(1)); //xor with one bit at the very end of the capacity.
+	YMM_V[1] = _mm256_and_si256(YMM_V[1], capacitymask), _mm256_set1_epi64x(1);
+	YMM_V[2] = _mm256_and_si256(YMM_V[2], capacitymask), _mm256_set1_epi64x(1);
+	YMM_V[3] = _mm256_and_si256(YMM_V[3], capacitymask), _mm256_set1_epi64x(1);
+	YMM_V[4] = _mm256_and_si256(YMM_V[4], capacitymask), _mm256_set1_epi64x(1);
 
+	bool matches = true;
+	for (int i = 0; i < 5; i++) {
+		//Compare if V_c and IV_c are equal.
+		__m256i equal = _mm256_cmpeq_epi64(YMM_V[i], _mm256_and_si256(YMM_IV[i], capacitymask));
+		if (equal.m256i_u64[0] == 0 && equal.m256i_u64[1] == 0 && equal.m256i_u64[2] == 0 && equal.m256i_u64[3] == 0) {
+			//Some of them was not equal, since they had the value 0. 
+			matches = false;
+		}
+	}
 
-
-
-	//Handle ciphertext
+	if (matches) {
+		//return plaintext
+	}
+	else {
+		//invalidate plaintext
+	}
 	
 }
-
-p1_inv() {}

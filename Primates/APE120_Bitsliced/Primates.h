@@ -3,6 +3,7 @@
 #pragma once
 
 //A decimal value with index 48-55 full of ones is: 71776119061217280
+//A decimal value with index 0-47 set to one is: 281474976710655
 
 //Round constants for p1: 01, 02, 05, 0a, 15, 0b, 17, 0e, 1d, 1b, 16, 0c
 //The second element of the second row is located at YMM bits: 47 + 64*n (where n<4) 
