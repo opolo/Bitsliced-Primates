@@ -4,6 +4,9 @@
 #include <string.h>
 #include "Debug.h"
 
+#define false 0
+#define true 1
+#define bool unsigned char
 
 void transpose_nonce_to_rate_u64(const unsigned char n[4][NonceLength], u64 transposedNonce[5][4][3]);
 void transpose_data_to_ratesize_u64(const unsigned char *data[4], u64 dataLen[4], u64 transposedData[5][4], u64 dataTransposedProgress[4], u64 sectionLengthWithoutPadding[4]);
@@ -13,7 +16,7 @@ void primate(__m256i *state);
 void convert_capacityparts_to_bytes(__m256i *YMMs, unsigned char deTransposedBytes[4][keyLength]);
 void convert_rateparts_to_bytes(__m256i *YMMs, unsigned char deTransposedBytes[4][RateSize]);
 
-void transpose_key_to_u64(const unsigned char k[4][keyLength], u64 transposedKey[5][4]);
+void transpose_key_to_capacity_u64(const unsigned char k[4][keyLength], u64 transposedKey[5][4]);
 
 void primates120_encrypt(const unsigned char k[4][keyLength],
 	const unsigned char *m[4], u64 mlen[4],
@@ -24,9 +27,11 @@ void primates120_encrypt(const unsigned char k[4][keyLength],
 
 	//Declarations
 	__m256i YMM[5]; //YMM state registers
+	__m256i keys_YMM[5]; //YMM state registers
 	u64 transposedKey[5][4]; //5x registers with 4x states in them
 	u64 transposedData[5][4]; //5x registers with 4x states in them
 	u64 transposedNonce[5][4][3]; //5x regs, 4x states, 3x nonce sections for each.
+	bool DoneTransposingState[4];
 
 	//Prepare
 	_mm256_zeroall;
@@ -44,13 +49,16 @@ void primates120_encrypt(const unsigned char k[4][keyLength],
 	print_ad_hex(ad, adlen);
 	//ENDTEST 
 
-	//Transpose keys to bitsliced format and load them into registers.
-	transpose_key_to_u64(k, transposedKey);
+	//Transpose keys to bitsliced format and load them into YMM registers. Also make a copy of key for later
+	transpose_key_to_capacity_u64(k, transposedKey);
 	YMM[0] = _mm256_set_epi64x(transposedKey[0][0], transposedKey[0][1], transposedKey[0][2], transposedKey[0][3]);
 	YMM[1] = _mm256_set_epi64x(transposedKey[1][0], transposedKey[1][1], transposedKey[1][2], transposedKey[1][3]);
 	YMM[2] = _mm256_set_epi64x(transposedKey[2][0], transposedKey[2][1], transposedKey[2][2], transposedKey[2][3]);
 	YMM[3] = _mm256_set_epi64x(transposedKey[3][0], transposedKey[3][1], transposedKey[3][2], transposedKey[3][3]);
 	YMM[4] = _mm256_set_epi64x(transposedKey[4][0], transposedKey[4][1], transposedKey[4][2], transposedKey[4][3]);
+	for (int i = 0; i < 5; i++) {
+		keys_YMM[i] = YMM[0]; //This should not create a reference, but actually copy data as compiler should generate a vmovdqa instruction.
+	}
 
 	//Transpose nonces to bitsliced format
 	transpose_nonce_to_rate_u64(npub, transposedNonce);
@@ -69,13 +77,11 @@ void primates120_encrypt(const unsigned char k[4][keyLength],
 	//	primate(YMM); QQQ
 	}
 
-	//TEST
-	print_state_as_binary(YMM, 0);
-
 	//Handle associated data. If any is present, we do this - else we skip the step.
 	if (adlen != 0) {
 		u64 transposedDataProgress[4] = { 0 };
 		__m256i adYmm;
+
 		while (transposedDataProgress[0] < adlen[0] && transposedDataProgress[1] < adlen[1] &&
 			   transposedDataProgress[2] < adlen[2] && transposedDataProgress[3] < adlen[3]) {
 
@@ -84,64 +90,53 @@ void primates120_encrypt(const unsigned char k[4][keyLength],
 			for (int YMMReg = 0; YMMReg < 5; YMMReg++) {
 				adYmm = _mm256_set_epi64x(transposedData[YMMReg][0], transposedData[YMMReg][1], transposedData[YMMReg][2], transposedData[YMMReg][3]);
 				YMM[YMMReg] = _mm256_xor_si256(YMM[YMMReg], adYmm);
-				print_state_as_binary(YMM, 0);
 			}
-			//primate(YMM);
+			memset(transposedData, 0, sizeof(transposedData));
+			//primate(YMM); QQQ
 		}
-
-		memset(transposedData, 0, sizeof(transposedData)); //Empty transposedData variable, so that we can use it for the message-data next.
 	}
 
-	//TEST
-	print_state_as_binary(YMM, 0);
-
 	//XOR state with [0]^(b-1) | 1 //i.e. xor last bit with 1.
-	YMM[4] = _mm256_xor_si256(YMM[4], _mm256_set1_epi64x(1));
+	__m256i temp = _mm256_set1_epi64x(1);
+	YMM[4] = _mm256_xor_si256(YMM[4],temp);
 
+	//test qqq
+	print_state_as_binary(YMM, 0);
+	
 	//Var to store length of last block.
 	u64 lastBlockLengths[4];
 
-	//Handle message
+	//Handle message. If any is present, we do this - else we skip the step.
 	if (mlen != 0) {
-		u64 transposedDataProgress = 0;
-		__m256i mYMM;
+		u64 transposedDataProgress[4] = { 0 };
+		__m256i msgYmm;
 
-		while (transposedDataProgress < mlen) {
-			transpose_data_to_ratesize_u64(m, mlen, transposedData, transposedDataProgress, lastBlockLengths);
+		while (transposedDataProgress[0] < mlen[0] && transposedDataProgress[1] < mlen[1] &&
+			   transposedDataProgress[2] < mlen[2] && transposedDataProgress[3] < mlen[3]) {
 
-			//XOR m to state
+			transpose_data_to_ratesize_u64(m, mlen, transposedData, transposedDataProgress, 0);
+			//XOR next elements to rate-part of state
 			for (int YMMReg = 0; YMMReg < 5; YMMReg++) {
-				mYMM = _mm256_set_epi64x(transposedData[YMMReg][0], transposedData[YMMReg][1],
-										 transposedData[YMMReg][2], transposedData[YMMReg][3]);
-				YMM[YMMReg] = _mm256_xor_si256(YMM[YMMReg], mYMM);
+				msgYmm = _mm256_set_epi64x(transposedData[YMMReg][0], transposedData[YMMReg][1], transposedData[YMMReg][2], transposedData[YMMReg][3]);
+				YMM[YMMReg] = _mm256_xor_si256(YMM[YMMReg], msgYmm);
 			}
-
-			//Primate permutation
-			primate(YMM);
-
-			//detranspose rate part (5 bytes) of current state and store in corresponding place in C. 
-			unsigned char detransposedRatePart[5]; 
-			convert_rateparts_to_bytes(YMM, detransposedRatePart[5]);
-			memcpy(ciphertexts[0][transposedDataProgress - 5], detransposedRatePart[0], 5);
-			memcpy(ciphertexts[1][transposedDataProgress - 5], detransposedRatePart[1], 5);
-			memcpy(ciphertexts[2][transposedDataProgress - 5], detransposedRatePart[2], 5);
-			memcpy(ciphertexts[3][transposedDataProgress - 5], detransposedRatePart[3], 5);
+			memset(transposedData, 0, sizeof(transposedData));
+			//primate(YMM); QQQ
+			//TODO Here we save the current rate r_i to c_i
 		}
-
-		//encryption done. Last state's capacity is our tag, 
-		//and we need to do something weird about the secondlast block TODO (...whatever it is)
-		unsigned char tags[4][keyLength];
-		convert_capacityparts_to_bytes(YMM, tags);
-		memcpy(tag[0], tags[0], keyLength);
-		memcpy(tag[1], tags[1], keyLength);
-		memcpy(tag[2], tags[2], keyLength);
-		memcpy(tag[3], tags[3], keyLength);
 	}
 
+	//TODO: Do something weird about the last ciphertext block 
+	
+	//XOR final capacity with key
+	for (int YMM_reg = 0; YMM_reg < 5; YMM_reg++) {
+		YMM[0] = _mm256_xor_si256(YMM[YMM_reg], keys_YMM[0]);
+	}
+	//detranspose key and return it as tag. TODO
 
 }
 
-void convert_capacityparts_to_bytes(__m256i *YMMs, unsigned char deTransposedBytes[4][keyLength]) {
+void detranspose_capacity_to_bytes(__m256i *YMMs, unsigned char detransposedBytes[4][CapacitySize]) {
 	//In each YMM, the capacities is stored at the bits, 0-47 (bytes index 0-5), 64-111 (bytes index 8-13), 
 	//128-175 (16-21) , 192-239 (24-29).
 	//The MSB of each element is stored in YMM5.
@@ -159,62 +154,21 @@ void convert_capacityparts_to_bytes(__m256i *YMMs, unsigned char deTransposedByt
 	_mm256_store_si256(YMM4, YMMs[4]);
 
 	for (int state = 0; state < 4; state++) {
-		int YMM_byte_offset = state * 8;
 
-		//detranspose all 30 capacity bytes of a state
-		for (int detransposed_byte = 0; detransposed_byte < 30; detransposed_byte += 5) {
+		int state_offset = state * 8; //8 bytes = 64 bit
+		for (int capacity_byte = 0; capacity_byte < CapacitySize/8; capacity_byte++) {
 			
-			deTransposedBytes[state][0 + detransposed_byte] =
-				(YMM0[YMM_byte_offset] & 1) |
-				(YMM1[YMM_byte_offset] & 1) << 1 |
-				(YMM2[YMM_byte_offset] & 1) << 2 |
-				(YMM3[YMM_byte_offset] & 1) << 3 |
-				(YMM4[YMM_byte_offset] & 1) << 4 |
-				(YMM0[YMM_byte_offset] & 2) << 5 |
-				(YMM1[YMM_byte_offset] & 2) << 6 |
-				(YMM2[YMM_byte_offset] & 2) << 7;
-
-			deTransposedBytes[state][1 + detransposed_byte] =
-				(YMM3[YMM_byte_offset] & 2) |
-				(YMM4[YMM_byte_offset] & 2) << 1 |
-				(YMM0[YMM_byte_offset] & 3) << 2 |
-				(YMM1[YMM_byte_offset] & 3) << 3 |
-				(YMM2[YMM_byte_offset] & 3) << 4 |
-				(YMM3[YMM_byte_offset] & 3) << 5 |
-				(YMM4[YMM_byte_offset] & 3) << 6 |
-				(YMM0[YMM_byte_offset] & 4) << 7;
-
-			deTransposedBytes[state][2 + detransposed_byte] =
-				(YMM1[YMM_byte_offset] & 4) |
-				(YMM2[YMM_byte_offset] & 4) << 1 |
-				(YMM3[YMM_byte_offset] & 4) << 2 |
-				(YMM4[YMM_byte_offset] & 4) << 3 |
-				(YMM0[YMM_byte_offset] & 5) << 4 |
-				(YMM1[YMM_byte_offset] & 5) << 5 |
-				(YMM2[YMM_byte_offset] & 5) << 6 |
-				(YMM3[YMM_byte_offset] & 5) << 7;
-
-			deTransposedBytes[state][3 + detransposed_byte] =
-				(YMM4[YMM_byte_offset] & 5) |
-				(YMM0[YMM_byte_offset] & 6) << 1 |
-				(YMM1[YMM_byte_offset] & 6) << 2 |
-				(YMM2[YMM_byte_offset] & 6) << 3 |
-				(YMM3[YMM_byte_offset] & 6) << 4 |
-				(YMM4[YMM_byte_offset] & 6) << 5 |
-				(YMM0[YMM_byte_offset] & 7) << 6 |
-				(YMM1[YMM_byte_offset] & 7) << 7;
-
-			deTransposedBytes[state][4 + detransposed_byte] =
-				(YMM2[YMM_byte_offset] & 7) |
-				(YMM3[YMM_byte_offset] & 7) << 1 |
-				(YMM4[YMM_byte_offset] & 7) << 2 |
-				(YMM0[YMM_byte_offset] & 8) << 3 |
-				(YMM1[YMM_byte_offset] & 8) << 4 |
-				(YMM2[YMM_byte_offset] & 8) << 5 |
-				(YMM3[YMM_byte_offset] & 8) << 6 |
-				(YMM4[YMM_byte_offset] & 8) << 7;
-
-			YMM_byte_offset++;
+			int offset = capacity_byte * 8;
+			int shift = 0;
+			for (int bit = 0; bit < 8; bit++) {
+				
+				detransposedBytes[state][bit + offset] = ((YMM0[capacity_byte + state_offset] >> shift) & 1) |
+										   				 ((YMM1[capacity_byte + state_offset] >> shift) & 1 << 1) |
+										   				 ((YMM2[capacity_byte + state_offset] >> shift) & 1 << 2) |
+										   				 ((YMM3[capacity_byte + state_offset] >> shift) & 1 << 3) |
+										   				 ((YMM4[capacity_byte + state_offset] >> shift) & 1 << 4);
+				shift++;
+			}
 		}
 	}
 	_aligned_free(YMM0);
@@ -224,79 +178,32 @@ void convert_capacityparts_to_bytes(__m256i *YMMs, unsigned char deTransposedByt
 	_aligned_free(YMM4);
 }
 
-void convert_rateparts_to_bytes(__m256i *YMMs, unsigned char deTransposedBytes[4][RateSize]) {
+void detranspose_rate_to_bytes(__m256i *YMMs, unsigned char detransposedBytes[4][RateSize]) {
 	
 	//In each YMM, the rates are stored at the bits, 48-55 (byte index 6), 112-119 (byte index 14), 
 	//176-183 (byte index 22), 240-247 (byte index 30).
-	
-	//The MSB of each element is stored in YMM5.
-	//The first element of the capacity is stored in the last bit of the YMMs (right?)
-	unsigned char *YMM0 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 30byte, 32byte aligned
-	unsigned char *YMM1 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 30byte, 32byte aligned
-	unsigned char *YMM2 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 30byte, 32byte aligned
-	unsigned char *YMM3 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 30byte, 32byte aligned
-	unsigned char *YMM4 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 30byte, 32byte aligned
 
-	_mm256_store_si256(YMM0, YMMs[0]);
-	_mm256_store_si256(YMM1, YMMs[1]);
-	_mm256_store_si256(YMM2, YMMs[2]);
-	_mm256_store_si256(YMM3, YMMs[3]);
-	_mm256_store_si256(YMM4, YMMs[4]);
+	unsigned char *YMM0 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 32byte, 32byte aligned
+	unsigned char *YMM1 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 32byte, 32byte aligned
+	unsigned char *YMM2 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 32byte, 32byte aligned
+	unsigned char *YMM3 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 32byte, 32byte aligned
+	unsigned char *YMM4 = _aligned_malloc(sizeof(char) * 32, 32); //Allocate 32byte, 32byte aligned
 
 	for (int state = 0; state < 4; state++) {
-		int byte_offset = 6 + state * 64;
 
-		deTransposedBytes[state][0] =
-			(YMM0[byte_offset] & 1) |
-			(YMM1[byte_offset] & 1) << 1 |
-			(YMM2[byte_offset] & 1) << 2 |
-			(YMM3[byte_offset] & 1) << 3 |
-			(YMM4[byte_offset] & 1) << 4 |
-			(YMM0[byte_offset] & 2) << 5 |
-			(YMM1[byte_offset] & 2) << 6 |
-			(YMM2[byte_offset] & 2) << 7;
-		
-		deTransposedBytes[state][1] =
-			(YMM3[byte_offset] & 2) |
-			(YMM4[byte_offset] & 2) << 1 |
-			(YMM0[byte_offset] & 3) << 2 |
-			(YMM1[byte_offset] & 3) << 3 |
-			(YMM2[byte_offset] & 3) << 4 |
-			(YMM3[byte_offset] & 3) << 5 |
-			(YMM4[byte_offset] & 3) << 6 |
-			(YMM0[byte_offset] & 4) << 7;
+		int offset = state * 8; //8 bytes = 64 bit
+		int shift = 0;
+			for (int bit = 0; bit < 8; bit++) {
 
-		deTransposedBytes[state][2] =
-			(YMM1[byte_offset] & 4) |
-			(YMM2[byte_offset] & 4) << 1 |
-			(YMM3[byte_offset] & 4) << 2 |
-			(YMM4[byte_offset] & 4) << 3 |
-			(YMM0[byte_offset] & 5) << 4 |
-			(YMM1[byte_offset] & 5) << 5 |
-			(YMM2[byte_offset] & 5) << 6 |
-			(YMM3[byte_offset] & 5) << 7;
-
-		deTransposedBytes[state][3] =
-			(YMM4[byte_offset] & 5) |
-			(YMM0[byte_offset] & 6) << 1 |
-			(YMM1[byte_offset] & 6) << 2 |
-			(YMM2[byte_offset] & 6) << 3 |
-			(YMM3[byte_offset] & 6) << 4 |
-			(YMM4[byte_offset] & 6) << 5 |
-			(YMM0[byte_offset] & 7) << 6 |
-			(YMM1[byte_offset] & 7) << 7;
-
-		deTransposedBytes[state][4] =
-			(YMM2[byte_offset] & 7) |
-			(YMM3[byte_offset] & 7) << 1 |
-			(YMM4[byte_offset] & 7) << 2 |
-			(YMM0[byte_offset] & 8) << 3 |
-			(YMM1[byte_offset] & 8) << 4 |
-			(YMM2[byte_offset] & 8) << 5 |
-			(YMM3[byte_offset] & 8) << 6 |
-			(YMM4[byte_offset] & 8) << 7;
+				detransposedBytes[state][bit] = ((YMM0[6 + offset] >> shift) & 1) |
+												((YMM1[6 + offset] >> shift) & 1 << 1) |
+												((YMM2[6 + offset] >> shift) & 1 << 2) |
+												((YMM3[6 + offset] >> shift) & 1 << 3) |
+												((YMM4[6 + offset] >> shift) & 1 << 4);
+				shift++;
+			}
+		}
 	}
-
 	_aligned_free(YMM0);
 	_aligned_free(YMM1);
 	_aligned_free(YMM2);
@@ -368,7 +275,7 @@ void transpose_data_to_ratesize_u64(const unsigned char *data[4], u64 data_len[4
 		if (remaining_elements > 0 && remaining_elements < 8) {
 
 			for (int i = 0; i < remaining_elements; i++) {
-				data_i[i] = data[state_no][transpose_progress[state_no + i]];
+				data_i[i] = data[state_no][transpose_progress[state_no] + i];
 
 				if (i + 1 == remaining_elements) {
 					data_i[i + 1] = 1; //first element after end of data is a 1, the rest of the padding is 0.
@@ -383,11 +290,11 @@ void transpose_data_to_ratesize_u64(const unsigned char *data[4], u64 data_len[4
 		//transpose if there are more bytes left
 		if (remaining_elements > 0) {
 			for (int element = 0; element < 8; element++) {
-				transposed_data[0][state_no] = (transposed_data[0][state_no] << 1) |  data_ptr[element] & 1;
-				transposed_data[1][state_no] = (transposed_data[0][state_no] << 1) | (data_ptr[element] >> 1) & 1;
-				transposed_data[2][state_no] = (transposed_data[0][state_no] << 1) | (data_ptr[element] >> 2) & 1;
-				transposed_data[3][state_no] = (transposed_data[0][state_no] << 1) | (data_ptr[element] >> 3) & 1;
-				transposed_data[4][state_no] = (transposed_data[0][state_no] << 1) | (data_ptr[element] >> 4) & 1;
+				transposed_data[0][state_no] = (transposed_data[0][state_no] << 1) |  data_ptr[transpose_progress[state_no] + element] & 1;
+				transposed_data[1][state_no] = (transposed_data[1][state_no] << 1) | (data_ptr[transpose_progress[state_no] + element] >> 1) & 1;
+				transposed_data[2][state_no] = (transposed_data[2][state_no] << 1) | (data_ptr[transpose_progress[state_no] + element] >> 2) & 1;
+				transposed_data[3][state_no] = (transposed_data[3][state_no] << 1) | (data_ptr[transpose_progress[state_no] + element] >> 3) & 1;
+				transposed_data[4][state_no] = (transposed_data[4][state_no] << 1) | (data_ptr[transpose_progress[state_no] + element] >> 4) & 1;
 			}
 			//The ratepart is located at the bits 48-55, while these nonce-bits would be placed at bits 0-7. Thus we shift.
 			transposed_data[0][state_no] = transposed_data[0][state_no] << 48;
@@ -435,7 +342,7 @@ void transpose_nonce_to_rate_u64(const unsigned char n[4][NonceLength], u64 tran
 * This function takes 4 keys and transpose them into a register with the dimensions:
 * k[register_no][key_no]
 */
-void transpose_key_to_u64(const unsigned char k[4][keyLength], u64 transposedKey[5][4]) {
+void transpose_key_to_capacity_u64(const unsigned char k[4][keyLength], u64 transposedKey[5][4]) {
 
 	//We expect that the key is 240 bits = 48 primate elements (stored in bytes) long.
 	for (int key_no = 0; key_no < 4; key_no++) {

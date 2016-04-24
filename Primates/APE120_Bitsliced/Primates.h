@@ -1,11 +1,6 @@
+#include "Parameters.h"
+
 #pragma once
-
-#define PrimateRounds 12
-#define keyLength 48
-#define NonceLength 24 //Bytes
-#define RateSize 8 //Bytes
-
-#define PrimateRounds 12 //p1
 
 //Round constants for p1: 01, 02, 05, 0a, 15, 0b, 17, 0e, 1d, 1b, 16, 0c
 //The second element of the second row is located at YMM bits: 47 + 64*n (where n<4) 
