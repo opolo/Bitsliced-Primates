@@ -1,4 +1,7 @@
 #include "Primates.h"
+#include <stdio.h>
+#include <string.h>
+#include <immintrin.h>
 
 //1 key section = 2 rows in the primate state.
 #define P120KeySec1	  {0x00},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},		{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0}, 
@@ -26,10 +29,17 @@ void main() {
 												   { P120NonceSec1 P120NonceSec2 P120NonceSec3 } };
 	
 	//variable length
-	unsigned char *msg[4]; 
-	msg[0] = 0x1; msg[1] = 0x2;
-	msg[2] = 0x3; msg[3] = 0x4;
-	u64 mLengths[4] = { { 2 },{ 4 },{ 2 },{ 5 } };
+	const unsigned char *msg[4];
+	const unsigned char msg0[ADLen] = { ADSec1 ADSec2 ADSec3 };
+	const unsigned char msg1[ADLen] = { ADSec1 ADSec2 ADSec3 };
+	const unsigned char msg2[ADLen] = { ADSec1 ADSec2 ADSec3 };
+	const unsigned char msg3[ADLen] = { ADSec1 ADSec2 ADSec3 };
+	msg[0] = &msg0;
+	msg[1] = &msg1;
+	msg[2] = &msg2;
+	msg[3] = &msg3;
+
+	u64 msgLengths[4] = { { ADLen },{ ADLen },{ ADLen },{ ADLen } };
 
 	const unsigned char *ad[4];
 	const unsigned char ad0[ADLen] = { ADSec1 ADSec2 ADSec3 };
@@ -43,6 +53,16 @@ void main() {
 
 	u64 adLengths[4] = { { ADLen },{ ADLen },{ ADLen },{ ADLen } };
 	
+	//Return data from function. TODO: Make ciphertext support different lengths between states
+	unsigned char *ciphertexts[4];
+	ciphertexts[0] = malloc(sizeof(unsigned char)*ADLen);
+	ciphertexts[1] = malloc(sizeof(unsigned char)*ADLen);
+	ciphertexts[2] = malloc(sizeof(unsigned char)*ADLen);
+	ciphertexts[3] = malloc(sizeof(unsigned char)*ADLen);
+	unsigned char tags[4][keyLength];
 
-	primates120_encrypt(keys, msg, mLengths, ad, adLengths, nonces);
+
+	primates120_encrypt(keys, msg, msgLengths, ad, adLengths, nonces, ciphertexts, tags);
+
+	getchar();
 }
