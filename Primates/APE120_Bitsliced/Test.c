@@ -61,8 +61,31 @@ void main() {
 	ciphertexts[3] = malloc(sizeof(unsigned char)*ADLen);
 	unsigned char tags[4][keyLength];
 
+	unsigned char *plaintexts[4];
+	plaintexts[0] = malloc(sizeof(unsigned char)*ADLen);
+	plaintexts[1] = malloc(sizeof(unsigned char)*ADLen);
+	plaintexts[2] = malloc(sizeof(unsigned char)*ADLen);
+	plaintexts[3] = malloc(sizeof(unsigned char)*ADLen);
+
 
 	primates120_encrypt(keys, msg, msgLengths, ad, adLengths, nonces, ciphertexts, tags);
+	primates120_decrypt(keys, ciphertexts, msgLengths, ad, adLengths, nonces, plaintexts, tags);
+
+	//Print plaintext state 1 before and after enc/dec
+	printf("Before, inbetween and after encrypt and decrypt: \n");
+	for (int i = 0; i < ADLen; i++) {
+		//before
+		printf("%02x ", msg[0][i]);
+	}
+	printf("\n");
+	for (int i = 0; i < ADLen; i++) {
+		//before
+		printf("%02x ", ciphertexts[0][i]);
+	}
+	printf("\n");
+	for (int i = 0; i < ADLen; i++) {
+		printf("%02x ", plaintexts[0][i]);
+	}
 
 	getchar();
 }
