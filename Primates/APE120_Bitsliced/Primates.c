@@ -17,6 +17,7 @@ void primate(__m256i *state);
 void p1_inv(__m256i *states);
 
 void test_rate_transpose();
+void test_capacity_transpose();
 
 void detranspose_capacity_to_bytes(__m256i *YMMs, unsigned char detransposedBytes[4][CapacitySize]);
 void detranspose_rate_to_bytes(__m256i *YMMs, unsigned char detransposedBytes[4][RateSize]);
@@ -49,7 +50,8 @@ void primates120_encrypt(const unsigned char k[4][keyLength],
 	//each state with 64 bits. There will still only be space in the vector for a total of 4 states anyway.
 	
 	//TEST 
-	testTranspose();
+	//test_rate_transpose();
+	//test_capacity_transpose();
 	print_keys_hex(k);
 	print_nonces_hex(npub);
 	print_ad_hex(ad, adlen);
@@ -152,15 +154,54 @@ void primates120_encrypt(const unsigned char k[4][keyLength],
 	detranspose_capacity_to_bytes(YMM, tag);
 }
 
-#define testdata1 { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0x00 }, { 0x00 }, { 0x00 }, { 0x00 }, { 0x00 }, { 0x00 }, 
-#define testdata2 { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }
+#define test_rate_data1 { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0x00 }, { 0x00 }, { 0x00 }, { 0x00 }, { 0x00 }, { 0x00 }, 
+#define test_rate_data2 { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }
 
 //We only use the first 5 bits in a byte, as a primate element contains only 5 bits.
 unsigned char byte_to_primate_element(unsigned char byte) {
 	return byte & 31; //31 = 11111 in bits.
 }
 
+#define test_cap_data1 { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, 
+#define test_cap_data2 { 0x00 }, { 0x00 }, { 0x00 }, { 0x00 }, { 0x00 }, { 0x00 }, { 0x00 }, { 0x00 }, { 0x00 }, { 0x00 }, { 0x00 }, { 0x00 },
+#define test_cap_data3 { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, { 0xFF }, 
+#define test_cap_data4 { 0x00 }, { 0x00 }, { 0x00 }, { 0x00 }, { 0x00 }, { 0x00 }, { 0x00 }, { 0x00 }, { 0x00 }, { 0x00 }, { 0x00 }, { 0x00 }
+
 void test_capacity_transpose() {
+	__m256i test_YMM[5];
+	_mm256_zeroall;
+
+	unsigned char  test_capacity_after[4][CapacitySize];
+	unsigned char test_capacity_before[4][CapacitySize] = { { test_cap_data1 test_cap_data2 test_cap_data3 test_cap_data4 }, { test_cap_data1 test_cap_data2 test_cap_data3 test_cap_data4 }, 
+															 { test_cap_data1 test_cap_data2 test_cap_data3 test_cap_data4 }, { test_cap_data1 test_cap_data2 test_cap_data3 test_cap_data4 } };
+	
+	u64 test_capacity_YMM_u64[5][4];
+	memset(test_capacity_YMM_u64, 0, sizeof(test_capacity_YMM_u64));
+
+	//Print capacity for state 1 (0):
+	printf("Before/after capacity transpose/detranspose (of capacity): \n");
+	for (int i = 0; i < CapacitySize; i++) {
+		printf("%02x ", byte_to_primate_element(test_capacity_before[0][i]));
+	}
+	printf("\n");
+
+	//transpose capacity
+	transpose_key_to_capacity_u64(test_capacity_before, test_capacity_YMM_u64);
+
+	//Load capacity into YMM
+	for (int i = 0; i < 5; i++) {
+		test_YMM[i] = _mm256_set_epi64x(test_capacity_YMM_u64[i][0], test_capacity_YMM_u64[i][1],
+										test_capacity_YMM_u64[i][2], test_capacity_YMM_u64[i][3]);
+	}
+
+	//Load capacity from YMM
+	detranspose_capacity_to_bytes(test_YMM, test_capacity_after);
+
+	//Print capacity (state 1 (0)) detransposed from YMM:
+	for (int i = 0; i < CapacitySize; i++) {
+		printf("%02x ", test_capacity_after[0][i]);
+	}
+	printf("\n");
 }
 
 void test_rate_transpose() {
@@ -168,7 +209,7 @@ void test_rate_transpose() {
 	
 	unsigned char test_rate_after[4][RateSize * 3];
 	unsigned char *test_rate_before[4];
-	unsigned char test_rate_before_0123[24] = { testdata1 testdata2 };
+	unsigned char test_rate_before_0123[24] = { test_rate_data1 test_rate_data2 };
 	test_rate_before[0] = &test_rate_before_0123;
 	test_rate_before[1] = &test_rate_before_0123;
 	test_rate_before[2] = &test_rate_before_0123;
@@ -179,7 +220,7 @@ void test_rate_transpose() {
 	u64 dataLen[4] = { 24, 24, 24, 24 };
 
 	//Print state 1 (0):
-	printf("Before/after rate transpose/detranspose: \n");
+	printf("Before/after rate transpose/detranspose (of rate): \n");
 	for (int i = 0; i < 24; i++) {
 		printf("%02x ", byte_to_primate_element(test_rate_before[0][i]));
 	}
@@ -194,7 +235,6 @@ void test_rate_transpose() {
 		for (int i = 0; i < 5; i++) {
 			test_YMM[i] = _mm256_set_epi64x(test_rate_YMM_u64[i][0], test_rate_YMM_u64[i][1], test_rate_YMM_u64[i][2], test_rate_YMM_u64[i][3]);
 		}
-
 
 		//Load from YMM
 		detranspose_rate_to_bytes(test_YMM, test_rate_after);
@@ -227,18 +267,18 @@ void detranspose_capacity_to_bytes(__m256i *YMMs, unsigned char detransposedByte
 	for (int state = 0; state < 4; state++) {
 
 		int state_offset = state * 8; //8 bytes = 64 bit
-		for (int capacity_byte = 0; capacity_byte < CapacitySize/8; capacity_byte++) {
+		int index = 0; //index of detransposed primate element. It should be 0-47.
+		for (int capacity_byte = 5; capacity_byte >= 0; capacity_byte--) {
 			
-			int offset = capacity_byte * 8;
-			int shift = 0;
-			for (int bit = 0; bit < 8; bit++) {
+			int shift = 7;
+			for (int bit = 7; bit >= 0; bit--) {
 				
-				detransposedBytes[state][bit + offset] = ((YMM0[capacity_byte + state_offset] >> shift) & 1) |
-										   				 ((YMM1[capacity_byte + state_offset] >> shift) & 1 << 1) |
-										   				 ((YMM2[capacity_byte + state_offset] >> shift) & 1 << 2) |
-										   				 ((YMM3[capacity_byte + state_offset] >> shift) & 1 << 3) |
-										   				 ((YMM4[capacity_byte + state_offset] >> shift) & 1 << 4);
-				shift++;
+				detransposedBytes[state][index] = ((YMM0[capacity_byte + state_offset] >> bit) & 1) |
+										   		  (((YMM1[capacity_byte + state_offset] >> bit) & 1) << 1) |
+										   		  (((YMM2[capacity_byte + state_offset] >> bit) & 1) << 2) |
+										   		  (((YMM3[capacity_byte + state_offset] >> bit) & 1) << 3) |
+										   		  (((YMM4[capacity_byte + state_offset] >> bit) & 1) << 4);
+				index++;
 			}
 		}
 	}
@@ -424,19 +464,18 @@ void transpose_nonce_to_rate_u64(const unsigned char n[4][NonceLength], u64 tran
 }
 
 /*
-* This function takes 4 keys and transpose them into a register with the dimensions:
-* k[register_no][key_no]
-*/
-void transpose_key_to_capacity_u64(const unsigned char k[4][keyLength], u64 transposedKey[5][4]) {
+* This function takes an array with 4 capacities of 48 elements and transposes them into a register with the dimensions:
+* data[register_no][state_no]
+*/void transpose_key_to_capacity_u64(const unsigned char k[4][keyLength], u64 transposedKey[5][4]) {
 
 	//We expect that the key is 240 bits = 48 primate elements (stored in bytes) long.
-	for (int key_no = 0; key_no < 4; key_no++) {
-		for (int key_element = 0; key_element < keyLength; key_element++) {
-			transposedKey[0][key_no] = (transposedKey[0][key_no] << 1) | k[key_no][key_element] & 1;
-			transposedKey[1][key_no] = (transposedKey[1][key_no] << 1) | (k[key_no][key_element] >> 1) & 1;
-			transposedKey[2][key_no] = (transposedKey[2][key_no] << 1) | (k[key_no][key_element] >> 2) & 1;
-			transposedKey[3][key_no] = (transposedKey[3][key_no] << 1) | (k[key_no][key_element] >> 3) & 1;
-			transposedKey[4][key_no] = (transposedKey[4][key_no] << 1) | (k[key_no][key_element] >> 4) & 1;
+	for (int state_no = 0; state_no < 4; state_no++) {
+		for (int cap_element = 0; cap_element < keyLength; cap_element++) {
+			transposedKey[0][state_no] = (transposedKey[0][state_no] << 1) | k[state_no][cap_element] & 1;
+			transposedKey[1][state_no] = (transposedKey[1][state_no] << 1) | (k[state_no][cap_element] >> 1) & 1;
+			transposedKey[2][state_no] = (transposedKey[2][state_no] << 1) | (k[state_no][cap_element] >> 2) & 1;
+			transposedKey[3][state_no] = (transposedKey[3][state_no] << 1) | (k[state_no][cap_element] >> 3) & 1;
+			transposedKey[4][state_no] = (transposedKey[4][state_no] << 1) | (k[state_no][cap_element] >> 4) & 1;
 		}
 	}
 }
