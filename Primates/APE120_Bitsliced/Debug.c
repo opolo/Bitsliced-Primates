@@ -30,7 +30,7 @@ void print_nonces_hex(const unsigned char npub[4][NonceLength]) {
 	}
 }
 
-void print_ad_hex(const unsigned char *ad[4], u64 adlen[4]) {
+void print_ad_hex(const unsigned char *ad[4], u64 adlen) {
 	if (adlen == 0) {
 		printf("No associated data with any current encryption \n");
 		return;
@@ -39,11 +39,11 @@ void print_ad_hex(const unsigned char *ad[4], u64 adlen[4]) {
 	for (int state = 0; state < 4; state++) {
 		
 		printf("Ass. Data %i : ", state);
-		if (adlen[state] == 0) {
+		if (adlen == 0) {
 			printf("No data.");
 		}
 
-		for (int primate_element = 0; primate_element < adlen[state]; primate_element++) {
+		for (int primate_element = 0; primate_element < adlen; primate_element++) {
 			//Draw a divisor for each 8 element to make it easier to read... and because the ratepart is 8 elements long, so its easy to see the complete data loaded each time.
 			if (primate_element % 8 == 0 && primate_element != 0) {
 				printf(" -- ");

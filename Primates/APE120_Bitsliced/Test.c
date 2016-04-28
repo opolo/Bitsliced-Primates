@@ -39,7 +39,7 @@ void main() {
 	msg[2] = &msg2;
 	msg[3] = &msg3;
 
-	u64 msgLengths[4] = { { ADLen },{ ADLen },{ ADLen },{ ADLen } };
+	u64 msgLengths = ADLen;
 
 	const unsigned char *ad[4];
 	const unsigned char ad0[ADLen] = { ADSec1 ADSec2 ADSec3 };
@@ -51,7 +51,7 @@ void main() {
 	ad[2] = &ad2;
 	ad[3] = &ad3;
 
-	u64 adLengths[4] = { { ADLen },{ ADLen },{ ADLen },{ ADLen } };
+	u64 adLengths = ADLen;
 	
 	//Return data from function. TODO: Make ciphertext support different lengths between states
 	unsigned char *ciphertexts[4];

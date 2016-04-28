@@ -9,9 +9,13 @@
 #define bool unsigned char
 
 void transpose_nonce_to_rate_u64(const unsigned char n[4][NonceLength], u64 transposedNonce[5][4][3]);
-void transpose_data_to_ratesize_u64(const unsigned char *data[4], u64 dataLen[4], u64 transposedData[5][4], u64 dataTransposedProgress[4], u64 sectionLengthWithoutPadding[4]);
-void primates120_decrypt(const unsigned char k[4][keyLength], const unsigned char npub[4][NonceLength],
-	const unsigned char *ciphertexts[4], u64 cLen[4], const unsigned char *ad[4], u64 adlen[4], unsigned char tag[4][keyLength], unsigned char *m[4]);
+void transpose_data_to_ratesize_u64(const unsigned char *data[4], u64 dataLen, u64 transposedData[5][4], u64 dataTransposedProgress);
+void primates120_decrypt(const unsigned char k[4][keyLength], 
+	const unsigned char *ciphertexts[4], u64 cLen, 
+	const unsigned char *ad[4], u64 adlen, 
+	const unsigned char npub[4][NonceLength],
+	unsigned char *m[4],
+	unsigned char tag[4][keyLength]);
 
 void primate(__m256i *state);
 void p1_inv(__m256i *states);
@@ -25,8 +29,8 @@ void detranspose_rate_to_bytes(__m256i *YMMs, unsigned char detransposedBytes[4]
 void transpose_key_to_capacity_u64(const unsigned char k[4][keyLength], u64 transposedKey[5][4]);
 
 void primates120_encrypt(const unsigned char k[4][keyLength],
-	const unsigned char *m[4], u64 mlen[4],
-	const unsigned char *ad[4], u64 adlen[4],
+	const unsigned char *m[4], u64 mlen,
+	const unsigned char *ad[4], u64 adlen,
 	const unsigned char npub[4][NonceLength],
 	unsigned char *ciphertexts[4],
 	unsigned char tag[4][keyLength]) {
@@ -87,14 +91,13 @@ void primates120_encrypt(const unsigned char k[4][keyLength],
 
 	//Handle associated data. If any is present, we do this - else we skip the step.
 	if (adlen != 0) {
-		u64 transposedDataProgress[4] = { 0 };
+		u64 transposedDataProgress = 0;
 		__m256i adYmm;
 
-		while (transposedDataProgress[0] < adlen[0] && transposedDataProgress[1] < adlen[1] &&
-			   transposedDataProgress[2] < adlen[2] && transposedDataProgress[3] < adlen[3]) {
+		while (transposedDataProgress < adlen) {
 
-			transpose_data_to_ratesize_u64(ad, adlen, transposedData, transposedDataProgress, 0);
-			transposedDataProgress[0] += 8; transposedDataProgress[1] += 8; transposedDataProgress[2] += 8; transposedDataProgress[3] += 8;
+			transpose_data_to_ratesize_u64(ad, adlen, transposedData, transposedDataProgress);
+			transposedDataProgress += 8;
 			//XOR next add elements to rate-part of state
 			for (int YMMReg = 0; YMMReg < 5; YMMReg++) {
 				adYmm = _mm256_set_epi64x(transposedData[YMMReg][0], transposedData[YMMReg][1], transposedData[YMMReg][2], transposedData[YMMReg][3]);
@@ -109,19 +112,15 @@ void primates120_encrypt(const unsigned char k[4][keyLength],
 	__m256i temp = _mm256_set1_epi64x(1);
 	YMM[4] = _mm256_xor_si256(YMM[4],temp);
 	
-	//Var to store length of last block.
-	u64 lastBlockLengths[4];
-
 	//Handle message. If any is present, we do this - else we skip the step.
 	if (mlen != 0) {
-		u64 transposedDataProgress[4] = { 0 };
+		u64 transposedDataProgress = 0;
 		__m256i msgYmm;
 
-		while (transposedDataProgress[0] < mlen[0] && transposedDataProgress[1] < mlen[1] &&
-			   transposedDataProgress[2] < mlen[2] && transposedDataProgress[3] < mlen[3]) {
+		while (transposedDataProgress< mlen) {
 
-			transpose_data_to_ratesize_u64(m, mlen, transposedData, transposedDataProgress, 0);
-			transposedDataProgress[0] += 8; transposedDataProgress[1] += 8; transposedDataProgress[2] += 8; transposedDataProgress[3] += 8;
+			transpose_data_to_ratesize_u64(m, mlen, transposedData, transposedDataProgress);
+			transposedDataProgress += 8; 
 			//XOR next elements to rate-part of state
 			for (int YMMReg = 0; YMMReg < 5; YMMReg++) {
 				msgYmm = _mm256_set_epi64x(transposedData[YMMReg][0], transposedData[YMMReg][1], transposedData[YMMReg][2], transposedData[YMMReg][3]);
@@ -135,7 +134,7 @@ void primates120_encrypt(const unsigned char k[4][keyLength],
 			detranspose_rate_to_bytes(YMM, temp_rate);
 			for (int i = 0; i < 4; i++) {
 				for (int j = 0; j < 8; j++) {
-					ciphertexts[i][transposedDataProgress[i] - 8 + j] = temp_rate[i][j];
+					ciphertexts[i][transposedDataProgress - 8 + j] = temp_rate[i][j];
 				}
 			}			
 		}
@@ -214,8 +213,8 @@ void test_rate_transpose() {
 	test_rate_before[3] = &test_rate_before_0123;
 
 	u64 test_rate_YMM_u64[5][4] = { 0 };
-	u64 transpose_progress[4] = {0, 0, 0, 0};
-	u64 dataLen[4] = { 24, 24, 24, 24 };
+	u64 transpose_progress = 0;
+	u64 dataLen = 24;
 
 	//Print state 1 (0):
 	printf("Before/after rate transpose/detranspose (of rate): \n");
@@ -225,9 +224,9 @@ void test_rate_transpose() {
 	printf("\n");
 
 	//Transpose/detranspose 3 rate sections
-	while (transpose_progress[0] < 24) {
+	while (transpose_progress < 24) {
 		//Transpose rate
-		transpose_data_to_ratesize_u64(test_rate_before, dataLen, test_rate_YMM_u64, transpose_progress, 0);
+		transpose_data_to_ratesize_u64(test_rate_before, dataLen, test_rate_YMM_u64, transpose_progress);
 		
 		//Load into YMM
 		for (int i = 0; i < 5; i++) {
@@ -385,39 +384,17 @@ void p1_inv(__m256i *states) {
 We need to transpose chunks of the data of sizes that are equal to the rate-part (40 bits) of the primate-cipher.
 Thus we transpose 8 primate elements (stored in 8 bytes) at a time.
 */
-void transpose_data_to_ratesize_u64(const unsigned char *data[4], u64 data_len[4], u64 transposed_data[5][4], u64 transpose_progress[4], u64 sectionLengthWithoutPadding[4]) {
+void transpose_data_to_ratesize_u64(const unsigned char *data[4], u64 data_len, u64 transposed_data[5][4], u64 transpose_progress) {
 
 	for (int state_no = 0; state_no < 4; state_no++) {
-		unsigned char data_i[8] = {0}; //internal data being used for transposing
-		unsigned char *data_ptr;
-
-		//How many elements are left?
-		int remaining_elements = data_len[state_no] - transpose_progress[state_no];
-
-		//If less than 8 are left, add padding.
-		if (remaining_elements > 0 && remaining_elements < 8) {
-
-			for (int i = 0; i < remaining_elements; i++) {
-				data_i[i] = data[state_no][transpose_progress[state_no] + i];
-
-				if (i + 1 == remaining_elements) {
-					data_i[i + 1] = 1; //first element after end of data is a 1, the rest of the padding is 0.
-				}
-			}
-			data_ptr = data_i;
-		}
-		else {
-			data_ptr = data[state_no];
-		}
-
 		//transpose if there are more bytes left
-		if (remaining_elements > 0) {
+		if ((data_len - transpose_progress) > 0) {
 			for (int element = 0; element < 8; element++) {
-				transposed_data[0][state_no] = (transposed_data[0][state_no] << 1) |  data_ptr[transpose_progress[state_no] + element] & 1;
-				transposed_data[1][state_no] = (transposed_data[1][state_no] << 1) | (data_ptr[transpose_progress[state_no] + element] >> 1) & 1;
-				transposed_data[2][state_no] = (transposed_data[2][state_no] << 1) | (data_ptr[transpose_progress[state_no] + element] >> 2) & 1;
-				transposed_data[3][state_no] = (transposed_data[3][state_no] << 1) | (data_ptr[transpose_progress[state_no] + element] >> 3) & 1;
-				transposed_data[4][state_no] = (transposed_data[4][state_no] << 1) | (data_ptr[transpose_progress[state_no] + element] >> 4) & 1;
+				transposed_data[0][state_no] = (transposed_data[0][state_no] << 1) |  data[state_no][transpose_progress + element] & 1;
+				transposed_data[1][state_no] = (transposed_data[1][state_no] << 1) | (data[state_no][transpose_progress + element] >> 1) & 1;
+				transposed_data[2][state_no] = (transposed_data[2][state_no] << 1) | (data[state_no][transpose_progress + element] >> 2) & 1;
+				transposed_data[3][state_no] = (transposed_data[3][state_no] << 1) | (data[state_no][transpose_progress + element] >> 3) & 1;
+				transposed_data[4][state_no] = (transposed_data[4][state_no] << 1) | (data[state_no][transpose_progress + element] >> 4) & 1;
 			}
 			//The ratepart is located at the bits 48-55, while these nonce-bits would be placed at bits 0-7. Thus we shift.
 			transposed_data[0][state_no] = transposed_data[0][state_no] << 48;
@@ -475,8 +452,8 @@ void transpose_nonce_to_rate_u64(const unsigned char n[4][NonceLength], u64 tran
 	}
 }
 void primates120_decrypt(const unsigned char k[4][keyLength],
-	const unsigned char *ciphertexts[4], u64 cLen[4],
-	const unsigned char *ad[4], u64 adlen[4],
+	const unsigned char *ciphertexts[4], u64 cLen,
+	const unsigned char *ad[4], u64 adlen,
 	const unsigned char npub[4][NonceLength],
 	unsigned char *m[4],
 	unsigned char tag[4][keyLength])
@@ -492,6 +469,8 @@ void primates120_decrypt(const unsigned char k[4][keyLength],
 	u64 transposedNonce[5][4][3]; //5x regs, 4x states, 3x nonce sections for each.
 	u64 transposedKey[5][4]; //5x registers with 4x states in them
 	u64 transposedTag[5][4]; //5x registers with 4x states in them
+
+	_mm256_zeroall();
 
 	memset(transposedData, 0, sizeof(transposedData));
 	memset(transposedNonce, 0, sizeof(transposedNonce));
@@ -529,14 +508,13 @@ void primates120_decrypt(const unsigned char k[4][keyLength],
 
 	//Handle associated data. If any is present, we do this - else we skip the step.
 	if (adlen != 0) {
-		u64 transposedDataProgress[4] = { 0 };
+		u64 transposedDataProgress = 0;
 		__m256i adYmm;
 
-		while (transposedDataProgress[0] < adlen[0] && transposedDataProgress[1] < adlen[1] &&
-			transposedDataProgress[2] < adlen[2] && transposedDataProgress[3] < adlen[3]) {
+		while (transposedDataProgress < adlen) {
 
 			transpose_data_to_ratesize_u64(ad, adlen, transposedData, transposedDataProgress, 0);
-			transposedDataProgress[0] += 8; transposedDataProgress[1] += 8; transposedDataProgress[2] += 8; transposedDataProgress[3] += 8;
+			transposedDataProgress += 8; 
 			//XOR next add elements to rate-part of state
 			for (int YMMReg = 0; YMMReg < 5; YMMReg++) {
 				adYmm = _mm256_set_epi64x(transposedData[YMMReg][0], transposedData[YMMReg][1], transposedData[YMMReg][2], transposedData[YMMReg][3]);
@@ -547,19 +525,13 @@ void primates120_decrypt(const unsigned char k[4][keyLength],
 		}
 	}
 
-	//TEST QQQ
-	print_state_as_binary(YMM_IV, 0);
-	
-
 	//Handle ciphertext
 	if (cLen != 0) {
-		//Do trick with bits of last 2 message sections, if message is not integral	
-		//TODO 
-
+		
 		//Initialize YMM_V by loading tag XOR key into capacity. Then load rate of last cipherblock into YMM_V.
 		u64 transposedTag[5][4] = { 0 };
-		u64 cipherBackwards[4] = { cLen[0], cLen[1], cLen[2], cLen[3] }; 
-		cipherBackwards[0] -= 8; cipherBackwards[1] -= 8; cipherBackwards[2] -= 8; cipherBackwards[3] -= 8; //Load last block
+		u64 cipherBackwards = cLen; 
+		cipherBackwards -= 8; //Load last block
 		transpose_key_to_capacity_u64(tag, transposedTag);
 		transpose_data_to_ratesize_u64(ciphertexts, cLen, transposedData, cipherBackwards, 0);
 		for (int i = 0; i < 5; i++) {
@@ -570,7 +542,7 @@ void primates120_decrypt(const unsigned char k[4][keyLength],
 		memset(transposedData, 0, sizeof(transposedData));
 
 		//Initialize YMM_M by taking rate part of v and XORing with secondlast ciphertext and store in YMM_M.
-		cipherBackwards[0] -= 8; cipherBackwards[1] -= 8; cipherBackwards[2] -= 8; cipherBackwards[3] -= 8; //Load secondlast
+		cipherBackwards -= 8; //Load secondlast
 		transpose_data_to_ratesize_u64(ciphertexts, cLen, transposedData, cipherBackwards, 0);
 		for (int i = 0; i < 5; i++) {
 			__m256i cipherblock = _mm256_set_epi64x(transposedData[i][0], transposedData[i][1], transposedData[i][2], transposedData[i][3]);
@@ -584,48 +556,45 @@ void primates120_decrypt(const unsigned char k[4][keyLength],
 		detranspose_rate_to_bytes(YMM_M, temp_rate);
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 8; j++) {
-				int index = j + cLen[i] - 8;
+				int index = j + cLen - 8;
 				m[i][index] = temp_rate[i][j];
 			}
 		}
-		print_state_as_binary(YMM_M, 0);
+
 		//XOR V with M[w]10* || 0c
 		YMM_V[0] = _mm256_xor_si256(YMM_V[0], _mm256_and_si256(YMM_M[0], ratemask)); //Is it neccessary to use the rate-mask in these?
 		YMM_V[1] = _mm256_xor_si256(YMM_V[1], _mm256_and_si256(YMM_M[1], ratemask)); //Is it neccessary to use the rate-mask in these?
 		YMM_V[2] = _mm256_xor_si256(YMM_V[2], _mm256_and_si256(YMM_M[2], ratemask)); //Is it neccessary to use the rate-mask in these?
 		YMM_V[3] = _mm256_xor_si256(YMM_V[3], _mm256_and_si256(YMM_M[3], ratemask)); //Is it neccessary to use the rate-mask in these?
-		YMM_V[4] = _mm256_xor_si256(YMM_V[4], _mm256_xor_si256(YMM_M[4], ratemask)); //Is it neccessary to use the rate-mask in these?
+		YMM_V[4] = _mm256_xor_si256(YMM_V[4], _mm256_and_si256(YMM_M[4], ratemask)); //Is it neccessary to use the rate-mask in these?
 		
-
-
 		//decipher all remaining cipherblocks. start by taking W[i-2] (i.e. thirdlast block)
-		cipherBackwards[0] -= 8; cipherBackwards[1] -= 8; cipherBackwards[2] -= 8; cipherBackwards[3] -= 8;
-		//since its an unsigned var, we also check against overflows by making sure, its not larger than the cLen
-		while (cipherBackwards[0] >= 0 && cipherBackwards[0] <= cLen[0] &&
-			cipherBackwards[1] >= 0 && cipherBackwards[1] <= cLen[1] &&
-			cipherBackwards[2] >= 0 && cipherBackwards[2] <= cLen[2] &&
-			cipherBackwards[3] >= 0 && cipherBackwards[3] <= cLen[3]) {
-			
+		cipherBackwards -= 8;
+
+		for (int remaining_cipherblock_count = (cLen / RateSize) - 1; remaining_cipherblock_count > 0; remaining_cipherblock_count--) {
+
 			p1_inv(YMM_V);
+
 			memset(transposedData, 0, sizeof(transposedData));
 			__m256i cipher_temp[5];
-			if (cipherBackwards[0] < 0) 
+			if (remaining_cipherblock_count < 2)
 			{
 				//We need to transpose C[0] instead now. 
-				transpose_data_to_ratesize_u64(ciphertexts, cLen, transposedData, cipherBackwards, 0); //Increments cipherBackwards with 8, be aware of that
+				transpose_data_to_ratesize_u64(ciphertexts, cLen, transposedData, cipherBackwards, 0); 
 				for (int i = 0; i < 5; i++) {
 					//load current cipher-blocks to ymm
 					cipher_temp[i] = _mm256_and_si256(YMM_IV[i], ratemask);
 				}
 			}
 			else {
-				transpose_data_to_ratesize_u64(ciphertexts, cLen, transposedData, cipherBackwards, 0); //Increments cipherBackwards with 8, be aware of that
+				transpose_data_to_ratesize_u64(ciphertexts, cLen, transposedData, cipherBackwards, 0);
 				for (int i = 0; i < 5; i++) {
 					//load current cipher-blocks to ymm
 					cipher_temp[i] = _mm256_set_epi64x(transposedData[i][0], transposedData[i][1], transposedData[i][2], transposedData[i][3]);
 				}
 			}
-			cipherBackwards[0] -= 8; cipherBackwards[1] -= 8; cipherBackwards[2] -= 8; cipherBackwards[3] -= 8;
+
+			cipherBackwards -= 8; 
 			
 			for (int i = 0; i < 5; i++) {
 				//XOR V_r with relevant C-block and store as plaintextmessage block
@@ -638,14 +607,14 @@ void primates120_decrypt(const unsigned char k[4][keyLength],
 			//Store the plaintextblock.
 			detranspose_rate_to_bytes(YMM_M, temp_rate);
 			for (int state = 0; state < 4; state++) {
+				int offset = (remaining_cipherblock_count-1) * 8;
 				for (int index = 0; index < 8; index++) {
-					m[state][index + cipherBackwards[0]] = temp_rate[state][index];
+					m[state][index + offset] = temp_rate[state][index];
 				}
 			}
 
-			cipherBackwards[0] -= 8; cipherBackwards[1] -= 8; cipherBackwards[2] -= 8; cipherBackwards[3] -= 8;
+			cipherBackwards -= 8;
 		}
-		//On last iteration, do the same with C[0] instead of the above. 
 	}
 
 	YMM_V[0] = _mm256_xor_si256(_mm256_and_si256(YMM_V[0], capacitymask), _mm256_set1_epi64x(1)); //xor with one bit at the very end of the capacity.
