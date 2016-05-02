@@ -17,7 +17,7 @@ void primates120_decrypt(const unsigned char k[4][keyLength],
 	unsigned char *m[4],
 	unsigned char tag[4][keyLength]);
 
-void primate(__m256i *state);
+void primate(__m256i *states);
 void p1_inv(__m256i *states);
 
 void test_rate_transpose();
@@ -330,55 +330,6 @@ void detranspose_rate_to_bytes(__m256i *YMMs, unsigned char detransposedBytes[4]
 	_aligned_free(YMM4);
 }
 
-void primate(__m256i *states) {
-	return;
-	for (int round = 0; round < PrimateRounds; round++) {
-		//Constant addition
-		//XOR a roundconstant to the second element of the second row (47th element of the capacity <-- probably wrong qqq)
-		//Round constants for p1: 01, 02, 05, 0a, 15, 0b, 17, 0e, 1d, 1b, 16, 0c
-		//Array where the constants are transposed to the 47th bit:
-		const u64 roundConstantBitsYMM0[] = { 70368744177664, 0, 70368744177664, 0, 70368744177664, 
-											70368744177664, 70368744177664, 0, 70368744177664, 
-											70368744177664, 0, 0};
-		const u64 roundConstantBitsYMM1[] = { 0, 70368744177664, 0, 70368744177664,
-											0, 70368744177664, 70368744177664, 70368744177664,
-											0, 70368744177664, 70368744177664, 0 };
-		const u64 roundConstantBitsYMM2[] = { 0, 0, 70368744177664, 0,
-											70368744177664, 0, 70368744177664, 70368744177664,
-											70368744177664, 0, 70368744177664, 70368744177664 };
-		const u64 roundConstantBitsYMM3[] = { 0, 0, 0, 70368744177664,
-											0, 70368744177664, 0, 70368744177664,
-											70368744177664, 70368744177664, 0, 70368744177664 };
-		const u64 roundConstantBitsYMM4[] = { 0, 0, 0, 0,
-											70368744177664, 0, 70368744177664, 0,
-											70368744177664, 70368744177664, 70368744177664, 0 };
-		
-		__m256i rc_ymm0 = _mm256_set1_epi64x(roundConstantBitsYMM0[round]);
-		__m256i rc_ymm1 = _mm256_set1_epi64x(roundConstantBitsYMM1[round]);
-		__m256i rc_ymm2 = _mm256_set1_epi64x(roundConstantBitsYMM2[round]);
-		__m256i rc_ymm3 = _mm256_set1_epi64x(roundConstantBitsYMM3[round]);
-		__m256i rc_ymm4 = _mm256_set1_epi64x(roundConstantBitsYMM4[round]);
-		states[0] = _mm256_xor_si256(states[0], rc_ymm0);
-		states[1] = _mm256_xor_si256(states[1], rc_ymm1);
-		states[2] = _mm256_xor_si256(states[2], rc_ymm2);
-		states[3] = _mm256_xor_si256(states[3], rc_ymm3);
-		states[4] = _mm256_xor_si256(states[4], rc_ymm4);
-
-		//Mix Columns
-		//TODO
-
-		//Shift Rows primate 120
-		//shifted from top down:
-		//0,1,2,3,4,5,7
-		//TODO
-
-		//Sub Elements
-		//TODO
-	}
-}
-
-void p1_inv(__m256i *states) {
-}
 
 /*
 We need to transpose chunks of the data of sizes that are equal to the rate-part (40 bits) of the primate-cipher.
@@ -641,4 +592,59 @@ void primates120_decrypt(const unsigned char k[4][keyLength],
 	}	
 }
 
+void primate(__m256i *states) {
+	for (int round = 0; round < PrimateRounds; round++) {
+		/*
+		//Constant addition
+		//XOR a roundconstant to the second element of the second row (47th element of the capacity <-- probably wrong qqq)
+		//Round constants for p1: 01, 02, 05, 0a, 15, 0b, 17, 0e, 1d, 1b, 16, 0c
+		//Array where the constants are transposed to the 47th bit:
+		const u64 roundConstantBitsYMM0[] = { 70368744177664,	0,				70368744177664, 0, 
+											  70368744177664,	70368744177664, 70368744177664, 0, 
+											  70368744177664,	70368744177664,	0,				0 };
+
+		const u64 roundConstantBitsYMM1[] = { 0,				70368744177664, 0,				70368744177664,
+											  0,				70368744177664, 70368744177664, 70368744177664,
+			  								  0,				70368744177664, 70368744177664, 0 };
+
+		const u64 roundConstantBitsYMM2[] = { 0,				0,				70368744177664, 0,
+											  70368744177664,	0,				70368744177664, 70368744177664,
+											  70368744177664,	0,				70368744177664, 70368744177664 };
+
+		const u64 roundConstantBitsYMM3[] = { 0,				0,				0,				70368744177664,
+											  0,				70368744177664, 0,				70368744177664,
+											  70368744177664,	70368744177664, 0,				70368744177664 };
+
+		const u64 roundConstantBitsYMM4[] = { 0,				0,				0,				0,
+											  70368744177664,	0,				70368744177664, 0,
+											  70368744177664,	70368744177664, 70368744177664, 0 };
+
+		__m256i rc_ymm0 = _mm256_set1_epi64x(roundConstantBitsYMM0[round]);
+		__m256i rc_ymm1 = _mm256_set1_epi64x(roundConstantBitsYMM1[round]);
+		__m256i rc_ymm2 = _mm256_set1_epi64x(roundConstantBitsYMM2[round]);
+		__m256i rc_ymm3 = _mm256_set1_epi64x(roundConstantBitsYMM3[round]);
+		__m256i rc_ymm4 = _mm256_set1_epi64x(roundConstantBitsYMM4[round]);
+		states[0] = _mm256_xor_si256(states[0], rc_ymm0);
+		states[1] = _mm256_xor_si256(states[1], rc_ymm1);
+		states[2] = _mm256_xor_si256(states[2], rc_ymm2);
+		states[3] = _mm256_xor_si256(states[3], rc_ymm3);
+		states[4] = _mm256_xor_si256(states[4], rc_ymm4);
+		*/
+
+		//Mix Columns
+		//TODO
+
+		//Shift Rows primate 120
+		//We do this by shifting each byte (which corresponds to all columns in a row), high and low, and then blend them together. After that we blend the bytes together and finally load them into the registers. 
+		//shifted from top down:
+		//0,1,2,3,4,5,7
+		//TODO
+
+		//Sub Elements
+		//TODO
+	}
+}
+
+void p1_inv(__m256i *states) {
+}
 
