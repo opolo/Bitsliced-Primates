@@ -8,7 +8,10 @@
 #define true 1
 #define bool unsigned char
 
-static const __m256i m256iAllOne = { 0xFFFFFFFFFFFFFFFFULL, 0xFFFFFFFFFFFFFFFFULL, 0xFFFFFFFFFFFFFFFFULL, 0xFFFFFFFFFFFFFFFFULL };
+static const __m256i m256iAllOne = { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 
+									 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 
+									 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 
+									 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, };
 #define XOR(a, b) _mm256_xor_si256(a, b)
 #define AND(a, b) _mm256_and_si256(a, b)
 #define NEG(a) _mm256_xor_si256(m256iAllOne, a)
@@ -31,8 +34,8 @@ void p1_inv(__m256i *states);
 void test_rate_transpose();
 void test_capacity_transpose();
 
-void schwabe_bitsliced_primate();
-void schwabe_bitsliced_primate_inv();
+void schwabe_bitsliced_primate(__m256i (*state)[2]);
+void schwabe_bitsliced_primate_inv(__m256i (*state)[2]);
 
 void detranspose_capacity_to_bytes(__m256i *YMMs, unsigned char detransposedBytes[4][CapacitySize]);
 void detranspose_rate_to_bytes(__m256i *YMMs, unsigned char detransposedBytes[4][RateSize]);
@@ -612,11 +615,110 @@ void schwabe_primate_test() {
 		state[i][1] = _mm256_setzero_si256();
 	}
 
-	schwabe_bitsliced_primate();
-	schwabe_bitsliced_primate_inv();
+	schwabe_bitsliced_primate(state);
+	schwabe_bitsliced_primate_inv(state);
 }
 
-void schwabe_bitsliced_primate_inv() {
+void schwabe_bitsliced_primate_inv(__m256i (*state)[2]) {
+	__m256i x[5][2];
+	for (int i = 0; i < 5; i++) {
+		x[i][0] = state[i][0];
+		x[i][1] = state[i][1];
+	}
+
+	for (int round = 0; round < PrimateRounds; round++) {
+	
+		//SHIFT ROWS INVERSE START
+		//shifted to the right (from top down):
+		//0,1,2,3,4,5,7
+		//TODO
+		__m256i shuffleControlMaskFirstReg = _mm256_set_epi8(	0,	0,	0,	0,	0,	0,	0,	0,
+																15,	8,	9,	10,	11,	12,	13,	14,
+																22,	23,	16,	17,	18,	19,	20,	21,
+																29, 30, 31, 24, 25, 26, 27, 28);
+		__m256i shuffleControlMaskSecondReg = _mm256_set_epi8(	4,	5,	6,	7,	0,	1,	2,	3,
+																11,	12,	13,	14,	15,	8,	9,	10,
+																17,	18,	19,	20,	21,	22,	23,	16,
+																256, 256, 256, 256, 256, 256, 256, 256); //Setting it to 256 makes shuffle zero the bits
+		for (int reg = 0; reg < 5; reg++) {
+
+			x[reg][0] = _mm256_shuffle_epi8(x[reg][0], shuffleControlMaskFirstReg);
+			x[reg][1] = _mm256_shuffle_epi8(x[reg][1], shuffleControlMaskSecondReg);
+		}
+		//SHIFT ROWS INVERSE END
+
+		//SUB BYTES INVERSE START
+		for (int i = 0; i < 2; i++) {
+			//We make this loop to handle both pairs of the registers identically (since 8 states fills 2 registers (or 10, due to 5*2 from bitlicing).
+
+			//Helper variables
+			__m256i q[20];
+			__m256i t[13];
+			__m256i y[5];
+
+			q[0] = XOR3(x[0][i], x[1][i], x[2][i]);
+			q[1] = NEG(XOR(x[2][i], x[4][i]));
+			t[0] = AND(q[0], q[1]);
+
+			q[2] = x[0][i];
+			q[3] = x[1][i];
+			t[1] = AND(q[2], q[3]);
+
+			q[4] = XOR3(x[2][i], x[3][i], t[0]);
+			q[5] = NEG(x[1][i]);
+			t[2] = AND(q[4], q[5]);
+
+			q[6] = XOR3(x[1][i], t[1], t[2]);
+			q[7] = XOR(x[2][i], x[4][i]);
+			t[3] = AND(q[6], q[7]);
+
+			q[8] = XOR4(x[2][i], t[0], t[2], t[3]);
+			q[9] = XOR4(x[0][i], x[3][i], x[4][i], XOR3(t[1], t[2], t[3]));
+			t[4] = AND(q[8], q[9]);
+
+			q[10] = XOR4(x[0][i], x[2][i], x[3][i], XOR3(t[1], t[2], t[3]));
+			q[11] = XOR4(x[1][i], x[3][i], t[0], t[2]);
+			t[5] = AND(q[10], q[11]);
+
+			q[12] = XOR(x[0][i], x[4][i]);
+			q[13] = XOR4(t[0], t[3], t[4], t[5]);
+			t[6] = AND(q[12], q[13]);
+
+			q[14] = NEG(XOR4(x[0][i], x[1][i], x[2][i], XOR4(x[4][i], t[0], t[1], XOR4(t[3], t[4], t[5], t[6]))));
+			q[15] = XOR4(x[0][i], x[3][i], t[0], XOR4(t[1], t[2], t[4], t[6]));
+			t[7] = AND(q[14], q[15]);
+
+			q[16] = NEG(XOR4(x[2][i], x[3][i], t[2], t[5]));
+			q[17] = NEG(XOR4(x[0][i], x[1][i], x[4][i], XOR4(t[0], t[1], t[2], XOR3(t[3], t[6], t[7]))));
+			t[8] = AND(q[16], q[17]);
+
+			q[18] = XOR4(x[4][i], t[2], t[5], XOR(t[6], t[8]));
+			q[19] = NEG(XOR4(x[0][i], x[1][i], x[4][i], XOR3(t[4], t[7], t[8])));
+			t[9] = AND(q[18], q[19]);
+
+			y[0] = XOR4(x[0][i], x[1][i], t[0], XOR3(t[6], t[7], t[9]));
+			y[1] = XOR(t[0], t[3], t[6]);
+			y[2] = XOR4(t[3], t[5], t[6], t[7]);
+			y[3] = XOR3(t[1], t[2], t[4]);;
+			y[4] = XOR4(x[1][i], t[0], t[4], t[8]);
+
+			x[0][i] = y[0];
+			x[1][i] = y[1];
+			x[2][i] = y[2];
+			x[3][i] = y[3];
+			x[4][i] = y[4];
+
+
+
+		}
+		//SUB BYTES INVERSE END
+	}
+
+	for (int i = 0; i < 5; i++) {
+		state[i][0] = x[i][0];
+		state[i][1] = x[i][1];
+	}
+
 
 }
 
@@ -624,26 +726,47 @@ void schwabe_bitsliced_primate_inv() {
 void primate(__m256i *state) {
 }
 
+
 //This one has the Schwabe layout
-void schwabe_bitsliced_primate() {
+void schwabe_bitsliced_primate(__m256i (*state)[2]) {
 
 	__m256i x[5][2];
 	for (int i = 0; i < 5; i++) {
-		x[i][0] = _mm256_setzero_si256();
-		x[i][1] = _mm256_setzero_si256();
+		x[i][0] = state[i][0];
+		x[i][1] = state[i][1];
 	}
 
 	for (int round = 0; round < PrimateRounds; round++) {
 
-		//SBOX start
-		__m256i result[5][2];
+		//SHIFT ROWS (primate 120) START
+		//shifted to the left (from top down):
+		//0,1,2,3,4,5,7
+		//TODO
+		__m256i shuffleControlMaskFirstReg = _mm256_set_epi8(	0,	0,	0,	0,	0,	0,	0, 0, 
+																9,	10, 11, 12, 13, 14, 15, 8,
+																18, 19, 20, 21, 22, 23, 16, 17,
+																27, 28, 29, 30, 31, 24, 25, 26); 
+		__m256i shuffleControlMaskSecondReg = _mm256_set_epi8(	4,	5,	6,	7,	0,	1,	2,	3,
+																13, 14, 15, 8,	9,	10,	11,	12,
+																23, 16, 17, 18, 19, 20, 21, 22,
+																256, 256, 256, 256, 256, 256, 256, 256); //Setting it to 256 makes shuffle zero the bits
+		for (int reg = 0; reg < 5; reg++) {
+			
+			x[reg][0] = _mm256_shuffle_epi8(x[reg][0], shuffleControlMaskFirstReg);
+			x[reg][1] = _mm256_shuffle_epi8(x[reg][1], shuffleControlMaskSecondReg);
+		}
+		//SHIFT ROWS END
+
+
+		//SBOX START
 		for (int i = 0; i < 2; i++) {
 			//We make this loop to handle both pairs of the registers identically (since 8 states fills 2 registers (or 10, due to 5*2 from bitlicing).
 
 			//Helper variables
-			__m256i z[12];
+			__m256i z[13];
 			__m256i q[13];
-			__m256i t[12];
+			__m256i t[13];
+			__m256i y[5];
 
 			z[0] = XOR(x[0][i], x[4][i]);
 			z[1] = XOR(x[1][i], x[2][i]);
@@ -688,14 +811,28 @@ void schwabe_bitsliced_primate() {
 			z[11] = XOR(t[4],	z[4]);
 			z[12] = XOR(z[6], z[11]);
 
-			x[0][i] = NEG(XOR(q[2],		z[5]));
-			x[1][i] = XOR(z[0],			z[8]);
-			x[2][i] = XOR(q[7],			z[12]);
-			x[3][i] = XOR(q[6],			z[11]);
-			x[4][i] = XOR(x[2][i],	z[10]);
-		}
+			y[0] = NEG(XOR(q[2],		z[5]));
+			y[1] = XOR(z[0],			z[8]);
+			y[2] = XOR(q[7],			z[12]);
+			y[3] = XOR(q[6],			z[11]);
+			y[4] = XOR(x[2][i],	z[10]);
 
+			x[0][i] = y[0];
+			x[1][i] = y[1];
+			x[2][i] = y[2];
+			x[3][i] = y[3];
+			x[4][i] = y[4];
+
+		}
+		//SBOX END
 	}
+
+
+	for (int i = 0; i < 5; i++) {
+		state[i][0] = x[i][0];
+		state[i][1] = x[i][1];
+	}
+
 }
 
 		//SBOX end
@@ -707,24 +844,7 @@ void schwabe_bitsliced_primate() {
 		//Mix Columns
 		//TODO
 
-		//Shift Rows primate 120
-		//We do this by shifting each byte (which corresponds to all columns in a row), high and low, and then blend them together. After that we blend the bytes together and finally load them into the registers. 
-		//shifted from top down:
-		//0,1,2,3,4,5,7
-		//TODO
-		__m256i shuffleControlMaskLowLaneFirstReg = _mm256_set1_epi16(0); //TODO THESE
-		__m256i shuffleControlMaskHighLaneFirstReg = _mm256_set1_epi16(0);
-		__m256i shuffleControlMaskLowLaneSecondReg = _mm256_set1_epi16(0);
-		__m256i shuffleControlMaskHighLaneSecondReg = _mm256_set1_epi16(0);
-		for (int reg = 0; reg < 5; reg++) {
-			__m256i temp;
-			
-			temp = _mm256_shuffle_epi8(states[reg][0], shuffleControlMaskLowLaneFirstReg); //Lower lane is shuffled correctly
-			states[reg][0] = _mm256_inserti128_si256(_mm256_shuffle_epi8(states[reg][0], shuffleControlMaskHighLaneFirstReg), _mm256_castsi256_si128(temp), 0); //Higher lane is shuffled correctly, and combined with lower lane.
-
-			temp = _mm256_shuffle_epi8(states[reg][1], shuffleControlMaskLowLaneSecondReg); //Lower lane is shuffled correctly
-			states[reg][1] = _mm256_inserti128_si256(_mm256_shuffle_epi8(states[reg][0], shuffleControlMaskHighLaneSecondReg), _mm256_castsi256_si128(temp), 0); //Higher lane is shuffled correctly, and combined with lower lane.
-		}
+		
 		
 		//Sub Elements
 		//TODO
@@ -803,7 +923,6 @@ void schwabe_bitsliced_primate() {
 //	}
 //}
 
-//Schwabe
-void p1_inv(__m256i *states) {
-}
+void p1_inv(__m256i *states) {}
+
 
