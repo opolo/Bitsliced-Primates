@@ -67,6 +67,8 @@ void main() {
 	plaintexts[2] = malloc(sizeof(unsigned char)*ADLen);
 	plaintexts[3] = malloc(sizeof(unsigned char)*ADLen);
 	
+	schwabe_primate_test();
+
 	primates120_encrypt(keys, msg, msgLengths, ad, adLengths, nonces, ciphertexts, tags);
 	
 	//Print plaintext state 0 before enc

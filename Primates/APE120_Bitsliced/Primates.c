@@ -8,6 +8,14 @@
 #define true 1
 #define bool unsigned char
 
+static const __m256i m256iAllOne = { 0xFFFFFFFFFFFFFFFFULL, 0xFFFFFFFFFFFFFFFFULL, 0xFFFFFFFFFFFFFFFFULL, 0xFFFFFFFFFFFFFFFFULL };
+#define XOR(a, b) _mm256_xor_si256(a, b)
+#define AND(a, b) _mm256_and_si256(a, b)
+#define NEG(a) _mm256_xor_si256(m256iAllOne, a)
+#define OR(a, b) _mm256_or_si256(a, b)
+#define XOR3(a, b, c) _mm256_xor_si256(a, _mm256_xor_si256(b, c))
+#define XOR4(a, b, c, d) _mm256_xor_si256(a, _mm256_xor_si256(b, _mm256_xor_si256(c, d)))
+
 void transpose_nonce_to_rate_u64(const unsigned char n[4][NonceLength], u64 transposedNonce[5][4][3]);
 void transpose_data_to_ratesize_u64(const unsigned char *data[4], u64 dataLen, u64 transposedData[5][4], u64 dataTransposedProgress);
 void primates120_decrypt(const unsigned char k[4][keyLength], 
@@ -22,6 +30,9 @@ void p1_inv(__m256i *states);
 
 void test_rate_transpose();
 void test_capacity_transpose();
+
+void schwabe_bitsliced_primate();
+void schwabe_bitsliced_primate_inv();
 
 void detranspose_capacity_to_bytes(__m256i *YMMs, unsigned char detransposedBytes[4][CapacitySize]);
 void detranspose_rate_to_bytes(__m256i *YMMs, unsigned char detransposedBytes[4][RateSize]);
@@ -592,44 +603,106 @@ void primates120_decrypt(const unsigned char k[4][keyLength],
 	}	
 }
 
-void primate(__m256i *states) {
+
+void schwabe_primate_test() {
+	__m256i state[5][2];
+
+	for (int i = 0; i < 5; i++) {
+		state[i][0] = _mm256_setzero_si256();
+		state[i][1] = _mm256_setzero_si256();
+	}
+
+	schwabe_bitsliced_primate();
+	schwabe_bitsliced_primate_inv();
+}
+
+void schwabe_bitsliced_primate_inv() {
+
+}
+
+
+void primate(__m256i *state) {
+}
+
+//This one has the Schwabe layout
+void schwabe_bitsliced_primate() {
+
+	__m256i x[5][2];
+	for (int i = 0; i < 5; i++) {
+		x[i][0] = _mm256_setzero_si256();
+		x[i][1] = _mm256_setzero_si256();
+	}
+
 	for (int round = 0; round < PrimateRounds; round++) {
+
+		//SBOX start
+		__m256i result[5][2];
+		for (int i = 0; i < 2; i++) {
+			//We make this loop to handle both pairs of the registers identically (since 8 states fills 2 registers (or 10, due to 5*2 from bitlicing).
+
+			//Helper variables
+			__m256i z[12];
+			__m256i q[13];
+			__m256i t[12];
+
+			z[0] = XOR(x[0][i], x[4][i]);
+			z[1] = XOR(x[1][i], x[2][i]);
+			z[2] = XOR(x[2][i], x[3][i]);
+
+			q[0] = XOR(x[0][i], x[3][i]);
+			t[0] = OR(q[0],		x[1][i]);
+			q[2] = XOR(x[1][i], x[3][i]);
+
+			q[3] = NEG(XOR(x[0][i], x[2][i]));
+			t[1] = OR(q[2],			q[3]);
+			q[4] = XOR(x[1][i],		z[0]);
+
+			q[5] = XOR(x[0][i],		z[2]);
+			t[2] = AND(q[4],		q[5]);
+			q[6] = NEG(XOR(x[4][i], q[5]));
+
+
+			q[7] = XOR(x[4][i],	z[1]);
+			t[3] = OR(q[6],		q[7]);
+			q[8] = XOR(q[4],	z[2]);
+
+			z[9] = XOR(t[0],	t[3]);
+			q[9] = XOR(x[2][i], z[9]);
+			t[4] = AND(q[8],	q[9]);
+
+			q[10] = NEG(XOR(x[3][i],	z[0]));
+			t[5]  = AND(q[10],			z[0]);
+			q[12] = NEG(XOR4(z[1],		z[9], t[2], t[4]));
+
+			t[6] = AND(q[12],	z[2]);
+			z[3] = XOR(t[5],	t[6]);
+			z[4] = XOR(t[3],	z[3]);
+
+
+			z[5] = XOR(t[2], z[4]);
+			z[6] = XOR(t[1], t[6]);
+			z[7] = XOR(t[4], z[5]);
+
+			z[8] = XOR(t[1],	z[7]);
+			z[10] = XOR(t[0],	z[7]);
+			z[11] = XOR(t[4],	z[4]);
+			z[12] = XOR(z[6], z[11]);
+
+			x[0][i] = NEG(XOR(q[2],		z[5]));
+			x[1][i] = XOR(z[0],			z[8]);
+			x[2][i] = XOR(q[7],			z[12]);
+			x[3][i] = XOR(q[6],			z[11]);
+			x[4][i] = XOR(x[2][i],	z[10]);
+		}
+
+	}
+}
+
+		//SBOX end
+
 		/*
 		//Constant addition
-		//XOR a roundconstant to the second element of the second row (47th element of the capacity <-- probably wrong qqq)
-		//Round constants for p1: 01, 02, 05, 0a, 15, 0b, 17, 0e, 1d, 1b, 16, 0c
-		//Array where the constants are transposed to the 47th bit:
-		const u64 roundConstantBitsYMM0[] = { 70368744177664,	0,				70368744177664, 0, 
-											  70368744177664,	70368744177664, 70368744177664, 0, 
-											  70368744177664,	70368744177664,	0,				0 };
-
-		const u64 roundConstantBitsYMM1[] = { 0,				70368744177664, 0,				70368744177664,
-											  0,				70368744177664, 70368744177664, 70368744177664,
-			  								  0,				70368744177664, 70368744177664, 0 };
-
-		const u64 roundConstantBitsYMM2[] = { 0,				0,				70368744177664, 0,
-											  70368744177664,	0,				70368744177664, 70368744177664,
-											  70368744177664,	0,				70368744177664, 70368744177664 };
-
-		const u64 roundConstantBitsYMM3[] = { 0,				0,				0,				70368744177664,
-											  0,				70368744177664, 0,				70368744177664,
-											  70368744177664,	70368744177664, 0,				70368744177664 };
-
-		const u64 roundConstantBitsYMM4[] = { 0,				0,				0,				0,
-											  70368744177664,	0,				70368744177664, 0,
-											  70368744177664,	70368744177664, 70368744177664, 0 };
-
-		__m256i rc_ymm0 = _mm256_set1_epi64x(roundConstantBitsYMM0[round]);
-		__m256i rc_ymm1 = _mm256_set1_epi64x(roundConstantBitsYMM1[round]);
-		__m256i rc_ymm2 = _mm256_set1_epi64x(roundConstantBitsYMM2[round]);
-		__m256i rc_ymm3 = _mm256_set1_epi64x(roundConstantBitsYMM3[round]);
-		__m256i rc_ymm4 = _mm256_set1_epi64x(roundConstantBitsYMM4[round]);
-		states[0] = _mm256_xor_si256(states[0], rc_ymm0);
-		states[1] = _mm256_xor_si256(states[1], rc_ymm1);
-		states[2] = _mm256_xor_si256(states[2], rc_ymm2);
-		states[3] = _mm256_xor_si256(states[3], rc_ymm3);
-		states[4] = _mm256_xor_si256(states[4], rc_ymm4);
-		*/
+		
 
 		//Mix Columns
 		//TODO
@@ -639,12 +712,98 @@ void primate(__m256i *states) {
 		//shifted from top down:
 		//0,1,2,3,4,5,7
 		//TODO
+		__m256i shuffleControlMaskLowLaneFirstReg = _mm256_set1_epi16(0); //TODO THESE
+		__m256i shuffleControlMaskHighLaneFirstReg = _mm256_set1_epi16(0);
+		__m256i shuffleControlMaskLowLaneSecondReg = _mm256_set1_epi16(0);
+		__m256i shuffleControlMaskHighLaneSecondReg = _mm256_set1_epi16(0);
+		for (int reg = 0; reg < 5; reg++) {
+			__m256i temp;
+			
+			temp = _mm256_shuffle_epi8(states[reg][0], shuffleControlMaskLowLaneFirstReg); //Lower lane is shuffled correctly
+			states[reg][0] = _mm256_inserti128_si256(_mm256_shuffle_epi8(states[reg][0], shuffleControlMaskHighLaneFirstReg), _mm256_castsi256_si128(temp), 0); //Higher lane is shuffled correctly, and combined with lower lane.
 
+			temp = _mm256_shuffle_epi8(states[reg][1], shuffleControlMaskLowLaneSecondReg); //Lower lane is shuffled correctly
+			states[reg][1] = _mm256_inserti128_si256(_mm256_shuffle_epi8(states[reg][0], shuffleControlMaskHighLaneSecondReg), _mm256_castsi256_si128(temp), 0); //Higher lane is shuffled correctly, and combined with lower lane.
+		}
+		
 		//Sub Elements
 		//TODO
 	}
 }
 
+
+//void primate(__m256i *state) {
+//	__m256i states[5][2];
+//	for (int i = 0; i < 5; i++) {
+//		states[i][0] = _mm256_setzero_si256();
+//	}
+//
+//	for (int round = 0; round < PrimateRounds; round++) {
+//		/*
+//		//Constant addition
+//		//XOR a roundconstant to the second element of the second row (47th element of the capacity <-- probably wrong qqq)
+//		//Round constants for p1: 01, 02, 05, 0a, 15, 0b, 17, 0e, 1d, 1b, 16, 0c
+//		//Array where the constants are transposed to the 47th bit:
+//		const u64 roundConstantBitsYMM0[] = { 70368744177664,	0,				70368744177664, 0,
+//		70368744177664,	70368744177664, 70368744177664, 0,
+//		70368744177664,	70368744177664,	0,				0 };
+//
+//		const u64 roundConstantBitsYMM1[] = { 0,				70368744177664, 0,				70368744177664,
+//		0,				70368744177664, 70368744177664, 70368744177664,
+//		0,				70368744177664, 70368744177664, 0 };
+//
+//		const u64 roundConstantBitsYMM2[] = { 0,				0,				70368744177664, 0,
+//		70368744177664,	0,				70368744177664, 70368744177664,
+//		70368744177664,	0,				70368744177664, 70368744177664 };
+//
+//		const u64 roundConstantBitsYMM3[] = { 0,				0,				0,				70368744177664,
+//		0,				70368744177664, 0,				70368744177664,
+//		70368744177664,	70368744177664, 0,				70368744177664 };
+//
+//		const u64 roundConstantBitsYMM4[] = { 0,				0,				0,				0,
+//		70368744177664,	0,				70368744177664, 0,
+//		70368744177664,	70368744177664, 70368744177664, 0 };
+//
+//		__m256i rc_ymm0 = _mm256_set1_epi64x(roundConstantBitsYMM0[round]);
+//		__m256i rc_ymm1 = _mm256_set1_epi64x(roundConstantBitsYMM1[round]);
+//		__m256i rc_ymm2 = _mm256_set1_epi64x(roundConstantBitsYMM2[round]);
+//		__m256i rc_ymm3 = _mm256_set1_epi64x(roundConstantBitsYMM3[round]);
+//		__m256i rc_ymm4 = _mm256_set1_epi64x(roundConstantBitsYMM4[round]);
+//		states[0] = _mm256_xor_si256(states[0], rc_ymm0);
+//		states[1] = _mm256_xor_si256(states[1], rc_ymm1);
+//		states[2] = _mm256_xor_si256(states[2], rc_ymm2);
+//		states[3] = _mm256_xor_si256(states[3], rc_ymm3);
+//		states[4] = _mm256_xor_si256(states[4], rc_ymm4);
+//		*/
+//
+//		//Mix Columns
+//		//TODO
+//
+//		//Shift Rows primate 120
+//		//We do this by shifting each byte (which corresponds to all columns in a row), high and low, and then blend them together. After that we blend the bytes together and finally load them into the registers. 
+//		//shifted from top down:
+//		//0,1,2,3,4,5,7
+//		//TODO
+//		__m256i shuffleControlMaskLowLaneFirstReg = _mm256_set1_epi16(0); //TODO THESE
+//		__m256i shuffleControlMaskHighLaneFirstReg = _mm256_set1_epi16(0);
+//		__m256i shuffleControlMaskLowLaneSecondReg = _mm256_set1_epi16(0);
+//		__m256i shuffleControlMaskHighLaneSecondReg = _mm256_set1_epi16(0);
+//		for (int reg = 0; reg < 5; reg++) {
+//			__m256i temp;
+//
+//			temp = _mm256_shuffle_epi8(states[reg][0], shuffleControlMaskLowLaneFirstReg); //Lower lane is shuffled correctly
+//			states[reg][0] = _mm256_inserti128_si256(_mm256_shuffle_epi8(states[reg][0], shuffleControlMaskHighLaneFirstReg), _mm256_castsi256_si128(temp), 0); //Higher lane is shuffled correctly, and combined with lower lane.
+//
+//			temp = _mm256_shuffle_epi8(states[reg][1], shuffleControlMaskLowLaneSecondReg); //Lower lane is shuffled correctly
+//			states[reg][1] = _mm256_inserti128_si256(_mm256_shuffle_epi8(states[reg][0], shuffleControlMaskHighLaneSecondReg), _mm256_castsi256_si128(temp), 0); //Higher lane is shuffled correctly, and combined with lower lane.
+//		}
+//
+//		//Sub Elements
+//		//TODO
+//	}
+//}
+
+//Schwabe
 void p1_inv(__m256i *states) {
 }
 
