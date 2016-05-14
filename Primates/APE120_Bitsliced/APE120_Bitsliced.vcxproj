@@ -143,11 +143,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Debug.c" />
+    <ClCompile Include="Encrypt.c" />
     <ClCompile Include="Primates.c" />
     <ClCompile Include="Test.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Debug.h" />
+    <ClInclude Include="Encrypt.h" />
     <ClInclude Include="Parameters.h" />
     <ClInclude Include="Primates.h" />
   </ItemGroup>

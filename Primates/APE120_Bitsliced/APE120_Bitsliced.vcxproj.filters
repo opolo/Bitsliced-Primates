@@ -24,6 +24,9 @@
     <ClCompile Include="Debug.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Encrypt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Primates.h">
@@ -33,6 +36,9 @@
       <Filter>Resource Files</Filter>
     </ClInclude>
     <ClInclude Include="Parameters.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Encrypt.h">
       <Filter>Resource Files</Filter>
     </ClInclude>
   </ItemGroup>
