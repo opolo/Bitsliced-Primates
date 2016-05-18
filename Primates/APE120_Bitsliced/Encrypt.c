@@ -1,5 +1,263 @@
 #include "Encrypt.h"
+#include <stdio.h>
+#include <string.h>
 
+void debitslice_u8(unsigned char bitsliced[5], unsigned char *data);
+void transpose_byte_to_u64(unsigned char byte, u64 transposedData[5][4], int offset);
+void detransposeDataFromRegister_capacity(__m256i (*state)[2], unsigned char *data);
+void detransposeDataFromRegister_rate(__m256i (*state)[2], unsigned char *data);
+void transpose_diff_data8x_to_register_XOR_rate(__m256i (*state)[2], unsigned char *data);
+void transpose_same_data8x_to_register_XOR_capacity(__m256i (*state)[2], unsigned char *data);
+void transpose_same_data8x_to_register_XOR_rate(__m256i (*state)[2], unsigned char *data);
+
+void aead_encrypt(const unsigned char key[KeyLength],
+	const unsigned char *m, u64 mlen,
+	const unsigned char *ad, u64 adlen,
+	const unsigned char nonce[NonceLength],
+	unsigned char *ciphertext,
+	unsigned char *tag) {
+
+	__m256i YMM_state[5]; //YMM state registers
+	__m256i YMM_key[5]; //YMM state registers
+
+	u64 transposedData[5];
+}
+
+//Used for Nonce and AD. Transposes the data to the 8 different states in the regs.
+void transpose_same_data8x_to_register_XOR_rate(__m256i (*state)[2], unsigned char *data) {
+	
+	u64 transposedData[5];
+
+	for (int i = 0; i < RateSize; i++) {
+		
+		//LSB
+		if (data[i] & 1)
+			transposedData[0] = (transposedData[0] << 8) ^ 0xFF;
+		else 
+			transposedData[0] = (transposedData[0] << 8);
+
+		//Bit 2
+		if (data[i] & 2)
+			transposedData[1] = (transposedData[1] << 8) ^ 0xFF;
+		else
+			transposedData[1] = (transposedData[1] << 8);
+
+		//Bit 3
+		if (data[i] & 4)
+			transposedData[2] = (transposedData[2] << 8) ^ 0xFF;
+		else
+			transposedData[2] = (transposedData[2] << 8);
+
+		//Bit 4
+		if (data[i] & 8)
+			transposedData[3] = (transposedData[3] << 8) ^ 0xFF;
+		else
+			transposedData[3] = (transposedData[3] << 8);
+
+		//Bit 5
+		if (data[i] & 16)
+			transposedData[4] = (transposedData[4] << 8) ^ 0xFF;
+		else
+			transposedData[4] = (transposedData[4] << 8);
+	}
+
+	state[0][0] = XOR(state[0][0], _mm256_set_epi64x(transposedData[0], 0, 0, 0));
+	state[1][0] = XOR(state[1][0], _mm256_set_epi64x(transposedData[1], 0, 0, 0));
+	state[2][0] = XOR(state[2][0], _mm256_set_epi64x(transposedData[2], 0, 0, 0));
+	state[3][0] = XOR(state[3][0], _mm256_set_epi64x(transposedData[3], 0, 0, 0));
+	state[4][0] = XOR(state[4][0], _mm256_set_epi64x(transposedData[4], 0, 0, 0));
+}
+
+//Used for Nonce and AD. Transposes the data to the 8 different states in the regs.
+void transpose_same_data8x_to_register_XOR_capacity(__m256i (*state)[2], unsigned char *data) {
+
+	u64 transposedData[5][4];
+	memset(transposedData, 0, transposedData[5][4]);
+
+	//First 3 rows (i.e. first group of registers)
+	int offset = 0;
+	for (int i = 0; i < CapacitySize-24; i++) {
+
+		if (i % 8 == 0)
+			offset++;
+
+		transpose_byte_to_u64(data[i], transposedData, offset);
+	}
+
+	//Load first group
+	state[0][0] = XOR(state[0][0], _mm256_set_epi64x(0, transposedData[0][1], transposedData[0][2], transposedData[0][3]));
+	state[1][0] = XOR(state[1][0], _mm256_set_epi64x(0, transposedData[1][1], transposedData[1][2], transposedData[1][3]));
+	state[2][0] = XOR(state[2][0], _mm256_set_epi64x(0, transposedData[2][1], transposedData[2][2], transposedData[2][3]));
+	state[3][0] = XOR(state[3][0], _mm256_set_epi64x(0, transposedData[3][1], transposedData[3][2], transposedData[3][3]));
+	state[4][0] = XOR(state[4][0], _mm256_set_epi64x(0, transposedData[4][1], transposedData[4][2], transposedData[4][3]));
+
+	//Next 3 rows (i.e. second group of registers).
+	memset(transposedData, 0, transposedData[5][4]);
+	offset = 0;
+	for (int i = CapacitySize - 24; i < CapacitySize; i++) {
+
+		if (i % 8 == 0 && i != 0 )
+			offset++;
+
+		transpose_byte_to_u64(data[i], transposedData, offset);
+	}
+
+	//Load second group
+	state[0][1] = XOR(state[0][1], _mm256_set_epi64x(0, transposedData[0][1], transposedData[0][2], transposedData[0][3]));
+	state[1][1] = XOR(state[1][1], _mm256_set_epi64x(0, transposedData[1][1], transposedData[1][2], transposedData[1][3]));
+	state[2][1] = XOR(state[2][1], _mm256_set_epi64x(0, transposedData[2][1], transposedData[2][2], transposedData[2][3]));
+	state[3][1] = XOR(state[3][1], _mm256_set_epi64x(0, transposedData[3][1], transposedData[3][2], transposedData[3][3]));
+	state[4][1] = XOR(state[4][1], _mm256_set_epi64x(0, transposedData[4][1], transposedData[4][2], transposedData[4][3]));
+}
+
+void transpose_diff_data8x_to_register_XOR_rate(__m256i (*state)[2], unsigned char *data) {
+	u64 transposedData[5];
+
+	//Load 8x bitss from different bytes from the data into registers, per iteration
+	for (int i = 0; i < RateSize*8; i += 8) {
+		
+		//LSB
+		transposedData[0] = (transposedData[0] << 8) 
+			^ (data[i]   & 1 << 7)
+			^ (data[i+1] & 1 << 6)
+			^ (data[i+2] & 1 << 5)
+			^ (data[i+3] & 1 << 4)
+			^ (data[i+4] & 1 << 3)
+			^ (data[i+5] & 1 << 2)
+			^ (data[i+6] & 1 << 1)
+			^ (data[i+7] & 1);
+
+		//Bit 2
+		transposedData[1] = (transposedData[1] << 8)
+			^ (data[i]	   & 2 << 7)
+			^ (data[i + 1] & 2 << 6)
+			^ (data[i + 2] & 2 << 5)
+			^ (data[i + 3] & 2 << 4)
+			^ (data[i + 4] & 2 << 3)
+			^ (data[i + 5] & 2 << 2)
+			^ (data[i + 6] & 2 << 1)
+			^ (data[i + 7] & 2);
+
+		//Bit 3
+		transposedData[2] = (transposedData[2] << 8)
+			^ (data[i]	   & 4 << 7)
+			^ (data[i + 1] & 4 << 6)
+			^ (data[i + 2] & 4 << 5)
+			^ (data[i + 3] & 4 << 4)
+			^ (data[i + 4] & 4 << 3)
+			^ (data[i + 5] & 4 << 2)
+			^ (data[i + 6] & 4 << 1)
+			^ (data[i + 7] & 4);
+
+		//Bit 4
+		transposedData[3] = (transposedData[3] << 8)
+			^ (data[i]	   & 8 << 7)
+			^ (data[i + 1] & 8 << 6)
+			^ (data[i + 2] & 8 << 5)
+			^ (data[i + 3] & 8 << 4)
+			^ (data[i + 4] & 8 << 3)
+			^ (data[i + 5] & 8 << 2)
+			^ (data[i + 6] & 8 << 1)
+			^ (data[i + 7] & 8);
+
+		//Bit 5
+		transposedData[4] = (transposedData[4] << 8)
+			^ (data[i]     & 16 << 7)
+			^ (data[i + 1] & 16 << 6)
+			^ (data[i + 2] & 16 << 5)
+			^ (data[i + 3] & 16 << 4)
+			^ (data[i + 4] & 16 << 3)
+			^ (data[i + 5] & 16 << 2)
+			^ (data[i + 6] & 16 << 1)
+			^ (data[i + 7] & 16);
+
+	}
+
+	state[0][0] = XOR(state[0][0], _mm256_set_epi64x(transposedData[0], 0, 0, 0));
+	state[1][0] = XOR(state[1][0], _mm256_set_epi64x(transposedData[1], 0, 0, 0));
+	state[2][0] = XOR(state[2][0], _mm256_set_epi64x(transposedData[2], 0, 0, 0));
+	state[3][0] = XOR(state[3][0], _mm256_set_epi64x(transposedData[3], 0, 0, 0));
+	state[4][0] = XOR(state[4][0], _mm256_set_epi64x(transposedData[4], 0, 0, 0));	
+}
+
+void detransposeDataFromRegister_rate(__m256i (*state)[2], unsigned char *data) {
+	
+	for (int i = 0; i < RateSize; i++) {
+		unsigned char bitslice[5] = { state[0][0].m256i_u8[i], state[1][0].m256i_u8[i], state[2][0].m256i_u8[i], state[3][0].m256i_u8[i], state[4][0].m256i_u8[i] };
+
+		debitslice_u8(bitslice, &data[i * 8]);
+	}
+}
+
+void debitslice_u8(unsigned char bitsliced[5], unsigned char *data) {
+	
+	int mask[8] = { 1, 2, 4, 8, 16, 32, 64, 128 };
+
+	for (int i = 0; i < 8; i++){
+		data[i] = (bitsliced[0] & mask[i])
+				^ ((bitsliced[1] & mask[i]) << 1)
+				^ ((bitsliced[2] & mask[i]) << 2)
+				^ ((bitsliced[3] & mask[i]) << 3)
+				^ ((bitsliced[4] & mask[i]) << 4);
+	}
+
+
+}
+
+void detransposeDataFromRegister_capacity(__m256i (*state)[2], unsigned char *data) {
+	
+	//First regs (last 3 rows, since first row contains the rate)
+	for (int i = 8; i < 32; i++) {
+		unsigned char bitslice[5] = { state[0][0].m256i_u8[i], state[1][0].m256i_u8[i], state[2][0].m256i_u8[i], state[3][0].m256i_u8[i], state[4][0].m256i_u8[i] };
+		debitslice_u8(bitslice, &data[i * 8]);
+	}
+
+	//second regs (first 3 rows, since last row is not used)
+	for (int i = 0; i < 24; i++) {
+		unsigned char bitslice[5] = { state[0][0].m256i_u8[i], state[1][0].m256i_u8[i], state[2][0].m256i_u8[i], state[3][0].m256i_u8[i], state[4][0].m256i_u8[i] };
+		debitslice_u8(bitslice, &data[i * 8]);
+	}
+}
+
+void transpose_byte_to_u64(unsigned char byte, u64 transposedData[5][4], int offset) {
+	//LSB
+	if (byte & 1)
+		transposedData[0][offset] = (transposedData[0][offset] << 8) ^ 0xFF;
+	else
+		transposedData[0][offset] = (transposedData[0][offset] << 8);
+
+	//Bit 2
+	if (byte & 2)
+		transposedData[1][offset] = (transposedData[1][offset] << 8) ^ 0xFF;
+	else
+		transposedData[1][offset] = (transposedData[1][offset] << 8);
+
+	//Bit 3
+	if (byte & 4)
+		transposedData[2][offset] = (transposedData[2][offset] << 8) ^ 0xFF;
+	else
+		transposedData[2][offset] = (transposedData[2][offset] << 8);
+
+	//Bit 4
+	if (byte & 8)
+		transposedData[3][offset] = (transposedData[3][offset] << 8) ^ 0xFF;
+	else
+		transposedData[3][offset] = (transposedData[3][offset] << 8);
+
+	//Bit 5
+	if (byte & 16)
+		transposedData[4][offset] = (transposedData[4][offset] << 8) ^ 0xFF;
+	else
+		transposedData[4][offset] = (transposedData[4][offset] << 8);
+}
+
+
+
+
+
+
+
+/*
 void primates120_encrypt(const unsigned char k[4][keyLength],
 	const unsigned char *m[4], u64 mlen,
 	const unsigned char *ad[4], u64 adlen,
@@ -361,11 +619,11 @@ void transpose_nonce_to_rate_u64(const unsigned char n[4][NonceLength], u64 tran
 /*
 * This function takes an array with 4 capacities of 48 elements and transposes them into a register with the dimensions:
 * data[register_no][state_no]
-*/void transpose_key_to_capacity_u64(const unsigned char k[4][keyLength], u64 transposedKey[5][4]) {
+*/void transpose_key_to_capacity_u64(const unsigned char k[4][KeyLength], u64 transposedKey[5][4]) {
 
 //We expect that the key is 240 bits = 48 primate elements (stored in bytes) long.
 	for (int state_no = 0; state_no < 4; state_no++) {
-		for (int cap_element = 0; cap_element < keyLength; cap_element++) {
+		for (int cap_element = 0; cap_element < KeyLength; cap_element++) {
 			transposedKey[0][state_no] = (transposedKey[0][state_no] << 1) | k[state_no][cap_element] & 1;
 			transposedKey[1][state_no] = (transposedKey[1][state_no] << 1) | (k[state_no][cap_element] >> 1) & 1;
 			transposedKey[2][state_no] = (transposedKey[2][state_no] << 1) | (k[state_no][cap_element] >> 2) & 1;
@@ -374,12 +632,15 @@ void transpose_nonce_to_rate_u64(const unsigned char n[4][NonceLength], u64 tran
 		}
 	}
 }
-void primates120_decrypt(const unsigned char k[4][keyLength],
+
+
+/*
+void primates120_decrypt(const unsigned char k[4][KeyLength],
 	const unsigned char *ciphertexts[4], u64 cLen,
 	const unsigned char *ad[4], u64 adlen,
 	const unsigned char npub[4][NonceLength],
 	unsigned char *m[4],
-	unsigned char tag[4][keyLength])
+	unsigned char tag[4][KeyLength])
 {
 	//Declarations
 	__m256i keys_YMM[5]; //YMM state registers
@@ -563,3 +824,5 @@ void primates120_decrypt(const unsigned char k[4][keyLength],
 		//invalidate plaintext
 	}
 }
+
+*/

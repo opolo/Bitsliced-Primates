@@ -2,7 +2,7 @@
 #include <immintrin.h>
 #include <stdio.h>
 
-void print_keys_hex(const unsigned char k[4][keyLength]);
+void print_keys_hex(const unsigned char k[4][KeyLength]);
 void print_nonces_hex(const unsigned char npub[4][NonceLength]);
 void print_ad_hex(const unsigned char *ad[4], u64 adlen);
 void print_YMMs(__m256i *YMMs);

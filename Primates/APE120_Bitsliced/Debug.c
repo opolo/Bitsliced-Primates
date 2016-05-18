@@ -4,13 +4,13 @@
 #define YMMLength 256
 
 
-void print_keys_hex(const unsigned char k[4][keyLength]) {
+void print_keys_hex(const unsigned char k[4][KeyLength]) {
 
 	for (int strNo = 0; strNo < 4; strNo++) {
 		const char *s = k[strNo];
 		printf("Key %i : ", strNo);
 
-		for (int byte = 0; byte < keyLength; byte++) {
+		for (int byte = 0; byte < KeyLength; byte++) {
 			printf("%02x ", s[byte] & 31); //Only print 5 LSB, as we will be using those only
 		}
 		printf("\n");

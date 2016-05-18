@@ -86,12 +86,10 @@ static const __m256i ape_constants_bit4[12] =
 };
 
 
-static const __m256i m256iAllOne = { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 
-									 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 
-									 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 
-									 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, };
-
-
+static const __m256i m256iAllOne = { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, };
 
 
 void schwabe_bitsliced_primate(__m256i (*state)[2]);
@@ -216,7 +214,7 @@ void T2_schwabe(__m256i (*state)[2], __m256i (*new_state)[2]) {
 void primate(__m256i *state) {
 }
 
-void sbox_schwabe(__m256i (*old)[2]) {
+void sbox_schwabe(__m256i (*x)[2]) {
 	//YMM 0 = LSB
 	//YMM 4 = MSB
 
@@ -224,133 +222,93 @@ void sbox_schwabe(__m256i (*old)[2]) {
 		//We make this loop to handle both pairs of the registers identically (since 8 states fills 2 registers (or 10, due to 5*2 from bitlicing).
 
 		//Helper variables
-		__m256i z[13];
-		__m256i q[13];
 		__m256i t[13];
 		__m256i y[5];
+		
 
-		z[0] = XOR(old[4][i], old[0][i]);
-		z[1] = XOR(old[3][i], old[2][i]);
-		z[2] = XOR(old[2][i], old[1][i]);
+		t[0] = AND(x[0][i], x[1][i]);
+		t[1] = AND(x[0][i], x[2][i]);
+		t[2] = AND(x[0][i], x[3][i]);
+		t[3] = AND(x[0][i], x[4][i]);
+		t[4] = AND(x[1][i], x[2][i]);
+		t[5] = AND(x[1][i], x[3][i]);
+		t[6] = AND(x[1][i], x[4][i]);
+		t[7] = AND(x[2][i], x[3][i]);
+		t[8] = AND(x[2][i], x[4][i]);
+		t[9] = AND(x[3][i], x[4][i]);
+		t[10] = XOR(t[1], t[4]);
+		
+		y[0] = NEG(XOR4(x[0][i], x[3][i],	t[1],	 t[6]));
+		y[1] = XOR5(	x[4][i], t[0],		t[3],	 t[7],		t[8]);
+		y[2] = XOR5(	x[3][i], x[4][i],	t[10],	 t[3],		t[9]);
+		y[3] = XOR5(	x[1][i], x[4][i],	t[10],	 t[5],		t[7]);
+		y[4] = XOR7(	x[1][i], x[2][i],	x[3][i], t[4],		t[2],	t[6],	t[8]);
 
-		q[0] = XOR(old[4][i], old[1][i]);
-		t[0] = OR(q[0], old[3][i]);
-		q[2] = XOR(old[3][i], old[1][i]);
-
-		q[3] = NEG(XOR(old[4][i], old[2][i]));
-		t[1] = OR(q[2], q[3]);
-		q[4] = XOR(old[3][i], z[0]);
-
-		q[5] = XOR(old[4][i], z[2]);
-		t[2] = AND(q[4], q[5]);
-		q[6] = NEG(XOR(old[0][i], q[5]));
-
-
-		q[7] = XOR(old[0][i], z[1]);
-		t[3] = OR(q[6], q[7]);
-		q[8] = XOR(q[4], z[2]);
-
-		z[9] = XOR(t[0], t[3]);
-		q[9] = XOR(old[2][i], z[9]);
-		t[4] = AND(q[8], q[9]);
-
-		q[10] = NEG(XOR(old[1][i], z[0]));
-		t[5] = AND(q[10], z[0]);
-		q[12] = NEG(XOR4(z[1], z[9], t[2], t[4]));
-
-		t[6] = AND(q[12], z[2]);
-		z[3] = XOR(t[5], t[6]);
-		z[4] = XOR(t[3], z[3]);
-
-
-		z[5] = XOR(t[2], z[4]);
-		z[6] = XOR(t[1], t[6]);
-		z[7] = XOR(t[4], z[5]);
-
-		z[8] = XOR(t[1], z[7]);
-		z[10] = XOR(t[0], z[7]);
-		z[11] = XOR(t[4], z[4]);
-		z[12] = XOR(z[6], z[11]);
-
-		y[4] = NEG(XOR(q[2], z[5]));
-		y[3] = XOR(z[0], z[8]);
-		y[2] = XOR(q[7], z[12]);
-		y[1] = XOR(q[6], z[11]);
-		y[0] = XOR(old[2][i], z[10]);
-
-		old[0][i] = y[0];
-		old[1][i] = y[1];
-		old[2][i] = y[2];
-		old[3][i] = y[3];
-		old[4][i] = y[4];
+		x[0][i] = y[0];
+		x[1][i] = y[1];
+		x[2][i] = y[2];
+		x[3][i] = y[3];
+		x[4][i] = y[4];
 
 	}
 }
-void sbox_schwabe_inv(__m256i (*old)[2]) {
+void sbox_schwabe_inv(__m256i (*x)[2]) {
 	//YMM 0 = LSB
 	//YMM 4 = MSB
 
-	//reverse bits as my algo is wrong right now...
-	__m256i old_rev[5][2];
-	for (int i = 0; i < 5; i++) {
-		old_rev[4-i][0] = old[i][0];
-		old_rev[4-i][1] = old[i][1];
-	}
 
 	//We make this loop to handle both pairs of the registers identically (since 8 states fills 2 registers (or 10, due to 5*2 from bitlicing).
 	for (int i = 0; i < 2; i++) {
 
 
 		//Helper variables
-		__m256i q[20];
-		__m256i t[13];
+		__m256i t[30];
 		__m256i y[5];
 
-		q[0] = XOR3(old_rev[0][i], old_rev[1][i], old_rev[2][i]);
-		q[1] = NEG(XOR(old_rev[2][i], old_rev[4][i]));
-		t[0] = AND(q[0], q[1]);
 
-		q[2] = old_rev[0][i];
-		q[3] = old_rev[1][i];
-		t[1] = AND(q[2], q[3]);
+		t[0] = AND(x[0][i], x[1][i]); //x0x1
+		t[1] = AND(x[0][i], x[2][i]); //x0x2
+		t[2] = AND(x[0][i], x[3][i]); //x0x3
+		t[3] = AND(x[0][i], x[4][i]); //x0x4
+		t[4] = AND(x[1][i], x[2][i]); //x1x2
+		t[5] = AND(x[1][i], x[3][i]); //x1x3
+		t[6] = AND(x[1][i], x[4][i]); //x1x4
+		t[7] = AND(x[2][i], x[3][i]); //x2x3
+		t[8] = AND(x[2][i], x[4][i]); //x2x4
+		t[9] = AND(x[3][i], x[4][i]); //x3x4
 
-		q[4] = XOR3(old_rev[2][i], old_rev[3][i], t[0]);
-		q[5] = NEG(old_rev[1][i]);
-		t[2] = AND(q[4], q[5]);
+		t[10] = AND(t[0], x[2][i]); //x0x1x2
+		t[11] = AND(t[0], x[3][i]); //x0x1x3
+		t[12] = AND(t[0], x[4][i]); //x0x1x4
+		t[13] = AND(t[1], x[3][i]); //x0x2x3
+		t[14] = AND(t[1], x[4][i]); //x0x2x4
+		t[15] = AND(t[2], x[4][i]); //x0x3x4
+		t[16] = AND(t[4], x[3][i]); //x1x2x3
+		t[17] = AND(t[4], x[4][i]); //x1x2x4
+		t[18] = AND(t[5], x[4][i]); //x1x3x4
+		t[19] = AND(t[7], x[4][i]); //x2x3x4
+		
+		t[20] = XOR(t[12], t[14]);
+		t[21] = XOR(t[4], t[7]);
+		t[22] = XOR(t[5], t[6]);
+		t[23] = XOR3(t[0], t[10], t[17]);
+		t[24] = XOR(t[9], t[11]);
+		t[25] = XOR(t[16], t[15]);
+		t[26] = XOR(x[2][i], t[13]);
+		t[27] = XOR(x[1][i], t[18]);
+		t[28] = XOR(x[4][i], t[3]);
 
-		q[6] = XOR3(old_rev[1][i], t[1], t[2]);
-		q[7] = XOR(old_rev[2][i], old_rev[4][i]);
-		t[3] = AND(q[6], q[7]);
+		y[0] = NEG(XOR10(x[0][i], x[1][i], t[2],		t[21],	t[26], t[22],	t[20], t[17], t[24], t[19]));
+		y[1] =	   XOR7(t[1],	 t[21],	  t[26],	t[28],	t[14], t[15],	t[27]);
+		y[2] =	   XOR8(x[1][i], x[4][i], t[0],     t[22],	t[21], t[20],	t[8], t[25]);
+		y[3] =	   XOR6(x[2][i], t[2],	  t[20],	t[23],	t[25], t[27]);
+		y[4] =	   XOR8(x[3][i], t[4],	  t[28],	t[6],	t[20], t[8],	t[23], t[24]);
 
-		q[8] = XOR4(old_rev[2][i], t[0], t[2], t[3]);
-		q[9] = XOR4(old_rev[0][i], old_rev[3][i], old_rev[4][i], XOR3(t[1], t[2], t[3]));
-		t[4] = AND(q[8], q[9]);
-
-		q[10] = XOR4(old_rev[0][i], old_rev[2][i], old_rev[3][i], XOR3(t[1], t[2], t[3]));
-		q[11] = XOR4(old_rev[1][i], old_rev[3][i], t[0], t[2]);
-		t[5] = AND(q[10], q[11]);
-
-		q[12] = XOR(old_rev[0][i], old_rev[4][i]);
-		q[13] = XOR4(t[0], t[3], t[4], t[5]);
-		t[6] = AND(q[12], q[13]);
-
-		q[14] = NEG(XOR4(old_rev[0][i], old_rev[1][i], old_rev[2][i], XOR4(old_rev[4][i], t[0], t[1], XOR4(t[3], t[4], t[5], t[6]))));
-		q[15] = XOR4(old_rev[0][i], old_rev[3][i], t[0], XOR4(t[1], t[2], t[4], t[6]));
-		t[7] = AND(q[14], q[15]);
-
-		q[16] = NEG(XOR4(old_rev[2][i], old_rev[3][i], t[2], t[5]));
-		q[17] = NEG(XOR4(old_rev[0][i], old_rev[1][i], old_rev[4][i], XOR4(t[0], t[1], t[2], XOR3(t[3], t[6], t[7]))));
-		t[8] = AND(q[16], q[17]);
-
-		q[18] = XOR4(old_rev[4][i], t[2], t[5], XOR(t[6], t[8]));
-		q[19] = NEG(XOR4(old_rev[0][i], old_rev[1][i], old_rev[4][i], XOR3(t[4], t[7], t[8])));
-		t[9] = AND(q[18], q[19]);
-
-		old[4][i] = XOR4(old_rev[0][i], old_rev[1][i], t[0], XOR3(t[6], t[7], t[9]));
-		old[3][i] = XOR(t[0], t[3], t[6]);
-		old[2][i] = XOR4(t[3], t[5], t[6], t[7]);
-		old[1][i] = XOR3(t[1], t[2], t[4]);;
-		old[0][i] = XOR4(old_rev[1][i], t[0], t[4], t[8]);
+		x[0][i] = y[0];
+		x[1][i] = y[1];
+		x[2][i] = y[2];
+		x[3][i] = y[3];
+		x[4][i] = y[4];
 
 	}
 }
@@ -472,16 +430,16 @@ void schwabe_bitsliced_primate(__m256i (*state)[2]) {
 	for (int round = 0; round < PrimateRounds; round++) {
 		
 		//Constant addition
-		constant_addition_schwabe(state, round);
+		//constant_addition_schwabe(state, round);
 
 		//Sub Bytes
 		sbox_schwabe(state);
 
 		//ShiftRows
-		schwabe_shiftrows(state);
+		//schwabe_shiftrows(state);
 
 		//Mix Columns
-		mix_col_schwabe(state);
+		//mix_col_schwabe(state);
 
 	}
 }
@@ -493,16 +451,16 @@ void schwabe_bitsliced_primate_inv(__m256i (*state)[2]) {
 	for (int round = 0; round < PrimateRounds; round++) {
 		
 		//Mix Columns inv
-		mix_col_schwabe_inv(state);
+		//mix_col_schwabe_inv(state);
 
 		//ShiftRowsInv
-		schwabe_shiftrows_inv(state);
+		//schwabe_shiftrows_inv(state);
 
 		//Sub bytes inv
 		sbox_schwabe_inv(state);
 
 		//Constant addition
-		constant_addition_schwabe(state, (PrimateRounds-1)-round);
+		//constant_addition_schwabe(state, (PrimateRounds-1)-round);
 	}
 }
 
