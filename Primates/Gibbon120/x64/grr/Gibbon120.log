@@ -1,0 +1,4 @@
+﻿  Primate.c
+c:\hobby\thesis\primates\gibbon120\primate.c(4): warning C4305: 'initializing': truncation from 'unsigned int' to 'char'
+  Gibbon120.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\grr\Gibbon120.exe
+  Gibbon120.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\grr\Gibbon120.pdb (Partial PDB)

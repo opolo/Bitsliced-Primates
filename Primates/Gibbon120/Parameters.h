@@ -23,5 +23,8 @@ typedef long long i64;
 #define size_nonce_bytes 15
 #define size_key_and_nonce_bytes 15
 
-
-#define XOR(a, b) _mm256_xor_si256(a, b)
+//Primate parameters
+#define OneBitsAtCol2 0b0000000011111111000000000000000000000000000000000000000000000000ULL
+#define p1_rounds 2
+#define p2_rounds 6
+#define p3_rounds 6

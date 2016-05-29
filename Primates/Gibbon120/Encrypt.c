@@ -21,16 +21,20 @@ void crypto_aead_encrypt(
 	//init_bitslice_state. V = p1(0^r || K || N)
 	init_bitslice_state(key, nonce, k, state);
 
+	//TEST
+	print_state_as_hex(state);
+	p1(state);
+	print_state_as_hex(state);
+
+	//Add a constant to each state to avoid ECB'esque problems.
+	//TODO
+
 	//V = V_r || (K || 0^(c/2) XOR V_c
 	state[0][0] = _mm256_xor_si256(state[0][0], key[0]);
 	state[1][0] = _mm256_xor_si256(state[1][0], key[1]);
 	state[2][0] = _mm256_xor_si256(state[2][0], key[2]);
 	state[3][0] = _mm256_xor_si256(state[3][0], key[3]);
 	state[4][0] = _mm256_xor_si256(state[4][0], key[4]);
-
-	
-	//Add a constant to each state to avoid ECB'esque problems.
-	//TODO
 
 	if (adlen > 0) {
 		//TODO ADLEN
@@ -122,7 +126,7 @@ void crypto_aead_decrypt(
 	}
 
 	p3(state);
-	print_state_as_hex(state);
+
 	u64 progress = 0;
 	u64 cipher_u64[5];
 	YMM cipher_YMM[5];
@@ -245,7 +249,7 @@ void init_bitslice_state(YMM *key, const u8 *n, const u8 *k, YMM(*state)[2]) {
 	state[3][1] = expand_bits_to_bytes(nonce_bits[0]);
 	state[4][1] = expand_bits_to_bytes(nonce_bits[0]);
 
-	p1(state);
+	//p1(state);
 }
 
 YMM expand_bits_to_bytes(int x)

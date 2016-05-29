@@ -27,6 +27,6 @@ void print_state_as_hex(YMM(*state)[2]) {
 		for (int i = 0; i < 32; i++) {
 			printf("%02x ", state[reg_no][1].m256i_u8[i]);
 		}
-		printf("\n\n");
+		printf("\n");
 	}
 }
