@@ -4,6 +4,8 @@
 #include <string.h>
 #include "Debug.h"
 
+void andrey_sbox_test();
+
 //SCHWABE APE CONSTANTS: (bit 0 = LSB)
 static const __m256i ape_constants_bit0[12] =
 {
@@ -121,6 +123,8 @@ void schwabe_primate_test() {
 	state[4][1] = _mm256_set1_epi8(0xFF);
 	//Vector to use END
 
+	andrey_sbox_test();
+
 	schwabe_bitsliced_primate(state);
 	schwabe_bitsliced_primate_inv(state);
 }
@@ -134,7 +138,67 @@ void constant_addition_schwabe(__m256i (*state)[2], int round) {
 	state[4][0] = XOR(state[4][0], ape_constants_bit4[round]);
 }
 
+#define testYel(a, b) XOR(a, b)
+#define testRed(a, b) AND(NEG(b), a)
 
+void andrey_sbox_test() {
+
+	__m256i x[5];
+	__m256i y[5];
+	x[2] = _mm256_set1_epi8(0xFF); 
+	x[1] = _mm256_setzero_si256();
+	x[0] = _mm256_setzero_si256();
+	x[3] = _mm256_setzero_si256();
+	x[4] = _mm256_setzero_si256();
+
+	__m256i t[40];
+
+	t[1] =  testYel(x[0], x[3]);
+	t[2] =  testYel(x[1], x[2]);
+	t[9] =  testYel(x[2], x[3]);
+	t[10] = testYel(x[1], x[3]);
+	t[11] = testYel(x[0], x[2]);
+
+	t[3] =  testYel(x[0], x[4]);
+	t[4] =  testYel(x[4], t[1]);
+	t[5] =  testYel(x[1], t[3]);
+	t[6] =  testYel(x[2], t[1]);
+	t[7] =  testYel(x[4], t[2]);
+	t[12] = testRed(x[1], t[1]); //R
+	t[13] = testRed(t[10], t[11]); //R
+	t[18] = testRed(t[3], t[9]); //R
+	
+	t[8] =  testYel(x[2], t[4]);
+	t[14] = testRed(t[6], t[5]); //R
+	t[16] = testRed(t[2], t[4]); //R
+	t[17] = testRed(t[3], t[4]); //R
+	t[20] = testYel(t[9], t[18]);
+	t[26] = testYel(t[11], t[13]);
+	t[28] = testYel(t[2], t[12]);
+	t[33] = testYel(t[10], t[3]);
+
+	t[15] = testRed(t[7], t[8]); //R
+	t[22] = testYel(t[4], t[16]);
+	t[23] = testYel(t[8], t[14]);
+	t[29] = testYel(x[1], t[26]);
+
+	t[19] = testYel(t[15], t[17]);
+	t[25] = testYel(t[3], t[22]);
+	t[35] = testYel(t[22], t[26]);
+
+	t[21] = testYel(t[19], t[20]);
+	t[27] = testYel(t[1], t[25]);
+
+	t[24] = testYel(t[21], t[23]);
+	t[31] = testYel(t[27], t[28]);
+	t[32] = testYel(t[19], t[27]);
+	
+	y[0] = testYel(t[24], t[33]);
+	y[1] = testYel(t[24], t[35]);
+	y[2] = testYel(t[29], t[32]);
+	y[3] = testYel(t[21], t[25]);
+	y[4] = testYel(t[24], t[31]);
+}
 
 void T_2_9_15_schwabe(__m256i (*old_state)[2], __m256i (*t2_state)[2], __m256i (*t9_state)[2], __m256i (*t15_state)[2]) {
 

@@ -53,8 +53,9 @@ void main() {
 	unsigned char *ciphertext;
 	unsigned char tag[ApeTagLength];
 
+
 	
-	schwabe_primate_test();
+	//schwabe_primate_test();
 
 
 	
