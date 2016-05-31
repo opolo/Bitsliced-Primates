@@ -8,3 +8,5 @@ void p2(YMM(*state)[2]);
 void p3(YMM(*state)[2]);
 
 void Initialize();
+
+void test_primates();

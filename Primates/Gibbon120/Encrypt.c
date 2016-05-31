@@ -7,8 +7,60 @@ void init_bitslice_state(YMM *key, const u8 *n, const u8 *k, YMM(*state)[2]);
 void load_data_into_u64(u8 *m, u64 mlen, u64 rates[8], u64 *progress);
 YMM expand_bits_to_bytes(int x);
 
+void initialize_common(YMM(*state)[2], const u8 *k, const u8 *nonce, YMM key[5], u64 adlen, const u8 *ad) {
+	//V = p1(0^r || K || N)
+	init_bitslice_state(key, nonce, k, state);
+
+	p1(state);
+
+	//V = V_r || (K || 0^(c/2) XOR V_c
+	state[0][0] = _mm256_xor_si256(state[0][0], key[0]);
+	state[1][0] = _mm256_xor_si256(state[1][0], key[1]);
+	state[2][0] = _mm256_xor_si256(state[2][0], key[2]);
+	state[3][0] = _mm256_xor_si256(state[3][0], key[3]);
+	state[4][0] = _mm256_xor_si256(state[4][0], key[4]);
+
+	//Add a different constant to each capacity (identically to how primate permutations adds constants) to avoid ECB'esque problems... Constants chosen: 01, 02, 05, 0a, 15, 0b, 17, 0e, 
+	state[0][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'1010'1110'00000000, 0), state[0][0]);
+	state[1][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0101'0111'00000000, 0), state[1][0]);
+	state[2][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0010'1011'00000000, 0), state[2][0]);
+	state[3][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0001'0101'00000000, 0), state[3][0]);
+	state[4][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0000'1010'00000000, 0), state[4][0]);
+
+
+	//AD
+	if (adlen > 0) {
+		p2(state);
+
+		u64 progress = 0;
+		u64 data[5] = {0};
+		while (progress + 40 < adlen) {
+		
+			//XOR next 40 bytes of data to rate of states;
+			load_data_into_u64(ad, adlen, data, &progress);
+			state[0][0] = XOR(_mm256_setr_epi64x(data[0], 0, 0, 0), state[0][0]);
+			state[1][0] = XOR(_mm256_setr_epi64x(data[1], 0, 0, 0), state[0][0]);
+			state[2][0] = XOR(_mm256_setr_epi64x(data[2], 0, 0, 0), state[0][0]);
+			state[3][0] = XOR(_mm256_setr_epi64x(data[3], 0, 0, 0), state[0][0]);
+			state[4][0] = XOR(_mm256_setr_epi64x(data[4], 0, 0, 0), state[0][0]);
+
+			p2(state);
+		}
+		
+		//Handle last upto 40 bytes of data
+		load_data_into_u64(ad, adlen, data, &progress);
+		state[0][0] = XOR(_mm256_setr_epi64x(data[0], 0, 0, 0), state[0][0]);
+		state[1][0] = XOR(_mm256_setr_epi64x(data[1], 0, 0, 0), state[0][0]);
+		state[2][0] = XOR(_mm256_setr_epi64x(data[2], 0, 0, 0), state[0][0]);
+		state[3][0] = XOR(_mm256_setr_epi64x(data[3], 0, 0, 0), state[0][0]);
+		state[4][0] = XOR(_mm256_setr_epi64x(data[4], 0, 0, 0), state[0][0]);
+	}
+
+	p3(state);
+}
+
 void crypto_aead_encrypt(
-	u8 *c, u64 *clen,
+	u8 *c,
 	const u8 *m, const u64 mlen,
 	const u8 *ad, const u64 adlen,
 	const u8 *nonce,
@@ -18,55 +70,37 @@ void crypto_aead_encrypt(
 	YMM state[5][2];
 	YMM key[5];
 
-	//init_bitslice_state. V = p1(0^r || K || N)
-	init_bitslice_state(key, nonce, k, state);
-
-	//TEST
-	print_state_as_hex(state);
-	p1(state);
-	print_state_as_hex(state);
-
-	//Add a constant to each state to avoid ECB'esque problems.
-	//TODO
-
-	//V = V_r || (K || 0^(c/2) XOR V_c
-	state[0][0] = _mm256_xor_si256(state[0][0], key[0]);
-	state[1][0] = _mm256_xor_si256(state[1][0], key[1]);
-	state[2][0] = _mm256_xor_si256(state[2][0], key[2]);
-	state[3][0] = _mm256_xor_si256(state[3][0], key[3]);
-	state[4][0] = _mm256_xor_si256(state[4][0], key[4]);
-
-	if (adlen > 0) {
-		//TODO ADLEN
-	}
-
-	p3(state);
+	//common start-steps between encrypt and decrypt
+	initialize_common(state, k, nonce, key, adlen, ad);
+	
+	
 
 	u64 progress = 0;
 	u64 message_u64[5];
-	YMM message_YMM[5];
 	while (progress < mlen) {
 		
 		//Get next 40 bytes of data
 		load_data_into_u64(m, mlen, message_u64, &progress);
 
-		//Load it into registers and create ciphertext by XOR v_r with message.
+		//Load it into registers and create ciphertext and new state_rate by XOR v_r with message.
 		for (int i = 0; i < 5; i++) {
-			
-			//Getting some weird bug, if we dont do it like this. Question has been opened about it: http://stackoverflow.com/questions/37509129/potential-bug-in-visual-studio-c-compiler-or-in-intel-intrinsics-avx2-mm256-s
-			YMM rate_ymm = { 0 };
-			rate_ymm.m256i_u64[0] = message_u64[i];
-
-			message_YMM[i] = XOR(rate_ymm, state[i][0]);
+			state[i][0] = XOR(_mm256_setr_epi64x(message_u64[i], 0, 0, 0), state[i][0]);
 		}
 
 		//Extract ciphertext
-		memcpy(&c[progress - 40], &message_YMM[0].m256i_u64, sizeof(u64));
-		memcpy(&c[progress - 32], &message_YMM[1].m256i_u64, sizeof(u64));
-		memcpy(&c[progress - 24], &message_YMM[2].m256i_u64, sizeof(u64));
-		memcpy(&c[progress - 16], &message_YMM[3].m256i_u64, sizeof(u64));
-		memcpy(&c[progress - 8],  &message_YMM[4].m256i_u64, sizeof(u64));
+		memcpy(&c[progress - 40], &state[0][0].m256i_u64, sizeof(u64));
+		memcpy(&c[progress - 32], &state[1][0].m256i_u64, sizeof(u64));
+		memcpy(&c[progress - 24], &state[2][0].m256i_u64, sizeof(u64));
+		memcpy(&c[progress - 16], &state[3][0].m256i_u64, sizeof(u64));
+		memcpy(&c[progress - 8],  &state[4][0].m256i_u64, sizeof(u64));
+
+		p3(state);
 	}
+
+	//TODO -- Decide: Remove excessive bytes from ciphertext due to padding or ignore it, if message was not integral?
+	//Decision: Keep them. Specification will be that the method returns ciphertext of the same length as plaintext,
+	//so excessive paddingbytes should just be ignored. Only problem is that function will require more memory (plaintext + paddingsize),
+	//In the memory pointer it receives.
 
 	
 	//XOR key to state
@@ -79,7 +113,7 @@ void crypto_aead_encrypt(
 	}
 	p1(state);
 
-	//Calculate tag
+	//Calculate tag (Actually the last 3 XORs are not needed, as we only need 120 bit for the tag... They could be removed, depending on which bits is used for the tag.
 	for (int i = 0; i < 5; i++) {
 		state[0][0] = XOR(state[0][0], key[0]);
 		state[1][0] = XOR(state[1][0], key[1]);
@@ -87,13 +121,10 @@ void crypto_aead_encrypt(
 		state[3][0] = XOR(state[3][0], key[3]);
 		state[4][0] = XOR(state[4][0], key[4]);
 	}
-
-	//Ciphertext length is the length of the plaintext + padding
-	*clen = (mlen % 40) + mlen;
 	
-	//Extract 120bit tag that is not part of rate..., and to where key was just XORed 
+	//Extract 120bit tag that is not part of rate..., And to where key was just XORed 
 	memcpy(&tag[0], &state[0][0].m256i_u64[1], sizeof(u64));
-	memcpy(&tag[8], &state[0][0].m256i_u64[1], sizeof(u8)*7);
+	memcpy(&tag[8], &state[1][0].m256i_u64[1], sizeof(u8)*7);
 	
 }
 
@@ -108,50 +139,31 @@ void crypto_aead_decrypt(
 	YMM state[5][2];
 	YMM key[5];
 
-	//init_bitslice_state. V = p1(0^r || K || N)
-	init_bitslice_state(key, nonce, k, state);
-
-	//V = V_r || (K || 0^(c/2) XOR V_c
-	state[0][0] = _mm256_xor_si256(state[0][0], key[0]);
-	state[1][0] = _mm256_xor_si256(state[1][0], key[1]);
-	state[2][0] = _mm256_xor_si256(state[2][0], key[2]);
-	state[3][0] = _mm256_xor_si256(state[3][0], key[3]);
-	state[4][0] = _mm256_xor_si256(state[4][0], key[4]);
-
-	//Add a constant to each state to avoid ECB'esque problems.
-	//TODO
-
-	if (adlen > 0) {
-		//TODO ADLEN
-	}
-
-	p3(state);
+	//common start-steps between encrypt and decrypt
+	initialize_common(state, k, nonce, key, adlen, ad);
 
 	u64 progress = 0;
 	u64 cipher_u64[5];
-	YMM cipher_YMM[5];
 	while (progress < clen) {
 
 		//Get next 40 bytes of data
 		load_data_into_u64(c, clen, cipher_u64, &progress);
 
-		//Load it into registers and create ciphertext by XOR v_r with message.
+		//Load it into registers and create ciphertext and new state_rate by XOR v_r with message.
+		YMM dec_m[5];
 		for (int i = 0; i < 5; i++) {
-
-			//Getting some weird bug, if we dont do it like this. Question has been opened about it: http://stackoverflow.com/questions/37509129/potential-bug-in-visual-studio-c-compiler-or-in-intel-intrinsics-avx2-mm256-s
-			YMM rate_ymm = { 0 };
-			rate_ymm.m256i_u64[0] = cipher_u64[i];
-
-			cipher_YMM[i] = XOR(rate_ymm, state[i][0]);
-
+			dec_m[i] = XOR(_mm256_setr_epi64x(cipher_u64[i], 0, 0, 0), state[i][0]);
+			state[i][0].m256i_u64[0] = cipher_u64[i];
 		}
 
 		//Extract ciphertext
-		memcpy(&m[progress - 40], &cipher_YMM[0].m256i_u64, sizeof(u64));
-		memcpy(&m[progress - 32], &cipher_YMM[1].m256i_u64, sizeof(u64));
-		memcpy(&m[progress - 24], &cipher_YMM[2].m256i_u64, sizeof(u64));
-		memcpy(&m[progress - 16], &cipher_YMM[3].m256i_u64, sizeof(u64));
-		memcpy(&m[progress - 8], &cipher_YMM[4].m256i_u64, sizeof(u64));
+		memcpy(&m[progress - 40], &dec_m[0].m256i_u64, sizeof(u64));
+		memcpy(&m[progress - 32], &dec_m[1].m256i_u64, sizeof(u64));
+		memcpy(&m[progress - 24], &dec_m[2].m256i_u64, sizeof(u64));
+		memcpy(&m[progress - 16], &dec_m[3].m256i_u64, sizeof(u64));
+		memcpy(&m[progress - 8], &dec_m[4].m256i_u64, sizeof(u64));
+
+		p3(state);
 	}
 
 	//Calculate tag later.
@@ -228,11 +240,11 @@ void init_bitslice_state(YMM *key, const u8 *n, const u8 *k, YMM(*state)[2]) {
 
 	//The high 8 bits are kept zeroed each time, as the size of 8 primate states takes 2240 bits. The first registers uses 1280 bits, so there is 64 bits per register in the second half unused
 	//It is more efficient to keep the high bits unused than the lower bits due to unneccesary shifting otherwise.
-	nonce_bits[0] = (n[0] << 16) | (n[1]  << 8) | n[2];
-	nonce_bits[1] = (n[3] << 16) | (n[4]  << 8) | n[5];
-	nonce_bits[2] = (n[6] << 16) | (n[7]  << 8) | n[8];
-	nonce_bits[3] = (n[9] << 16) | (n[10] << 8) | n[11];
-	nonce_bits[4] = (n[12]<< 16) | (n[13] << 8) | n[14];
+	nonce_bits[0] = n[0]  | (n[1]  << 8) | (n[2]  << 16);
+	nonce_bits[1] = n[3]  | (n[4]  << 8) | (n[5]  << 16);
+	nonce_bits[2] = n[6]  | (n[7]  << 8) | (n[8]  << 16);
+	nonce_bits[3] = n[9]  | (n[10] << 8) | (n[11] << 16);
+	nonce_bits[4] = n[12] | (n[13] << 8) | (n[14] << 16);
 
 	//broadcast each of the 32 bits (24 if excluding zeroed space) to a 256bit YMM register. This means that each bit gets broadcast to 8 bits, which is ideal here.
 	//Key
@@ -244,10 +256,10 @@ void init_bitslice_state(YMM *key, const u8 *n, const u8 *k, YMM(*state)[2]) {
 
 	//Nonce
 	state[0][1] = expand_bits_to_bytes(nonce_bits[0]);
-	state[1][1] = expand_bits_to_bytes(nonce_bits[0]);
-	state[2][1] = expand_bits_to_bytes(nonce_bits[0]);
-	state[3][1] = expand_bits_to_bytes(nonce_bits[0]);
-	state[4][1] = expand_bits_to_bytes(nonce_bits[0]);
+	state[1][1] = expand_bits_to_bytes(nonce_bits[1]);
+	state[2][1] = expand_bits_to_bytes(nonce_bits[2]);
+	state[3][1] = expand_bits_to_bytes(nonce_bits[3]);
+	state[4][1] = expand_bits_to_bytes(nonce_bits[4]);
 
 	//p1(state);
 }

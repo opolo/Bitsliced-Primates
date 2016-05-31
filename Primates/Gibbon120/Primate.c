@@ -37,6 +37,7 @@ void Initialize() {
 	*/
 
 	//Set the bits to 1111'1111 in the column two, second row byte, if the roundconstant has a onebit on this indice
+	//p1
 	p1_constants_bit0[0]  = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
 	p1_constants_bit0[1]  = _mm256_set_epi64x(0, 0, 0, 0);
 	p1_constants_bit0[2]  = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
@@ -63,16 +64,16 @@ void Initialize() {
 	p1_constants_bit1[10] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
 	p1_constants_bit1[11] = _mm256_set_epi64x(0, 0, 0, 0);
 
-	p1_constants_bit2[0] = _mm256_set_epi64x(0, 0, 0, 0);
-	p1_constants_bit2[1] = _mm256_set_epi64x(0, 0, 0, 0);
-	p1_constants_bit2[2] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
-	p1_constants_bit2[3] = _mm256_set_epi64x(0, 0, 0, 0);
-	p1_constants_bit2[4] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
-	p1_constants_bit2[5] = _mm256_set_epi64x(0, 0, 0, 0);
-	p1_constants_bit2[6] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
-	p1_constants_bit2[7] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
-	p1_constants_bit2[8] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
-	p1_constants_bit2[9] = _mm256_set_epi64x(0, 0, 0, 0);
+	p1_constants_bit2[0]  = _mm256_set_epi64x(0, 0, 0, 0);
+	p1_constants_bit2[1]  = _mm256_set_epi64x(0, 0, 0, 0);
+	p1_constants_bit2[2]  = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
+	p1_constants_bit2[3]  = _mm256_set_epi64x(0, 0, 0, 0);
+	p1_constants_bit2[4]  = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
+	p1_constants_bit2[5]  = _mm256_set_epi64x(0, 0, 0, 0);
+	p1_constants_bit2[6]  = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
+	p1_constants_bit2[7]  = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
+	p1_constants_bit2[8]  = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
+	p1_constants_bit2[9]  = _mm256_set_epi64x(0, 0, 0, 0);
 	p1_constants_bit2[10] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
 	p1_constants_bit2[11] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
 
@@ -102,6 +103,8 @@ void Initialize() {
 	p1_constants_bit4[10] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
 	p1_constants_bit4[11] = _mm256_set_epi64x(0, 0, 0, 0);
 
+
+	//p2
 	p2_constants_bit0[0] = _mm256_set_epi64x(0, 0, 0, 0);
 	p2_constants_bit0[1] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
 	p2_constants_bit0[2] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
@@ -137,6 +140,8 @@ void Initialize() {
 	p2_constants_bit4[4] = _mm256_set_epi64x(0, 0, 0, 0);
 	p2_constants_bit4[5] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
 
+
+	//p3
 	p3_constants_bit0[0] = _mm256_set_epi64x(0, 0, 0, 0);
 	p3_constants_bit0[1] = _mm256_set_epi64x(0, 0, 0, 0);
 	p3_constants_bit0[2] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
@@ -178,26 +183,123 @@ void shiftrows(__m256i (*state)[2]);
 void mixcolumns(__m256i (*old)[2]);
 void T2(__m256i (*state)[2], __m256i (*new_state)[2]);
 
+void test_primates() {
+
+	//Prepare test vectors
+	YMM YMM_p1_input[5][2];
+	YMM YMM_p2_input[5][2];
+	YMM YMM_p3_input[5][2];
+
+	for (int i = 0; i < 5; i++) {
+		YMM_p1_input[i][0] = _mm256_setzero_si256();
+		YMM_p2_input[i][0] = _mm256_setzero_si256();
+		YMM_p3_input[i][0] = _mm256_setzero_si256();
+
+		YMM_p1_input[i][1] = _mm256_setzero_si256();
+		YMM_p2_input[i][1] = _mm256_setzero_si256();
+		YMM_p3_input[i][1] = _mm256_setzero_si256();
+	}
+
+	//use test vectors
+	p1(YMM_p1_input);
+	p2(YMM_p2_input);
+	p3(YMM_p3_input);
+
+	//Expected values p1:
+	YMM YMM_p1_output_expected[5][2];
+	YMM_p1_output_expected[0][0] = _mm256_setr_epi64x(18374966855136771840ULL, 72056498804555775ULL, 72056494526300160ULL, 18446742978476114175ULL);
+	YMM_p1_output_expected[1][0] = _mm256_setr_epi64x(71776123339472895, 18446463698227757055, 281474959933440, 281474959998975);
+	YMM_p1_output_expected[2][0] = _mm256_setr_epi64x(18446744069414649600, 72056498804555775, 71777218572779520, 72056494526300415);
+	YMM_p1_output_expected[3][0] = _mm256_setr_epi64x(281470681743615, 18374967950370078975, 18446742974197989375, 4278255615);
+	YMM_p1_output_expected[4][0] = _mm256_setr_epi64x(280379759984895, 71776123339472895, 18374687574904996095, 18374966859414896895);
+
+	YMM_p1_output_expected[0][1] = _mm256_setr_epi64x(18446462603027808255, 18374686483949813760, 18446462598732906495, 0);
+	YMM_p1_output_expected[1][1] = _mm256_setr_epi64x(281470681808640, 18446463693949566720, 18446744073692839680, 0);
+	YMM_p1_output_expected[2][1] = _mm256_setr_epi64x(71776119061217535, 1099511562495, 18374966859414961920, 0);
+	YMM_p1_output_expected[3][1] = _mm256_setr_epi64x(18374966855136771840, 18374967950370078720, 1095216660735, 0);
+	YMM_p1_output_expected[4][1] = _mm256_setr_epi64x(18446744069414584575, 18446463698227757055, 18374967950353367295, 0);
+	
+	//Expected values p2:
+	YMM YMM_p2_output_expected[5][2];
+	YMM_p2_output_expected[0][0] = _mm256_setr_epi64x(18446463698244403455, 71776123339472895, 1095233372160, 18446742974214635520);
+	YMM_p2_output_expected[1][0] = _mm256_setr_epi64x(18374967950353432575, 72057594021150975, 18446742978492891135, 280379743338240);
+	YMM_p2_output_expected[2][0] = _mm256_setr_epi64x(0, 71777214277943040, 18446742974197989375, 72057594021216255);
+	YMM_p2_output_expected[3][0] = _mm256_setr_epi64x(71776119077994240, 72057589759672575, 18446463693966278655, 18446742978476179455);
+	YMM_p2_output_expected[4][0] = _mm256_setr_epi64x(71777218556133120, 72057589742960640, 18446462598749552895, 280375481859840);
+
+	YMM_p2_output_expected[0][1] = _mm256_setr_epi64x(280375465083135, 18446744069414584320, 18446742974214635520, 0);
+	YMM_p2_output_expected[1][1] = _mm256_setr_epi64x(18374967950370078975, 18374686483949879040, 72057589742960895, 0);
+	YMM_p2_output_expected[2][1] = _mm256_setr_epi64x(4294901760, 72057589759737855, 18446744069431296255, 0);
+	YMM_p2_output_expected[3][1] = _mm256_setr_epi64x(18446744073692774400, 18374967954648334335, 280375465083135, 0);
+	YMM_p2_output_expected[4][1] = _mm256_setr_epi64x(18374687579166474495, 1095216725760, 18374686479688335615, 0);
+
+	//Expected values p3:
+	YMM YMM_p3_output_expected[5][2]; 
+	YMM_p3_output_expected[0][0] = _mm256_setr_epi64x(18446462603011096320, 281474976645375, 281470681808895, 72057594021216000);
+	YMM_p3_output_expected[1][0] = _mm256_setr_epi64x(71776119061282560, 18374966855153418240, 72056494543011840, 18446463693949566975);
+	YMM_p3_output_expected[2][0] = _mm256_setr_epi64x(18446744069414584320, 18374687579166539775, 18446744073709486080, 18374966859414896640);
+	YMM_p3_output_expected[3][0] = _mm256_setr_epi64x(71776119061217280, 1095233372160, 18374686483949814015, 71776123356184575);
+	YMM_p3_output_expected[4][0] = _mm256_setr_epi64x(1099494915840, 18374686483966590720, 18374687579183251200, 72057589742960640);
+
+	YMM_p3_output_expected[0][1] = _mm256_setr_epi64x(71776119061217535, 71777218556067840, 18446463698244468735, 0);
+	YMM_p3_output_expected[1][1] = _mm256_setr_epi64x(18446462603027742720, 16711935, 280375465083135, 0);
+	YMM_p3_output_expected[2][1] = _mm256_setr_epi64x(18446463698227691520, 71776123339472640, 18374686483966590720, 0);
+	YMM_p3_output_expected[3][1] = _mm256_setr_epi64x(1099494850815, 281474959998975, 280379760049920, 0);
+	YMM_p3_output_expected[4][1] = _mm256_setr_epi64x(1099511562240, 281474959998975, 71776119061217280, 0);
+
+	//Iterate over each of the 5 ymm
+	for (int i = 0; i < 5; i++) {
+		//They get set to all 1 if equal. Else 0.
+		YMM p1_compared_0 = _mm256_cmpeq_epi64(YMM_p1_output_expected[i][0], YMM_p1_input[i][0]);
+		YMM p1_compared_1 = _mm256_cmpeq_epi64(YMM_p1_output_expected[i][1], YMM_p1_input[i][1]);
+
+		YMM p2_compared_0 = _mm256_cmpeq_epi64(YMM_p2_output_expected[i][0], YMM_p2_input[i][0]);
+		YMM p2_compared_1 = _mm256_cmpeq_epi64(YMM_p2_output_expected[i][1], YMM_p2_input[i][1]);
+		
+		YMM p3_compared_0 = _mm256_cmpeq_epi64(YMM_p3_output_expected[i][0], YMM_p3_input[i][0]);
+		YMM p3_compared_1 = _mm256_cmpeq_epi64(YMM_p3_output_expected[i][1], YMM_p3_input[i][1]);
+
+		//Iterate over each of the 4 u64 in each ymm
+		for (int j = 0; j < 4; j++) {
+			u64 equal_p1_0 = p1_compared_0.m256i_u64[j];
+			u64 equal_p1_1 = p1_compared_1.m256i_u64[j]; 
+			
+			u64 equal_p2_0 = p2_compared_0.m256i_u64[j];
+			u64 equal_p2_1 = p2_compared_1.m256i_u64[j];
+
+			u64 equal_p3_0 = p3_compared_0.m256i_u64[j];
+			u64 equal_p3_1 = p3_compared_1.m256i_u64[j];
+
+			if (equal_p1_0 == 0 || equal_p1_1 == 0)
+				printf("P1 not working \n");
+			if (equal_p2_0 == 0 || equal_p2_1 == 0)
+				printf("P2 not working \n");
+			if (equal_p3_0 == 0 || equal_p3_1 == 0) 
+				printf("P3 not working \n");
+		}
+	}
+}
+
+
+
 void p1(YMM(*state)[2]) {
 	for (int round = 0; round < p1_rounds; round++) {
-		
+
 		//Sub Bytes
-		//sbox(state);
+		sbox(state);
 
 		//Shift Rows
-		//shiftrows(state);
+		shiftrows(state);
 
 		//Mix Columns
 		mixcolumns(state);
 
-		
 		//Constant Addition
 		state[0][0] = XOR(state[0][0], p1_constants_bit0[round]);
 		state[1][0] = XOR(state[1][0], p1_constants_bit1[round]);
 		state[2][0] = XOR(state[2][0], p1_constants_bit2[round]);
 		state[3][0] = XOR(state[3][0], p1_constants_bit3[round]);
 		state[4][0] = XOR(state[4][0], p1_constants_bit4[round]);
-		
 	}
 }
 
@@ -208,7 +310,7 @@ void p2(YMM(*state)[2]) {
 		sbox(state);
 
 		//Shift Rows
-		//shiftrows(state);
+		shiftrows(state);
 
 		//Mix Columns
 		mixcolumns(state);
@@ -227,10 +329,10 @@ void p3(YMM(*state)[2]) {
 	for (int round = 0; round < p2_rounds; round++) {
 		
 		//Sub Bytes
-		//sbox(state);
+		sbox(state);
 
 		//Shift Rows
-		//shiftrows(state);
+		shiftrows(state);
 
 		//Mix Columns
 		mixcolumns(state);
@@ -241,6 +343,7 @@ void p3(YMM(*state)[2]) {
 		state[2][0] = XOR(state[2][0], p3_constants_bit2[round]);
 		state[3][0] = XOR(state[3][0], p3_constants_bit3[round]);
 		state[4][0] = XOR(state[4][0], p3_constants_bit4[round]);
+
 	}
 }
 
@@ -289,7 +392,7 @@ void shiftrows(__m256i (*state)[2]) {
 		0, 1, 2, 3, 4, 5, 6, 7, //0
 		9, 10, 11, 12, 13, 14, 15, 8, //1 
 		18, 19, 20, 21, 22, 23, 16, 17, //2
-		27, 28, 29, 30, 28, 24, 25, 26); //3
+		27, 28, 29, 30, 31, 24, 25, 26); //3
 	__m256i shuffleControlMaskSecondReg = _mm256_setr_epi8(
 		4, 5, 6, 7, 0, 1, 2, 3, //4
 		13, 14, 15, 8, 9, 10, 11, 12, //5
@@ -302,81 +405,75 @@ void shiftrows(__m256i (*state)[2]) {
 	}
 }
 
-void mixcolumns(__m256i (*old)[2]) {
+void mixcolumns(__m256i (*state)[2]) {
 	__m256i T2_regs[5][2];
+	__m256i T8_regs[5][2];
 	__m256i T9_regs[5][2];
 	__m256i T15_regs[5][2];
-	__m256i temp_regs[5][2];
+	__m256i T4_regs[5][2];
 
-	__m256i new_state[5][2];
+	__m256i temp_state[5][2];
 
-	//printf("\n\nOld:");
-	//print_state_as_hex(old);
+	for (int row = 0; row < state_row_count; row++)
+	{
+		//printf("Before: \n");
+		//print_state_as_hex(state);
 
-	//T2
-	T2(old, T2_regs);
+		//T2
+		T2(state, T2_regs);
 
-	//printf("T2:");
-	//print_state_as_hex(T2_regs);
+		T2(T2_regs, T4_regs); //T4
+		T2(T4_regs, T8_regs); //T8
 
-	T2(T2_regs, temp_regs); //T4
-	
-	//printf("T4:");
-	//print_state_as_hex(temp_regs);
+		//T9
+		for (int i = 0; i < 5; i++) {
+			T9_regs[i][0] = XOR(state[i][0], T8_regs[i][0]);
+			T9_regs[i][1] = XOR(state[i][1], T8_regs[i][1]);
+		}
 
-	T2(temp_regs, T9_regs); //T8
-	
-	//printf("T8:");
-	//print_state_as_hex(T9_regs);
+		//T15
+		for (int i = 0; i < 5; i++) {
+			T15_regs[i][0] = XOR4(state[i][0], T2_regs[i][0], T4_regs[i][0], T8_regs[i][0]);
+			T15_regs[i][1] = XOR4(state[i][1], T2_regs[i][1], T4_regs[i][1], T8_regs[i][1]);
+		}
 
-	T2(T9_regs, T15_regs); //T16
+		//Shuffle bytes upwards due to lines 1,2,3,4 in matrix.
+		for (int i = 0; i < 5; i++) {
+			temp_state[i][0] = _mm256_permute4x64_epi64(state[i][0], 0b00'11'10'01); // fill first 64 bits with second 64 bits (01 index), second 64 with third 64 bits (10 index) etc.
+			temp_state[i][0].m256i_u64[3] = state[i][1].m256i_u64[0]; //Test if this is faster when done..
 
-	//printf("T16:");
-	//print_state_as_hex(T15_regs);
+			temp_state[i][1] = _mm256_permute4x64_epi64(state[i][1], 0b00'11'10'01);
+			temp_state[i][1].m256i_u64[3] = 0; 
+		}
 
-	//T9
-	for (int i = 0; i < 5; i++) { 
-		T9_regs[i][0] = XOR(old[i][0], T9_regs[i][0]);
-		T9_regs[i][1] = XOR(old[i][1], T9_regs[i][1]);
-	}
+		//handle last line of matrix. Align all rows on the third u64
+		YMM aligned_last_row0[5];
+		YMM aligned_last_row1[5];
+		YMM aligned_last_row2[5];
+		YMM aligned_last_row3[5];
+		YMM aligned_last_row4[5];
+		YMM aligned_last_row5[5];
+		YMM aligned_last_row6[5];
+		for (int i = 0; i < 5; i++) {
+			aligned_last_row0[i] = _mm256_setr_epi64x(0, 0, state[i][0].m256i_u64[0], 0);
+			aligned_last_row1[i] = _mm256_setr_epi64x(0, 0, T2_regs[i][0].m256i_u64[1], 0);
+			aligned_last_row2[i] = _mm256_setr_epi64x(0, 0, T15_regs[i][0].m256i_u64[2], 0);
+			aligned_last_row3[i] = _mm256_setr_epi64x(0, 0, T9_regs[i][0].m256i_u64[3], 0);
+			aligned_last_row4[i] = _mm256_setr_epi64x(0, 0, T9_regs[i][1].m256i_u64[0], 0);
+			aligned_last_row5[i] = _mm256_setr_epi64x(0, 0, T15_regs[i][1].m256i_u64[1], 0);
+			aligned_last_row6[i] = _mm256_setr_epi64x(0, 0, T2_regs[i][1].m256i_u64[2], 0);
+		}
 
-	//T15
-	for (int i = 0; i < 5; i++) { 
-		T15_regs[i][0] = XOR(old[i][0], T15_regs[i][0]);
-		T15_regs[i][1] = XOR(old[i][1], T15_regs[i][1]);
-	}
+		YMM last_row_calculated[5];
+		for (int i = 0; i < 5; i++) {
+			last_row_calculated[i] = XOR7(aligned_last_row0[i], aligned_last_row1[i], aligned_last_row2[i], aligned_last_row3[i], aligned_last_row4[i], aligned_last_row5[i], aligned_last_row6[i]);
+		}
 
-	//printf("T15:");
-	//print_state_as_hex(T15_regs);
-
-	//printf("T9:");
-	//print_state_as_hex(T9_regs);
-
-	//Shufle first reg (handle lines 1,2,3,4 in matrix)
-	for (int i = 0; i < 5; i++) {
-		new_state[i][0] = _mm256_permute4x64_epi64(old[i][0], 0b01101100); // fill first 64 bits with second 64 bits (01 index), next 64 with third 64 bits (10 index) etc.
-		new_state[i][0].m256i_u64[3] = old[i][0].m256i_u64[0]; //Test if this is faster when done..
-	}
-	
-	//Calculate last row for second reg
-	for (int i = 0; i < 5; i++) {
-		__m256i i0_row, i1_row, i2_row, i3_row, i4_row, i5_row, i6_row = { 0, 0, 0, 0 };
-		i0_row.m256i_i64[3] = old[i][0].m256i_u64[0];
-		i1_row.m256i_i64[3] = T2_regs[i][0].m256i_u64[1];
-		i2_row.m256i_i64[3] = T15_regs[i][0].m256i_u64[2];
-		i3_row.m256i_i64[3] = T9_regs[i][0].m256i_u64[3];
-		i4_row.m256i_i64[3] = T9_regs[i][1].m256i_u64[0];
-		i5_row.m256i_i64[3] = T15_regs[i][1].m256i_u64[1];
-		i6_row.m256i_i64[3] = T2_regs[i][1].m256i_u64[2];
-
-		//XOR all the values together, and store them in reg 2 + shuffle reg 2
-		new_state[i][1] = _mm256_permute4x64_epi64(old[i][1], 0b01101111);
-		new_state[i][1] = XOR(new_state[i][1], XOR4(i0_row, i1_row, i2_row, XOR4(i3_row, i4_row, i5_row, i6_row)));
-	}
-
-	for (int i = 0; i < 5; i++) {
-		old[i][0] = new_state[i][0];
-		old[i][0] = new_state[i][1];
+		//Assign data to state
+		for (int i = 0; i < 5; i++) {
+			state[i][0] = temp_state[i][0];
+			state[i][1] = XOR(temp_state[i][1], last_row_calculated[i]);
+		}
 	}
 }
 

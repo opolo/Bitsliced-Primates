@@ -3,7 +3,7 @@
 #include "Debug.h"
 
 void crypto_aead_encrypt(
-	u8 *c, u64 *clen,
+	u8 *c,
 	const u8 *m, u64 mlen,
 	const u8 *ad, u64 adlen,
 	const u8 *nonce,
