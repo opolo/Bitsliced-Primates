@@ -19,14 +19,14 @@ void initialize_common(YMM(*state)[2], const u8 *k, const u8 *nonce, YMM key[5],
 	state[2][0] = _mm256_xor_si256(state[2][0], key[2]);
 	state[3][0] = _mm256_xor_si256(state[3][0], key[3]);
 	state[4][0] = _mm256_xor_si256(state[4][0], key[4]);
-	/*
+	
 	//Add a different constant to each capacity (identically to how primate permutations adds constants) to avoid ECB'esque problems... Constants chosen: 01, 02, 05, 0a, 15, 0b, 17, 0e, 
 	state[0][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'1010'1110'00000000, 0), state[0][0]);
 	state[1][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0101'0111'00000000, 0), state[1][0]);
 	state[2][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0010'1011'00000000, 0), state[2][0]);
 	state[3][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0001'0101'00000000, 0), state[3][0]);
 	state[4][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0000'1010'00000000, 0), state[4][0]);
-	*/
+	
 
 	//AD
 	if (adlen > 0) {
@@ -98,12 +98,6 @@ void crypto_aead_encrypt(
 		p3(state);
 	}
 
-	//TODO -- Decide: Remove excessive bytes from ciphertext due to padding or ignore it, if message was not integral?
-	//Decision: Keep them. Specification will be that the method returns ciphertext of the same length as plaintext,
-	//so excessive paddingbytes should just be ignored. Only problem is that function will require more memory (plaintext + paddingsize),
-	//In the memory pointer it receives.
-
-	
 	//XOR key to state
 	for (int i = 0; i < 5; i++) {
 		state[0][0] = XOR(state[0][0], key[0]);
@@ -244,33 +238,19 @@ void load_data_into_u64(u8 *m, u64 mlen, u64 rates[5], u64 *progress) {
 			//Are there any available?
 			if (mlen <= *progress) {
 				//No.
-
-				//Did we just take the last byte and thus need to pad with 10*?
-				if (mlen == *progress) {
-					rates[i] = 0b10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
-				}
-				else {
-					rates[i] = 0;
-				}
+				rates[i] = 0;
 			}
 			else
 			{
-				//How many are there left?
+				//Yes. How many are there left?
 				int available_bytes = mlen - *progress;
-				int zero_padding_bytes = 8 - available_bytes - 1; //-1 as we need to pad the first byte with 1, not zero.
-
+				
 				//Load remaining bytes into zeroed array (this is needed since we use XOR
-				rates[i] = 0;
+				rates[i] = 0x01; //Pad with 1 after the data.
 				for (int j = 0; j < available_bytes; j++) {
-					rates[i] |= m[*progress + j];
 					rates[i] <<= 8;
+					rates[i] |= m[*progress + (available_bytes - 1 - j)];
 				}
-
-				//Pad with 1 at bit 8 (since we just shifted 8 bits in the loop before); 128 = 1000 0000
-				rates[i] |= 0x01;
-
-				//Shift in the 0 value bytes as padding.
-				rates[i] <<= 8 * zero_padding_bytes;
 			}
 		}
 		*progress += 8; 

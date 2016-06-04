@@ -26,14 +26,15 @@
 
 #define DataMix {0x00},	{0xFF},	{0x00},	{0xFF},	{0x00},	{0xFF},	{0x00},	{0xFF}
 #define DataMix40 DataMix, DataMix, DataMix, DataMix, DataMix
-#define DataAscend {0x01}, {0x02}, {0x03}, {0x04}, {0x05}, {0x06}, {0x07}
+#define DataAscend7 {0x01}, {0x02}, {0x03}, {0x04}, {0x05}, {0x06}, {0x07}
+#define DataAscend8 {0x00}, {0x01}, {0x02}, {0x03}, {0x04}, {0x05}, {0x06}, {0x07}
 
 #define DataZeroes	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x00}
 #define DataZeroes40 DataZeroes, DataZeroes, DataZeroes, DataZeroes, DataZeroes
 
 //Constants for datalength. Change as needed
 //#define MsgLength 80
-#define MsgLength  7
+#define MsgLength  55
 #define AdLength 0 //40
 
 void main() {
@@ -44,7 +45,7 @@ void main() {
 	unsigned char *c = calloc(MsgLength + 40, sizeof(u8)); //8mb (8421376 bytes)
 
 	//data
-	const unsigned char msg[MsgLength] = { DataAscend };
+	const unsigned char msg[MsgLength] = { DataZeroes40, DataAscend8 , DataAscend7 };
 	//const unsigned char decrypted_msg[MsgLength];
 	//unsigned char *c = calloc(100, sizeof(u8)); //Make room for message + 40 extra byte due to how implementation works.. could be done more tidy
 

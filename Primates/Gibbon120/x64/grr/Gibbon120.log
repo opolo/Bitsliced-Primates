@@ -1,15 +1,19 @@
-﻿  Encrypt.c
+﻿  Primate.c
+c:\hobby\thesis\primates\gibbon120\primate.c(6): warning C4305: 'initializing': truncation from 'unsigned int' to 'char'
+c:\hobby\thesis\primates\gibbon120\primate.c(276): warning C4013: 'printf' undefined; assuming extern returning int
+  Encrypt.c
 c:\hobby\thesis\primates\gibbon120\encrypt.c(40): warning C4090: 'function': different 'const' qualifiers
 c:\hobby\thesis\primates\gibbon120\encrypt.c(51): warning C4090: 'function': different 'const' qualifiers
 c:\hobby\thesis\primates\gibbon120\encrypt.c(68): warning C4028: formal parameter 3 different from declaration
 c:\hobby\thesis\primates\gibbon120\encrypt.c(68): warning C4028: formal parameter 5 different from declaration
 c:\hobby\thesis\primates\gibbon120\encrypt.c(84): warning C4090: 'function': different 'const' qualifiers
-c:\hobby\thesis\primates\gibbon120\encrypt.c(138): warning C4028: formal parameter 5 different from declaration
-c:\hobby\thesis\primates\gibbon120\encrypt.c(161): warning C4090: 'function': different 'const' qualifiers
-c:\hobby\thesis\primates\gibbon120\encrypt.c(162): warning C4090: 'function': different 'const' qualifiers
-c:\hobby\thesis\primates\gibbon120\encrypt.c(163): warning C4090: 'function': different 'const' qualifiers
-c:\hobby\thesis\primates\gibbon120\encrypt.c(164): warning C4090: 'function': different 'const' qualifiers
-c:\hobby\thesis\primates\gibbon120\encrypt.c(165): warning C4090: 'function': different 'const' qualifiers
-c:\hobby\thesis\primates\gibbon120\encrypt.c(259): warning C4244: 'initializing': conversion from 'u64' to 'int', possible loss of data
+c:\hobby\thesis\primates\gibbon120\encrypt.c(132): warning C4028: formal parameter 5 different from declaration
+c:\hobby\thesis\primates\gibbon120\encrypt.c(155): warning C4090: 'function': different 'const' qualifiers
+c:\hobby\thesis\primates\gibbon120\encrypt.c(156): warning C4090: 'function': different 'const' qualifiers
+c:\hobby\thesis\primates\gibbon120\encrypt.c(157): warning C4090: 'function': different 'const' qualifiers
+c:\hobby\thesis\primates\gibbon120\encrypt.c(158): warning C4090: 'function': different 'const' qualifiers
+c:\hobby\thesis\primates\gibbon120\encrypt.c(159): warning C4090: 'function': different 'const' qualifiers
+c:\hobby\thesis\primates\gibbon120\encrypt.c(246): warning C4244: 'initializing': conversion from 'u64' to 'int', possible loss of data
+  Generating Code...
   Gibbon120.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\grr\Gibbon120.exe
   Gibbon120.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\grr\Gibbon120.pdb (Partial PDB)
