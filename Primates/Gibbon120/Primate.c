@@ -337,7 +337,7 @@ void p3(YMM(*state)[2]) {
 	if (DisablePrimates) {
 		return;
 	}
-	for (int round = 0; round < p2_rounds; round++) {
+	for (int round = 0; round < p3_rounds; round++) {
 		
 		//Sub Bytes
 		sbox(state);

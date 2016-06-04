@@ -20,6 +20,7 @@ void initialize_common(YMM(*state)[2], const u8 *k, const u8 *nonce, YMM key[5],
 	state[3][0] = _mm256_xor_si256(state[3][0], key[3]);
 	state[4][0] = _mm256_xor_si256(state[4][0], key[4]);
 	
+	
 	//Add a different constant to each capacity (identically to how primate permutations adds constants) to avoid ECB'esque problems... Constants chosen: 01, 02, 05, 0a, 15, 0b, 17, 0e, 
 	state[0][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'1010'1110'00000000, 0), state[0][0]);
 	state[1][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0101'0111'00000000, 0), state[1][0]);
@@ -70,11 +71,8 @@ void crypto_aead_encrypt(
 	YMM state[5][2];
 	YMM key[5];
 
-	print_state_as_hex(state);
 	//common start-steps between encrypt and decrypt
 	initialize_common(state, k, nonce, key, adlen, ad);
-	
-	print_state_as_hex(state);
 
 	u64 progress = 0;
 	u64 data_u64[5];
@@ -95,8 +93,13 @@ void crypto_aead_encrypt(
 		memcpy(&c[progress - 16], &state[3][0].m256i_u64[0], sizeof(u64));
 		memcpy(&c[progress - 8],  &state[4][0].m256i_u64[0], sizeof(u64));
 
+		printf("1a: \n ");
+		print_state_as_hex(state);
 		p3(state);
+		printf("1b: \n ");
+		print_state_as_hex(state);
 	}
+	
 
 	//XOR key to state
 	for (int i = 0; i < 5; i++) {
@@ -117,6 +120,8 @@ void crypto_aead_encrypt(
 		state[4][0] = XOR(state[4][0], key[4]);
 	}
 	
+	
+
 	//Extract 120bit tag that is not part of rate..., And to where key was just XORed 
 	memcpy(&tag[0], &state[0][0].m256i_u64[1], sizeof(u64));
 	memcpy(&tag[8], &state[1][0].m256i_u64[1], sizeof(u8)*7);
@@ -148,7 +153,9 @@ void crypto_aead_decrypt(
 		//Load it into registers and create ciphertext and new state_rate by XOR v_r with message.
 		for (int i = 0; i < 5; i++) {
 			dec_m[i] = XOR(_mm256_setr_epi64x(data_u64[i], 0, 0, 0), state[i][0]);
-			state[i][0].m256i_u64[0] = data_u64[i];
+			if (progress < clen) {
+				state[i][0].m256i_u64[0] = data_u64[i];
+			}
 		}
 
 		//Extract ciphertext
@@ -158,20 +165,32 @@ void crypto_aead_decrypt(
 		memcpy(&m[progress - 16], &dec_m[3].m256i_u64[0], sizeof(u64));
 		memcpy(&m[progress - 8], &dec_m[4].m256i_u64[0], sizeof(u64));
 
+		//If we are done decrypting, we XOR the padding to the state to prepare for creating the tag.
+		if (progress > clen) {
+			int bytes_before_padding = clen % 40; //including the first padding bit that is 1.
+
+			for (int i = 0; i < 5; i++) {
+				u64 padding_u64 = 0;
+
+				//Is it in this ymm, that we set the 1 bit?
+				if (bytes_before_padding < 8 && bytes_before_padding > 0) {
+					padding_u64 = 1; //append one bit
+					padding_u64 <<= 8 * bytes_before_padding; //Pad with zero bits after
+				}
+				bytes_before_padding -= 8;
+
+				state[i][0] = XOR(_mm256_setr_epi64x(padding_u64, 0, 0, 0), state[i][0]);
+			}
+		}
+
+		printf("2a: \n ");
+		print_state_as_hex(state);
 		p3(state);
+		printf("2b: \n ");
+		print_state_as_hex(state);
 	}
 
 	//Calculate tag
-	//Was message integral or do we need to add padding?
-	if (clen % 40 != 0) {
-		//TODO add padding 
-	}
-	//Rate should be m[i] plus potential padding
-	for (int i = 0; i < 5; i++) {
-		state[i][0] = dec_m[i];
-	}
-	p3(state);
-	
 	//XOR key to state
 	for (int i = 0; i < 5; i++) {
 		state[i][0] = XOR(key[i], state[i][0]);
@@ -182,25 +201,27 @@ void crypto_aead_decrypt(
 	//state[0][0].m256i_u64[1] and 7 first bytes of state[1][0].m256i_u64[1] contains the tag
 	state[0][0] = XOR(key[0], state[0][0]);
 	state[1][0] = XOR(key[1], state[1][0]);
-	state[1][0].m256i_u8[7] = 0; //We only compare 120 bits, not 128.
+	state[1][0].m256i_u8[15] = 0x00; //We only compare 120 bits, not 128.
+
+
 
 	//Load received parametered tag into registers
-	YMM old_tag_0 = _mm256_set_epi8(
-		0, 0, 0, 0, 0, 0, 0, 0,
+	YMM old_tag_0 = _mm256_setr_epi8(
 		0, 0, 0, 0, 0, 0, 0, 0,
 		tag[0], tag[1], tag[2], tag[3], tag[4], tag[5], tag[6], tag[7],
-		0, 0, 0, 0, 0, 0, 0, 0);
-	YMM old_tag_1 = _mm256_set_epi8(
 		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0);
+	YMM old_tag_1 = _mm256_setr_epi8(
 		0, 0, 0, 0, 0, 0, 0, 0,
 		tag[8], tag[9], tag[10], tag[11], tag[12], tag[13], tag[14], 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0, 0, 0, 0);
 
 	YMM isEqual0 = _mm256_cmpeq_epi64(state[0][0], old_tag_0);
 	YMM isEqual1 = _mm256_cmpeq_epi64(state[1][0], old_tag_1);
 
 	if (isEqual0.m256i_u64[1], isEqual1.m256i_u64[1]) {
-		printf("\nTag matched\n");
+		printf("\nTag did match\n");
 	}
 	else {
 	//	memset(m, 0, clen);

@@ -34,25 +34,25 @@
 
 //Constants for datalength. Change as needed
 //#define MsgLength 80
-#define MsgLength  55
-#define AdLength 0 //40
+#define MsgLength  40
+#define AdLength 40 
 
 void main() {
 	
 	//data
-	//unsigned char *msg = calloc(MsgLength, sizeof(u8)); //8mb (8421376 bytes)
+	unsigned char *msg = calloc(MsgLength, sizeof(u8)); 
 	unsigned char *decrypted_msg = calloc(MsgLength + 40, sizeof(u8)); //8mb (8421376 bytes)
 	unsigned char *c = calloc(MsgLength + 40, sizeof(u8)); //8mb (8421376 bytes)
 
 	//data
-	const unsigned char msg[MsgLength] = { DataZeroes40, DataAscend8 , DataAscend7 };
+	//const unsigned char msg[MsgLength] = { DataZeroes40, DataAscend8 , DataAscend7 };
 	//const unsigned char decrypted_msg[MsgLength];
 	//unsigned char *c = calloc(100, sizeof(u8)); //Make room for message + 40 extra byte due to how implementation works.. could be done more tidy
 
 	//constant length data
 	const unsigned char key[GibbonKeyLength] = { GibbonKey };
 	const unsigned char nonce[GibbonNonceLength] = { GibbonNonce };
-	const unsigned char ad = 0; // [AdLength] = { DataOnes40 };
+	const unsigned char ad[AdLength] = { DataOnes40 };
 	unsigned char tag[GibbonTagLength];
 
 	u64 cLength = 0;
@@ -94,6 +94,14 @@ void main() {
 		if ((i + 1) % 8 == 1 && i != 0)
 			printf("\t");
 		printf("%02x ", nonce[i]);
+	}
+	printf("\n\n");
+
+	printf("Tag: \n");
+	for (int i = 0; i < GibbonKeyLength; i++) {
+		if ((i + 1) % 8 == 1 && i != 0)
+			printf("\t");
+		printf("%02x ", tag[i]);
 	}
 	printf("\n\n");
 
