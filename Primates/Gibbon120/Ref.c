@@ -23,30 +23,35 @@
 #define DataOnes	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF}
 #define DataOnes40 DataOnes, DataOnes, DataOnes, DataOnes, DataOnes
 
+
+#define DataMix {0x00},	{0xFF},	{0x00},	{0xFF},	{0x00},	{0xFF},	{0x00},	{0xFF}
+#define DataMix40 DataMix, DataMix, DataMix, DataMix, DataMix
+#define DataAscend {0x01}, {0x02}, {0x03}, {0x04}, {0x05}, {0x06}, {0x07}
+
 #define DataZeroes	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x00}
 #define DataZeroes40 DataZeroes, DataZeroes, DataZeroes, DataZeroes, DataZeroes
 
 //Constants for datalength. Change as needed
 //#define MsgLength 80
-#define MsgLength 100'000'000
-#define AdLength 40
+#define MsgLength  7
+#define AdLength 0 //40
 
 void main() {
 	
 	//data
-	unsigned char *msg = calloc(MsgLength, sizeof(u8)); //8mb (8421376 bytes)
+	//unsigned char *msg = calloc(MsgLength, sizeof(u8)); //8mb (8421376 bytes)
 	unsigned char *decrypted_msg = calloc(MsgLength + 40, sizeof(u8)); //8mb (8421376 bytes)
 	unsigned char *c = calloc(MsgLength + 40, sizeof(u8)); //8mb (8421376 bytes)
 
 	//data
-	//const unsigned char msg[MsgLength] = { DataOnes40,  DataZeroes40 };
+	const unsigned char msg[MsgLength] = { DataAscend };
 	//const unsigned char decrypted_msg[MsgLength];
 	//unsigned char *c = calloc(100, sizeof(u8)); //Make room for message + 40 extra byte due to how implementation works.. could be done more tidy
 
 	//constant length data
 	const unsigned char key[GibbonKeyLength] = { GibbonKey };
 	const unsigned char nonce[GibbonNonceLength] = { GibbonNonce };
-	const unsigned char ad[AdLength] = { DataOnes40 };
+	const unsigned char ad = 0; // [AdLength] = { DataOnes40 };
 	unsigned char tag[GibbonTagLength];
 
 	u64 cLength = 0;
@@ -69,40 +74,52 @@ void main() {
 	if (DEBUG) {
 		finish = clock();
 		printf("Time taken: %f", (double)((finish - start) / CLOCKS_PER_SEC));
-		printf("\nClocks: %f", (double)((finish - start)));
+		printf("\n");
+		printf("Clocks: %f", (double)((finish - start)));
+		printf("\n\n");
 	}
 
-	/*
+	
 	printf("Key: \n");
 	for (int i = 0; i < GibbonKeyLength; i++) {
+		if ((i + 1) % 8 == 1 && i != 0)
+			printf("\t");
 		printf("%02x ", key[i]);
 	}
 	printf("\n\n");
 
 	printf("Nonce: \n");
 	for (int i = 0; i < GibbonNonceLength; i++) {
+		if ((i + 1) % 8 == 1 && i != 0)
+			printf("\t");
 		printf("%02x ", nonce[i]);
 	}
 	printf("\n\n");
 
 	printf("Plaintext: \n");
 	for (int i = 0; i < MsgLength; i++) {
+		if ((i + 1) % 8 == 1 && i != 0)
+			printf("\t");
 		printf("%02x ", msg[i]);
 	}
 	printf("\n\n");
 
 	printf("Ciphertext: \n" );
 	for (int i = 0; i < MsgLength; i++) {
+		if ((i + 1) % 8 == 1 && i != 0)
+			printf("\t");
 		printf("%02x ", c[i]);
 	}
 	printf("\n\n");
 
 	printf("Decrypted plaintext: \n");
 	for (int i = 0; i < MsgLength; i++) {
+		if ((i + 1) % 8 == 1 && i != 0)
+			printf("\t");
 		printf("%02x ", decrypted_msg[i]);
 	}
 	printf("\n\n");
-	*/
+	
 
 	getchar();
 }

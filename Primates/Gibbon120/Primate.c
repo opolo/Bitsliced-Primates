@@ -1,6 +1,8 @@
 #include "Primate.h"
 #include "Debug.h"
 
+#define DisablePrimates 1 //For testing/debugging
+
 static const __m256i m256iAllOne = { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
@@ -283,6 +285,9 @@ void test_primates() {
 
 
 void p1(YMM(*state)[2]) {
+	if (DisablePrimates) {
+		return;
+	}
 	for (int round = 0; round < p1_rounds; round++) {
 
 		//Sub Bytes
@@ -304,6 +309,9 @@ void p1(YMM(*state)[2]) {
 }
 
 void p2(YMM(*state)[2]) {
+	if (DisablePrimates) {
+		return;
+	}
 	for (int round = 0; round < p2_rounds; round++) {
 
 		//Sub Bytes
@@ -326,6 +334,9 @@ void p2(YMM(*state)[2]) {
 
 
 void p3(YMM(*state)[2]) {
+	if (DisablePrimates) {
+		return;
+	}
 	for (int round = 0; round < p2_rounds; round++) {
 		
 		//Sub Bytes
