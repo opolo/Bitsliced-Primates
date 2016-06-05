@@ -4,7 +4,7 @@
 #include <string.h>
 
 void init_bitslice_state(YMM *key, const u8 *n, const u8 *k, YMM(*state)[2]);
-void load_data_into_u64(u8 *m, u64 mlen, u64 rates[8], u64 *progress);
+void load_data_into_u64(u8 *m, u64 mlen, u64 rates[5], u64 *progress);
 YMM expand_bits_to_bytes(int x);
 
 void initialize_common(YMM(*state)[2], const u8 *k, const u8 *nonce, YMM key[5], u64 adlen, const u8 *ad) {
@@ -20,15 +20,14 @@ void initialize_common(YMM(*state)[2], const u8 *k, const u8 *nonce, YMM key[5],
 	state[3][0] = _mm256_xor_si256(state[3][0], key[3]);
 	state[4][0] = _mm256_xor_si256(state[4][0], key[4]);
 	
-	
 	//Add a different constant to each capacity (identically to how primate permutations adds constants) to avoid ECB'esque problems... Constants chosen: 01, 02, 05, 0a, 15, 0b, 17, 0e, 
 	state[0][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'1010'1110'00000000, 0), state[0][0]);
 	state[1][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0101'0111'00000000, 0), state[1][0]);
 	state[2][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0010'1011'00000000, 0), state[2][0]);
 	state[3][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0001'0101'00000000, 0), state[3][0]);
 	state[4][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0000'1010'00000000, 0), state[4][0]);
-	
 
+	
 	//AD
 	if (adlen > 0) {
 		p2(state);
@@ -40,10 +39,10 @@ void initialize_common(YMM(*state)[2], const u8 *k, const u8 *nonce, YMM key[5],
 			//XOR next 40 bytes of data to rate of states;
 			load_data_into_u64(ad, adlen, data, &progress);
 			state[0][0] = XOR(_mm256_setr_epi64x(data[0], 0, 0, 0), state[0][0]);
-			state[1][0] = XOR(_mm256_setr_epi64x(data[1], 0, 0, 0), state[0][0]);
-			state[2][0] = XOR(_mm256_setr_epi64x(data[2], 0, 0, 0), state[0][0]);
-			state[3][0] = XOR(_mm256_setr_epi64x(data[3], 0, 0, 0), state[0][0]);
-			state[4][0] = XOR(_mm256_setr_epi64x(data[4], 0, 0, 0), state[0][0]);
+			state[1][0] = XOR(_mm256_setr_epi64x(data[1], 0, 0, 0), state[1][0]);
+			state[2][0] = XOR(_mm256_setr_epi64x(data[2], 0, 0, 0), state[2][0]);
+			state[3][0] = XOR(_mm256_setr_epi64x(data[3], 0, 0, 0), state[3][0]);
+			state[4][0] = XOR(_mm256_setr_epi64x(data[4], 0, 0, 0), state[4][0]);
 
 			p2(state);
 		}
@@ -51,10 +50,10 @@ void initialize_common(YMM(*state)[2], const u8 *k, const u8 *nonce, YMM key[5],
 		//Handle last upto 40 bytes of data
 		load_data_into_u64(ad, adlen, data, &progress);
 		state[0][0] = XOR(_mm256_setr_epi64x(data[0], 0, 0, 0), state[0][0]);
-		state[1][0] = XOR(_mm256_setr_epi64x(data[1], 0, 0, 0), state[0][0]);
-		state[2][0] = XOR(_mm256_setr_epi64x(data[2], 0, 0, 0), state[0][0]);
-		state[3][0] = XOR(_mm256_setr_epi64x(data[3], 0, 0, 0), state[0][0]);
-		state[4][0] = XOR(_mm256_setr_epi64x(data[4], 0, 0, 0), state[0][0]);
+		state[1][0] = XOR(_mm256_setr_epi64x(data[1], 0, 0, 0), state[1][0]);
+		state[2][0] = XOR(_mm256_setr_epi64x(data[2], 0, 0, 0), state[2][0]);
+		state[3][0] = XOR(_mm256_setr_epi64x(data[3], 0, 0, 0), state[3][0]);
+		state[4][0] = XOR(_mm256_setr_epi64x(data[4], 0, 0, 0), state[4][0]);
 	}
 
 	p3(state);
@@ -74,6 +73,7 @@ void crypto_aead_encrypt(
 	//common start-steps between encrypt and decrypt
 	initialize_common(state, k, nonce, key, adlen, ad);
 
+	
 	u64 progress = 0;
 	u64 data_u64[5];
 	while (progress < mlen) {
@@ -92,8 +92,9 @@ void crypto_aead_encrypt(
 		memcpy(&c[progress - 24], &state[2][0].m256i_u64[0], sizeof(u64));
 		memcpy(&c[progress - 16], &state[3][0].m256i_u64[0], sizeof(u64));
 		memcpy(&c[progress - 8],  &state[4][0].m256i_u64[0], sizeof(u64));
-
+		
 		p3(state);
+		
 	}
 	
 
@@ -148,7 +149,7 @@ void crypto_aead_decrypt(
 
 		//Load it into registers and create ciphertext and new state_rate by XOR v_r with message.
 		for (int i = 0; i < 5; i++) {
-			dec_m[i] = XOR(_mm256_setr_epi64x(data_u64[i], 0, 0, 0), state[i][0]);
+			dec_m[i] = XOR(_mm256_setr_epi64x(data_u64[i], state[i][0].m256i_u64[1], state[i][0].m256i_u64[2], state[i][0].m256i_u64[3]), state[i][0]);
 			if (progress < clen) {
 				state[i][0].m256i_u64[0] = data_u64[i];
 			}
@@ -161,27 +162,47 @@ void crypto_aead_decrypt(
 		memcpy(&m[progress - 16], &dec_m[3].m256i_u64[0], sizeof(u64));
 		memcpy(&m[progress - 8], &dec_m[4].m256i_u64[0], sizeof(u64));
 
-		//If we are done decrypting, we XOR the padding to the state to prepare for creating the tag.
+		//If we are done decrypting, we XOR the last decrypted message with potential padding to the state to prepare for creating the tag.
 		if (progress > clen) {
-			int bytes_before_padding = clen % 40; //including the first padding bit that is 1.
+			int clen_last_blocksize = clen % 40;
+			int clen_pad_progress = 0;
 
 			for (int i = 0; i < 5; i++) {
-				u64 padding_u64 = 0;
 
-				//Is it in this ymm, that we set the 1 bit?
-				if (bytes_before_padding < 8 && bytes_before_padding > 0) {
-					padding_u64 = 1; //append one bit
-					padding_u64 <<= 8 * bytes_before_padding; //Pad with zero bits after
+				//Do we need to pad this ymm?
+				if (clen_last_blocksize >= clen_pad_progress + 8) {
+					//No, there are 8 plaintext bytes in it. 
 				}
-				bytes_before_padding -= 8;
+				else {
+					//There are a need to pad it.
+					
+					//Are any of the bytes in it from the plaintext?
+					if (clen_last_blocksize < clen_pad_progress) {
+						//No.
+						dec_m[i] = _mm256_setzero_si256();
+					}
+					else {
+						//Some of the bytes should be plaintext, some should be padding... How many should be padding?
+						int padding_bytes = 8 - (clen_last_blocksize - clen_pad_progress);
 
-				state[i][0] = XOR(_mm256_setr_epi64x(padding_u64, 0, 0, 0), state[i][0]);
+						//Shift data to the left to add padding by shifting back afterwards (and insert 0x01 at the front, before shifting back)
+						dec_m[i].m256i_u64[0] <<= 8 * padding_bytes;
+						dec_m[i].m256i_u64[0] >>= 8; //Make space for 0x01 byte
+						dec_m[i].m256i_u64[0] |= 0b00000001'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
+						dec_m[i].m256i_u64[0] >>= 8 * (padding_bytes - 1); //Shift remaining back.
+					}
+				}
+				clen_pad_progress += 8;
+
+				state[i][0] = XOR(state[i][0], dec_m[i]);
 			}
 		}
 
 		p3(state);
+		
 	}
 
+	
 	//Calculate tag
 	//XOR key to state
 	for (int i = 0; i < 5; i++) {
@@ -249,7 +270,7 @@ void load_data_into_u64(u8 *m, u64 mlen, u64 rates[5], u64 *progress) {
 		else {
 			//yes, there are less than 8 available. 
 			//Are there any available?
-			if (mlen <= *progress) {
+			if (mlen < *progress) {
 				//No.
 				rates[i] = 0;
 			}

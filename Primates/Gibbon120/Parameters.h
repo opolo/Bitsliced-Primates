@@ -10,6 +10,7 @@ typedef long long i64;
 
 //Bit-wise operations on AVX registers
 #define XOR(a, b) _mm256_xor_si256(a, b)
+#define XOR3(a, b, c) _mm256_xor_si256(a, _mm256_xor_si256(b, c))
 #define XOR4(a, b, c, d) _mm256_xor_si256(a, _mm256_xor_si256(b, _mm256_xor_si256(c, d)))
 #define XOR5(a, b, c, d, e) _mm256_xor_si256(a, _mm256_xor_si256(b, _mm256_xor_si256(c, _mm256_xor_si256(d, e))))
 #define XOR7(a, b, c, d, e, f, g) _mm256_xor_si256(a, _mm256_xor_si256(b, _mm256_xor_si256(c, _mm256_xor_si256(d, _mm256_xor_si256(e, _mm256_xor_si256(f, g))))))

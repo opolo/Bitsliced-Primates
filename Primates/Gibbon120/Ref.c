@@ -34,18 +34,18 @@
 
 //Constants for datalength. Change as needed
 //#define MsgLength 80
-#define MsgLength  40
+#define MsgLength  48
 #define AdLength 40 
 
 void main() {
 	
 	//data
-	unsigned char *msg = calloc(MsgLength, sizeof(u8)); 
+	//unsigned char *msg = calloc(MsgLength, sizeof(u8)); 
 	unsigned char *decrypted_msg = calloc(MsgLength + 40, sizeof(u8)); //8mb (8421376 bytes)
 	unsigned char *c = calloc(MsgLength + 40, sizeof(u8)); //8mb (8421376 bytes)
 
 	//data
-	//const unsigned char msg[MsgLength] = { DataZeroes40, DataAscend8 , DataAscend7 };
+	const unsigned char msg[MsgLength] = { DataMix40 , DataAscend8 };
 	//const unsigned char decrypted_msg[MsgLength];
 	//unsigned char *c = calloc(100, sizeof(u8)); //Make room for message + 40 extra byte due to how implementation works.. could be done more tidy
 
