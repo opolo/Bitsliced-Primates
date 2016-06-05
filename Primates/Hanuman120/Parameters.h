@@ -31,4 +31,9 @@ typedef long long i64;
 #define OneBitsAtCol2 0b0000000011111111000000000000000000000000000000000000000000000000ULL
 #define p1_rounds 12
 #define p4_rounds 12
-#define DEBUG 1
+
+
+#define Debug 0
+#define OutputData 0
+#define Benchmark 1
+#define DisablePrimates 0

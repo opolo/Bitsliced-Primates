@@ -1,0 +1,58 @@
+﻿  Debug.c
+Debug.c(65): warning C4133: 'function': incompatible types - from 'unsigned char *' to '__m256i *'
+Debug.c(66): warning C4133: 'function': incompatible types - from 'unsigned char *' to '__m256i *'
+Debug.c(67): warning C4133: 'function': incompatible types - from 'unsigned char *' to '__m256i *'
+Debug.c(68): warning C4133: 'function': incompatible types - from 'unsigned char *' to '__m256i *'
+Debug.c(69): warning C4133: 'function': incompatible types - from 'unsigned char *' to '__m256i *'
+Debug.c(71): warning C4477: 'printf' : format string '%02X' requires an argument of type 'unsigned int', but variadic argument 1 has type 'unsigned char *'
+Debug.c(71): warning C4313: 'printf': '%X' in format string conflicts with argument 1 of type 'unsigned char *'
+Debug.c(82): warning C4133: 'function': incompatible types - from 'unsigned char *' to '__m256i *'
+  Encrypt.c
+Encrypt.c(23): warning C4101: 'transposedData': unreferenced local variable
+Encrypt.c(21): warning C4101: 'YMM_key': unreferenced local variable
+Encrypt.c(20): warning C4101: 'YMM_state': unreferenced local variable
+  Primates.c
+Primates.c(12): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(14): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(16): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(17): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(18): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(20): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(21): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(29): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(31): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(33): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(34): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(35): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(37): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(38): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(46): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(48): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(50): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(51): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(52): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(54): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(55): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(63): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(65): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(67): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(68): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(69): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(71): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(80): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(82): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(84): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(85): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(86): warning C4305: 'initializing': truncation from '__int64' to 'char'
+Primates.c(91): warning C4305: 'initializing': truncation from 'unsigned int' to 'char'
+Primates.c(390): warning C4305: 'function': truncation from 'int' to 'char'
+Primates.c(408): warning C4305: 'function': truncation from 'int' to 'char'
+Primates.c(492): warning C4101: 'temp': unreferenced local variable
+Primates.c(513): warning C4101: 'temp': unreferenced local variable
+  Test.c
+Test.c(53): warning C4101: 'ciphertext': unreferenced local variable
+Test.c(54): warning C4101: 'tag': unreferenced local variable
+  Generating code
+  All 2 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  APE120_Bitsliced.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\Release\APE120_Bitsliced.exe

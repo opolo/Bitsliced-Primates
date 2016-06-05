@@ -1,4 +1,8 @@
-﻿  Encrypt.c
+﻿  Ref.c
+  Primate.c
+c:\hobby\thesis\primates\gibbon120\primate.c(4): warning C4305: 'initializing': truncation from 'unsigned int' to 'char'
+c:\hobby\thesis\primates\gibbon120\primate.c(274): warning C4013: 'printf' undefined; assuming extern returning int
+  Encrypt.c
 c:\hobby\thesis\primates\gibbon120\encrypt.c(40): warning C4090: 'function': different 'const' qualifiers
 c:\hobby\thesis\primates\gibbon120\encrypt.c(51): warning C4090: 'function': different 'const' qualifiers
 c:\hobby\thesis\primates\gibbon120\encrypt.c(68): warning C4028: formal parameter 3 different from declaration
@@ -10,6 +14,10 @@ c:\hobby\thesis\primates\gibbon120\encrypt.c(160): warning C4090: 'function': di
 c:\hobby\thesis\primates\gibbon120\encrypt.c(161): warning C4090: 'function': different 'const' qualifiers
 c:\hobby\thesis\primates\gibbon120\encrypt.c(162): warning C4090: 'function': different 'const' qualifiers
 c:\hobby\thesis\primates\gibbon120\encrypt.c(163): warning C4090: 'function': different 'const' qualifiers
-c:\hobby\thesis\primates\gibbon120\encrypt.c(280): warning C4244: 'initializing': conversion from 'u64' to 'int', possible loss of data
+c:\hobby\thesis\primates\gibbon120\encrypt.c(239): warning C4090: 'function': different 'const' qualifiers
+c:\hobby\thesis\primates\gibbon120\encrypt.c(275): warning C4244: 'initializing': conversion from 'u64' to 'int', possible loss of data
+  Debug.c
+c:\hobby\thesis\primates\gibbon120\debug.c(6): warning C4013: 'printf' undefined; assuming extern returning int
+  Generating Code...
   Gibbon120.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\grr\Gibbon120.exe
   Gibbon120.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\grr\Gibbon120.pdb (Partial PDB)

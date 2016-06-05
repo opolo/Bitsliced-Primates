@@ -1,0 +1,107 @@
+﻿  hash.c
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(26): error C2054: expected '(' to follow 'uint8_t'
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(27): error C2085: 'uint32_t': not in formal parameter list
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(27): error C2146: syntax error: missing ',' before identifier 'uint_32t'
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(28): error C2085: 'uint64_t': not in formal parameter list
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(28): error C2146: syntax error: missing ',' before identifier 'uint_64t'
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(75): error C2085: 'Var': not in formal parameter list
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(78): error C2085: 'BitSequence': not in formal parameter list
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(79): error C2085: 'DataLength': not in formal parameter list
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(80): error C2057: expected constant expression
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(80): error C2085: 'HashReturn': not in formal parameter list
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(82): error C2061: syntax error: identifier '__attribute__'
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(83): error C2143: syntax error: missing ')' before '('
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(83): error C2091: function returns function
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(83): error C2143: syntax error: missing ')' before 'constant'
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(83): error C2143: syntax error: missing '{' before 'constant'
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(83): error C2059: syntax error: 'constant'
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(83): error C2059: syntax error: ')'
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(90): error C2061: syntax error: identifier 'v'
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(90): error C2059: syntax error: ';'
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(91): error C2059: syntax error: '}'
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(93): error C2061: syntax error: identifier 'Init'
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(93): error C2059: syntax error: ';'
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(93): error C2143: syntax error: missing ')' before '*'
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(93): error C2143: syntax error: missing '{' before '*'
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(93): error C2059: syntax error: ')'
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(94): error C2061: syntax error: identifier 'Update'
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(94): error C2059: syntax error: ';'
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(94): error C2143: syntax error: missing ')' before '*'
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(94): error C2143: syntax error: missing '{' before '*'
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(94): error C2059: syntax error: ','
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(94): error C2059: syntax error: ')'
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(95): error C2061: syntax error: identifier 'Final'
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(95): error C2059: syntax error: ';'
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(95): error C2143: syntax error: missing ')' before '*'
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(95): error C2143: syntax error: missing '{' before '*'
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(95): error C2059: syntax error: ','
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(95): error C2059: syntax error: ')'
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(96): error C2061: syntax error: identifier 'Hash'
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(96): error C2059: syntax error: ';'
+c:\hobby\thesis\other helping\grøstl-avx2\hash.h(96): error C2059: syntax error: '<parameter-list>'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(20): error C2143: syntax error: missing ')' before '('
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(20): error C2091: function returns function
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(20): error C2143: syntax error: missing ')' before 'constant'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(20): error C2143: syntax error: missing '{' before 'constant'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(20): error C2059: syntax error: 'constant'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(20): error C2059: syntax error: ')'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(23): error C2143: syntax error: missing ')' before '('
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(23): error C2091: function returns function
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(23): error C2143: syntax error: missing ')' before 'constant'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(23): error C2143: syntax error: missing '{' before 'constant'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(23): error C2059: syntax error: 'constant'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(23): error C2059: syntax error: ')'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(41): error C2143: syntax error: missing ')' before '('
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(41): error C2091: function returns function
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(41): error C2143: syntax error: missing ')' before 'constant'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(41): error C2143: syntax error: missing '{' before 'constant'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(41): error C2059: syntax error: 'constant'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(41): error C2059: syntax error: ')'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(42): error C2143: syntax error: missing ')' before '('
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(42): error C2091: function returns function
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(42): error C2143: syntax error: missing ')' before 'constant'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(42): error C2143: syntax error: missing '{' before 'constant'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(42): error C2059: syntax error: 'constant'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(42): error C2059: syntax error: ')'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(44): error C2143: syntax error: missing ')' before '('
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(44): error C2091: function returns function
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(44): error C2143: syntax error: missing ')' before 'constant'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(44): error C2143: syntax error: missing '{' before 'constant'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(44): error C2059: syntax error: 'constant'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(44): error C2059: syntax error: ')'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(45): error C2143: syntax error: missing ')' before '('
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(45): error C2091: function returns function
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(45): error C2143: syntax error: missing ')' before 'constant'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(45): error C2143: syntax error: missing '{' before 'constant'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(45): error C2059: syntax error: 'constant'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(45): error C2059: syntax error: ')'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(46): error C2143: syntax error: missing ')' before '('
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(46): error C2091: function returns function
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(46): error C2143: syntax error: missing ')' before 'constant'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(46): error C2143: syntax error: missing '{' before 'constant'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(46): error C2059: syntax error: 'constant'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(46): error C2059: syntax error: ')'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(47): error C2143: syntax error: missing ')' before '('
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(47): error C2091: function returns function
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(47): error C2143: syntax error: missing ')' before 'constant'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(47): error C2143: syntax error: missing '{' before 'constant'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(47): error C2059: syntax error: 'constant'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(47): error C2059: syntax error: ')'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(226): warning C4013: 'asm' undefined; assuming extern returning int
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(227): error C2143: syntax error: missing ';' before 'volatile'
+c:\hobby\thesis\other helping\grøstl-avx2\groestl-asm-avx2-gather.h(227): warning C4550: expression evaluates to a function which is missing an argument list
+..\..\Other helping\Grøstl-AVX2\hash.c(14): error C2143: syntax error: missing ')' before '*'
+..\..\Other helping\Grøstl-AVX2\hash.c(14): error C2143: syntax error: missing '{' before '*'
+..\..\Other helping\Grøstl-AVX2\hash.c(15): error C2371: 'uint_8t': redefinition; different basic types
+  c:\hobby\thesis\other helping\grøstl-avx2\brg_types.h(61): note: see declaration of 'uint_8t'
+..\..\Other helping\Grøstl-AVX2\hash.c(15): warning C4228: nonstandard extension used: qualifiers after comma in declarator list are ignored
+..\..\Other helping\Grøstl-AVX2\hash.c(15): error C2143: syntax error: missing ';' before '*'
+..\..\Other helping\Grøstl-AVX2\hash.c(16): error C2059: syntax error: 'type'
+..\..\Other helping\Grøstl-AVX2\hash.c(16): error C2059: syntax error: ')'
+..\..\Other helping\Grøstl-AVX2\hash.c(33): error C2143: syntax error: missing ')' before '*'
+..\..\Other helping\Grøstl-AVX2\hash.c(33): error C2143: syntax error: missing '{' before '*'
+..\..\Other helping\Grøstl-AVX2\hash.c(33): error C2059: syntax error: ')'
+..\..\Other helping\Grøstl-AVX2\hash.c(33): error C2054: expected '(' to follow 'ctx'
+..\..\Other helping\Grøstl-AVX2\hash.c(46): error C2061: syntax error: identifier 'Init'
+..\..\Other helping\Grøstl-AVX2\hash.c(46): error C2059: syntax error: ';'
+..\..\Other helping\Grøstl-AVX2\hash.c(46): fatal error C1003: error count exceeds 100; stopping compilation

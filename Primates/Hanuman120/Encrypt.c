@@ -88,8 +88,7 @@ void crypto_aead_encrypt(
 
 		p1(state);
 	}
-	printf("2b: \n");
-	print_state_as_hex(state);
+
 	//Calculate tag (Actually the last 3 XORs are not needed, as we only need 120 bit for the tag... They could be removed, depending on which bits is used for the tag.
 	for (int i = 0; i < 5; i++) {
 		state[0][0] = XOR(state[0][0], key[0]);
@@ -107,7 +106,7 @@ void crypto_aead_encrypt(
 
 }
 
-void crypto_aead_decrypt(
+int crypto_aead_decrypt(
 	u8 *c, u64 clen,
 	const u8 *m,
 	const u8 *ad, const u64 adlen,
@@ -181,8 +180,7 @@ void crypto_aead_decrypt(
 
 		p1(state);
 	}
-	printf("2b: \n");
-	print_state_as_hex(state);
+
 	//XOR key to tag-part of state again. 
 	//state[0][0].m256i_u64[1] and 7 first bytes of state[1][0].m256i_u64[1] contains the tag
 	state[0][0] = XOR(key[0], state[0][0]);
@@ -207,12 +205,10 @@ void crypto_aead_decrypt(
 	YMM isEqual1 = _mm256_cmpeq_epi64(state[1][0], old_tag_1);
 
 	if (isEqual0.m256i_u64[1], isEqual1.m256i_u64[1]) {
-		printf("\nTag did match\n");
+		return 0;
 	}
-	else {
-		//	memset(m, 0, clen);
-		printf("\nTag did not match\n");
-	}
+	memset(m, 0, clen);
+	return 1;
 
 
 

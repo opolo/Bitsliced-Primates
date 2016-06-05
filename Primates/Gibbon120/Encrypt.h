@@ -10,7 +10,7 @@ void crypto_aead_encrypt(
 	const u8 *k,
 	u8 *tag);
 
-void crypto_aead_decrypt(
+int crypto_aead_decrypt(
 	u8 *c, u64 clen,
 	const u8 *m,
 	const u8 *ad, u64 adlen,

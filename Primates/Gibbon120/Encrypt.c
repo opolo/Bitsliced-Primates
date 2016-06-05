@@ -125,7 +125,7 @@ void crypto_aead_encrypt(
 	
 }
 
-void crypto_aead_decrypt(
+int crypto_aead_decrypt(
 	u8 *c, u64 clen,
 	const u8 *m,
 	const u8 *ad, const u64 adlen,
@@ -234,15 +234,10 @@ void crypto_aead_decrypt(
 	YMM isEqual1 = _mm256_cmpeq_epi64(state[1][0], old_tag_1);
 
 	if (isEqual0.m256i_u64[1], isEqual1.m256i_u64[1]) {
-		printf("\nTag did match\n");
+		return 0;
 	}
-	else {
-	//	memset(m, 0, clen);
-		printf("\nTag did not match\n");
-	}
-
-
-
+	memset(m, 0, clen);
+	return 1;
 }
 
 /*
