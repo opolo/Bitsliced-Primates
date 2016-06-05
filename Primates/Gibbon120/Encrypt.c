@@ -93,11 +93,7 @@ void crypto_aead_encrypt(
 		memcpy(&c[progress - 16], &state[3][0].m256i_u64[0], sizeof(u64));
 		memcpy(&c[progress - 8],  &state[4][0].m256i_u64[0], sizeof(u64));
 
-		printf("1a: \n ");
-		print_state_as_hex(state);
 		p3(state);
-		printf("1b: \n ");
-		print_state_as_hex(state);
 	}
 	
 
@@ -183,11 +179,7 @@ void crypto_aead_decrypt(
 			}
 		}
 
-		printf("2a: \n ");
-		print_state_as_hex(state);
 		p3(state);
-		printf("2b: \n ");
-		print_state_as_hex(state);
 	}
 
 	//Calculate tag

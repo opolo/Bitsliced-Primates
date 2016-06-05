@@ -1,5 +1,8 @@
 ﻿  ref.cpp
 c:\hobby\thesis\bitsliced-aead\reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(59): warning C4244: '=': conversion from 'unsigned __int64' to 'unsigned char', possible loss of data
 c:\hobby\thesis\bitsliced-aead\reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(61): warning C4244: '=': conversion from 'unsigned __int64' to 'unsigned char', possible loss of data
+  primate.cpp
+  encrypt.cpp
+  Generating Code...
   Gibbon120_REF_IMPL.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\grr\Gibbon120_REF_IMPL.exe
   Gibbon120_REF_IMPL.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\grr\Gibbon120_REF_IMPL.pdb (Partial PDB)

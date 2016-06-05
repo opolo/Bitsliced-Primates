@@ -1,3 +1,15 @@
-﻿  Ref.c
+﻿  Encrypt.c
+c:\hobby\thesis\primates\gibbon120\encrypt.c(41): warning C4090: 'function': different 'const' qualifiers
+c:\hobby\thesis\primates\gibbon120\encrypt.c(52): warning C4090: 'function': different 'const' qualifiers
+c:\hobby\thesis\primates\gibbon120\encrypt.c(69): warning C4028: formal parameter 3 different from declaration
+c:\hobby\thesis\primates\gibbon120\encrypt.c(69): warning C4028: formal parameter 5 different from declaration
+c:\hobby\thesis\primates\gibbon120\encrypt.c(82): warning C4090: 'function': different 'const' qualifiers
+c:\hobby\thesis\primates\gibbon120\encrypt.c(133): warning C4028: formal parameter 5 different from declaration
+c:\hobby\thesis\primates\gibbon120\encrypt.c(158): warning C4090: 'function': different 'const' qualifiers
+c:\hobby\thesis\primates\gibbon120\encrypt.c(159): warning C4090: 'function': different 'const' qualifiers
+c:\hobby\thesis\primates\gibbon120\encrypt.c(160): warning C4090: 'function': different 'const' qualifiers
+c:\hobby\thesis\primates\gibbon120\encrypt.c(161): warning C4090: 'function': different 'const' qualifiers
+c:\hobby\thesis\primates\gibbon120\encrypt.c(162): warning C4090: 'function': different 'const' qualifiers
+c:\hobby\thesis\primates\gibbon120\encrypt.c(259): warning C4244: 'initializing': conversion from 'u64' to 'int', possible loss of data
   Gibbon120.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\grr\Gibbon120.exe
   Gibbon120.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\grr\Gibbon120.pdb (Partial PDB)
