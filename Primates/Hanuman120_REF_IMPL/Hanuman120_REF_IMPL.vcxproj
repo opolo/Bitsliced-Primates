@@ -18,6 +18,20 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1hanuman120\ref\encrypt.cpp" />
+    <ClCompile Include="..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1hanuman120\ref\primate.cpp" />
+    <ClCompile Include="..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1hanuman120\ref\ref.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1hanuman120\ref\api.h" />
+    <ClInclude Include="..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1hanuman120\ref\crypto_aead.h" />
+    <ClInclude Include="..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1hanuman120\ref\parameters.h" />
+    <ClInclude Include="..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1hanuman120\ref\primate.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1hanuman120\ref\ref.suo" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{941E4656-0CF4-44DE-AEAB-6EA0757FB7EB}</ProjectGuid>
     <RootNamespace>Hanuman120_REF_IMPL</RootNamespace>
@@ -103,23 +117,13 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClInclude Include="api.h" />
-    <ClInclude Include="crypto_aead.h" />
-    <ClInclude Include="parameters.h" />
-    <ClInclude Include="primate.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="encrypt.cpp" />
-    <ClCompile Include="primate.cpp" />
-    <ClCompile Include="ref.cpp" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

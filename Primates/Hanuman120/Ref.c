@@ -77,9 +77,9 @@ void main() {
 		QueryPerformanceFrequency(&start);
 		cpu_frequency = (double)(start.QuadPart) / 1000.0; //Frequency: Ticks per milisecond on the system.
 
-		int iterations_b = 5000;
-		int iterations_kb = 5000;
-		int iterations_mb = 50;
+		int iterations_b = 2000;
+		int iterations_kb = 2000;
+		int iterations_mb = 500;
 
 		int b_test_size = 40;
 		int kb_test_size = 4000;
@@ -141,7 +141,7 @@ void main() {
 		printf("Fastest enc- & decryption: %f \n", fastestEncryption_b);
 		printf("Slowest enc- & decryption: %f \n", slowestEncryption_b);
 		printf("Average enc- & decryption speed: %f \n", averageSpeed_b);
-		printf("Speed in miliseconds: \n");
+		printf("Speed in milliseconds: \n");
 		printf("Fastest enc- & decryption: %f \n", fastestEncryption_b / cpu_frequency);
 		printf("Slowest enc- & decryption: %f \n", slowestEncryption_b / cpu_frequency);
 		printf("Average enc- & decryption speed: %f \n", averageSpeed_b / cpu_frequency);
@@ -187,7 +187,7 @@ void main() {
 		printf("Fastest enc- & decryption: %f \n", fastestEncryption_kb);
 		printf("Slowest enc- & decryption: %f \n", slowestEncryption_kb);
 		printf("Average enc- & decryption speed: %f \n", averageSpeed_kb);
-		printf("Speed in miliseconds: \n");
+		printf("Speed in milliseconds: \n");
 		printf("Fastest enc- & decryption: %f \n", fastestEncryption_kb / cpu_frequency);
 		printf("Slowest enc- & decryption: %f \n", slowestEncryption_kb / cpu_frequency);
 		printf("Average enc- & decryption speed: %f", averageSpeed_kb / cpu_frequency);
@@ -232,7 +232,7 @@ void main() {
 		printf("Fastest enc- & decryption: %f \n", fastestEncryption_mb);
 		printf("Slowest enc- & decryption: %f \n", slowestEncryption_mb);
 		printf("Average enc- & decryption speed: %f \n", averageSpeed_mb);
-		printf("Speed in seconds: \n");
+		printf("Speed in milliseconds: \n");
 		printf("Fastest enc- & decryption: %f \n", fastestEncryption_mb / cpu_frequency);
 		printf("Slowest enc- & decryption: %f \n", slowestEncryption_mb / cpu_frequency);
 		printf("Average enc- & decryption speed: %f", averageSpeed_mb / cpu_frequency);

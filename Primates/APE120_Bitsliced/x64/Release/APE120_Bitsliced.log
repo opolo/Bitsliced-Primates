@@ -1,4 +1,5 @@
-﻿  Debug.c
+﻿C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140\Microsoft.CppBuild.targets(392,5): warning MSB8028: The intermediate directory (x64\Release\) contains files shared from another project (APE120_Bitsliced.vcxproj).  This can lead to incorrect clean and rebuild behavior.
+  Debug.c
 Debug.c(65): warning C4133: 'function': incompatible types - from 'unsigned char *' to '__m256i *'
 Debug.c(66): warning C4133: 'function': incompatible types - from 'unsigned char *' to '__m256i *'
 Debug.c(67): warning C4133: 'function': incompatible types - from 'unsigned char *' to '__m256i *'
@@ -49,10 +50,5 @@ Primates.c(390): warning C4305: 'function': truncation from 'int' to 'char'
 Primates.c(408): warning C4305: 'function': truncation from 'int' to 'char'
 Primates.c(492): warning C4101: 'temp': unreferenced local variable
 Primates.c(513): warning C4101: 'temp': unreferenced local variable
-  Test.c
-Test.c(53): warning C4101: 'ciphertext': unreferenced local variable
-Test.c(54): warning C4101: 'tag': unreferenced local variable
-  Generating code
-  All 2 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
-  Finished generating code
-  APE120_Bitsliced.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\Release\APE120_Bitsliced.exe
+MSVCRT.lib(exe_main.obj) : error LNK2001: unresolved external symbol main
+C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\Release\APE120.exe : fatal error LNK1120: 1 unresolved externals

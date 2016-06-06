@@ -1,4 +1,8 @@
-﻿  ref.cpp
+﻿  encrypt.cpp
+  primate.cpp
+  ref.cpp
+..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(262): warning C4244: '=': conversion from 'unsigned __int64' to 'unsigned char', possible loss of data
+..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(264): warning C4244: '=': conversion from 'unsigned __int64' to 'unsigned char', possible loss of data
   Generating code
   1 of 23 functions ( 4.3%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation

@@ -15,28 +15,31 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="api.h">
+    <ClCompile Include="..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1hanuman120\ref\primate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1hanuman120\ref\ref.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1hanuman120\ref\encrypt.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1hanuman120\ref\primate.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="crypto_aead.h">
+    <ClInclude Include="..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1hanuman120\ref\api.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="parameters.h">
+    <ClInclude Include="..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1hanuman120\ref\crypto_aead.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="primate.h">
+    <ClInclude Include="..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1hanuman120\ref\parameters.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="encrypt.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="primate.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ref.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
+    <None Include="..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1hanuman120\ref\ref.suo" />
   </ItemGroup>
 </Project>

@@ -1,18 +1,14 @@
 #pragma once
+#include <immintrin.h>
 
-#define PrimateRounds 12 // p1
+typedef __m256i YMM;
 
-#define RateSize 8 //primate elements of 5 bit
-#define CapacitySize 48
-#define KeyLength 48 // In primate elements
-#define NonceLength 24 // In primate elements
+typedef unsigned char u8;
+typedef unsigned int u32;
+typedef unsigned long long u64;
+typedef long long i64;
 
-#define false 0
-#define true 1
-#define bool unsigned char
-
-
-
+//Bit-wise operations on AVX registers
 #define XOR(a, b) _mm256_xor_si256(a, b)
 #define NEG(a) _mm256_xor_si256(m256iAllOne, a)
 #define OR(a, b) _mm256_or_si256(a, b)
@@ -34,3 +30,20 @@
 #define AND7(a, b, c, d, e, f, g) _mm256_and_si256(a, _mm256_and_si256(b,  _mm256_and_si256(c,  _mm256_and_si256(d, _mm256_and_si256(e, _mm256_and_si256(f, g))))))
 #define AND8(a, b, c, d, e, f, g, h) _mm256_and_si256(a, _mm256_and_si256(b,  _mm256_and_si256(c,  _mm256_and_si256(d, _mm256_and_si256(e, _mm256_and_si256(f, _mm256_and_si256(g, h)))))))
 #define AND9(a, b, c, d, e, f, g, h, i) _mm256_and_si256(a, _mm256_and_si256(b,  _mm256_and_si256(c,  _mm256_and_si256(d, _mm256_and_si256(e, _mm256_and_si256(f, _mm256_and_si256(g, _mm256_and_si256(h, i))))))))
+
+//Below is for Ape-120
+#define size_rate_bytes 5
+#define size_capacity_bytes 30
+#define size_key_bytes 30
+#define size_nonce_bytes 30
+#define size_key_and_nonce_bytes 30
+#define state_row_count 7
+
+//Primate parameters
+#define OneBitsAtCol2 0b0000000011111111000000000000000000000000000000000000000000000000ULL
+#define p1_rounds 12
+
+#define Debug 0
+#define OutputData 0
+#define Benchmark 1
+#define DisablePrimates 0

@@ -18,9 +18,6 @@
     <ClCompile Include="Primates.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Test.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Debug.c">
       <Filter>Source Files</Filter>
     </ClCompile>
