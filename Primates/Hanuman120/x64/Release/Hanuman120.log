@@ -1,27 +1,8 @@
-﻿  Debug.c
-Debug.c(6): warning C4013: 'printf' undefined; assuming extern returning int
-  Encrypt.c
-Encrypt.c(33): warning C4090: 'function': different 'const' qualifiers
-Encrypt.c(44): warning C4090: 'function': different 'const' qualifiers
-Encrypt.c(62): warning C4028: formal parameter 3 different from declaration
-Encrypt.c(62): warning C4028: formal parameter 5 different from declaration
-Encrypt.c(75): warning C4090: 'function': different 'const' qualifiers
-Encrypt.c(115): warning C4028: formal parameter 5 different from declaration
-Encrypt.c(140): warning C4090: 'function': different 'const' qualifiers
-Encrypt.c(141): warning C4090: 'function': different 'const' qualifiers
-Encrypt.c(142): warning C4090: 'function': different 'const' qualifiers
-Encrypt.c(143): warning C4090: 'function': different 'const' qualifiers
-Encrypt.c(144): warning C4090: 'function': different 'const' qualifiers
-Encrypt.c(210): warning C4090: 'function': different 'const' qualifiers
-Encrypt.c(249): warning C4244: 'initializing': conversion from 'u64' to 'int', possible loss of data
-  Primate.c
-Primate.c(4): warning C4305: 'initializing': truncation from 'unsigned int' to 'char'
-Primate.c(216): warning C4013: 'printf' undefined; assuming extern returning int
-  Ref.c
+﻿  Ref.c
   Generating code
-  1 of 18 functions ( 5.6%) were compiled, the rest were copied from previous compilation.
+  3 of 18 functions (16.7%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    0 functions had inline decision re-evaluated but remain unchanged
+    1 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   Hanuman120.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\Release\Hanuman120.exe
   Hanuman120.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\Release\Hanuman120.pdb (Full PDB)

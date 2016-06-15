@@ -1,8 +1,64 @@
 #include "Debug.h"
 
+void print_state_as_hex(YMM(*state)[2]) {
+
+	//Print u64 index for help
+	printf("\n");
+	for (int i = 0; i < 8; i++) printf("i0 ");
+	printf("\t");
+
+	for (int i = 0; i < 8; i++) printf("i1 ");
+	printf("\t");
+
+	for (int i = 0; i < 8; i++) printf("i2 ");
+	printf("\t");
+
+	for (int i = 0; i < 8; i++) printf("i3 ");
+	printf("\t");
+
+	for (int i = 0; i < 8; i++) printf("i0 ");
+	printf("\t");
+
+	for (int i = 0; i < 8; i++) printf("i1 ");
+	printf("\t");
+
+	for (int i = 0; i < 8; i++) printf("i2 ");
+	printf("\t");
+
+	for (int i = 0; i < 8; i++) printf("i3 ");
+	printf("\t");
+	printf("\n");
+
+	for (int reg_no = 0; reg_no < 5; reg_no++) {
+
+		//Print first reg section
+		for (int i = 0; i < 32; i++) {
+			printf("%02x ", state[reg_no][0].m256i_u8[i]);
+			if ((i + 1) % 8 == 0) {
+				printf("\t");
+			}
+		}
+
+		//Print second reg section
+		for (int i = 0; i < 32; i++) {
+			printf("%02x ", state[reg_no][1].m256i_u8[i]);
+			if ((i + 1) % 8 == 0) {
+				printf("\t");
+			}
+		}
+		printf("\n");
+	}
+}
+
+
+
+
+
+
+/*
+
 #define YMMCount 5
 #define YMMLength 256
-
 
 void print_keys_hex(const unsigned char k[4][KeyLength]) {
 
@@ -109,3 +165,4 @@ void byte_to_binary(unsigned char *binarystr, unsigned char byte) {
 	binarystr[6] = byte & 64 ? 1 : 0;
 	binarystr[7] = byte & 128 ? 1 : 0;
 }
+*/

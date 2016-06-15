@@ -27,6 +27,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <None Include="ref.suo" />
+  </ItemGroup>
+  <ItemGroup>
     <ClInclude Include="api.h" />
     <ClInclude Include="crypto_aead.h" />
     <ClInclude Include="parameters.h" />
@@ -36,9 +39,6 @@
     <ClCompile Include="encrypt.cpp" />
     <ClCompile Include="primate.cpp" />
     <ClCompile Include="ref.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="ref.suo" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{7358BCDC-3AEB-4DCE-93A4-813F2387C5FB}</ProjectGuid>
@@ -211,6 +211,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

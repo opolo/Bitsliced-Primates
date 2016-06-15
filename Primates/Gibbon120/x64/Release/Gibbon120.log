@@ -1,7 +1,9 @@
 ﻿cl : Command line warning D9002: ignoring unknown option '-g'
-  Primate.c
-Primate.c(4): warning C4305: 'initializing': truncation from 'unsigned int' to 'char'
-Primate.c(274): warning C4013: 'printf' undefined; assuming extern returning int
-Primate.c(384): error C2065: 'm256iAllOne': undeclared identifier
-Primate.c(384): error C2440: 'function': cannot convert from 'int' to '__m256i'
-Primate.c(384): warning C4024: '_mm256_xor_si256': different types for formal and actual parameter 1
+  Ref.c
+  Generating code
+  3 of 19 functions (15.8%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    1 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+  Gibbon120.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\Release\Gibbon120.exe
+  Gibbon120.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\Release\Gibbon120.pdb (Full PDB)

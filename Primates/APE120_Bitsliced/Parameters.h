@@ -35,15 +35,16 @@ typedef long long i64;
 #define size_rate_bytes 5
 #define size_capacity_bytes 30
 #define size_key_bytes 30
-#define size_nonce_bytes 30
+#define size_nonce_bytes 15
 #define size_key_and_nonce_bytes 30
 #define state_row_count 7
+#define size_tag_u64 30 // 240 bytes
 
 //Primate parameters
 #define OneBitsAtCol2 0b0000000011111111000000000000000000000000000000000000000000000000ULL
 #define p1_rounds 12
 
-#define Debug 0
-#define OutputData 0
-#define Benchmark 1
+#define Debug 1
+#define OutputData 1
+#define Benchmark 0
 #define DisablePrimates 0

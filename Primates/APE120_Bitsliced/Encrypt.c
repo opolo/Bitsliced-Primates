@@ -1,6 +1,429 @@
 #include "Encrypt.h"
+#include "Primate.h"
 #include <stdio.h>
 #include <string.h>
+
+void create_key_YMM(const u8 *k, YMM(*key)[2]);
+void load_data_into_u64(u8 *m, u64 mlen, u64 rates[5], u64 *progress);
+YMM expand_bits_to_bytes(int x);
+
+void crypto_aead_encrypt(
+	u8 *c,
+	const u8 *m, const u64 mlen,
+	const u8 *ad, const u64 adlen,
+	const u8 *nonce,
+	const u8 *k,
+	u64 *tag) {
+
+
+	YMM state[5][2];
+	YMM key[5][2];
+	_mm256_zeroall(); //Makes sure all the just declared regs are 0.
+
+	//XOR key to empty state
+	create_key_YMM(k, key);
+	for (int i = 0; i < 5; i++) {
+		state[i][0] = key[i][0];
+		state[i][1] = key[i][1];
+	}
+
+	//Add a different constant to each capacity (identically to how primate permutations adds constants) to avoid ECB'esque problems... Constants chosen: 01, 02, 05, 0a, 15, 0b, 17, 0e, 
+	state[0][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'1010'1110'00000000, 0), state[0][0]);
+	state[1][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0101'0111'00000000, 0), state[1][0]);
+	state[2][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0010'1011'00000000, 0), state[2][0]);
+	state[3][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0001'0101'00000000, 0), state[3][0]);
+	state[4][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0000'1010'00000000, 0), state[4][0]);
+
+	//Handle nonce (40 byte in my implementation)
+	{
+		u64 nonce_u64[5] = { 0 };
+		int progress = 0;
+		load_data_into_u64(nonce, 30, nonce_u64, &progress);
+		state[0][0] = XOR(state[0][0], _mm256_setr_epi64x(nonce_u64[0], 0, 0, 0));
+		state[1][0] = XOR(state[1][0], _mm256_setr_epi64x(nonce_u64[1], 0, 0, 0));
+		state[2][0] = XOR(state[2][0], _mm256_setr_epi64x(nonce_u64[2], 0, 0, 0));
+		state[3][0] = XOR(state[3][0], _mm256_setr_epi64x(nonce_u64[3], 0, 0, 0));
+		state[4][0] = XOR(state[4][0], _mm256_setr_epi64x(nonce_u64[4], 0, 0, 0));
+		p1(state);
+
+	}
+
+	//Handle potential AD.
+	if (adlen) {
+		u64 progress = 0;
+		u64 ad_u64[5] = { 0 };
+		while (progress < adlen) {
+
+			//Get next 40 bytes of data
+			load_data_into_u64(ad, adlen, ad_u64, &progress);
+
+			//Load it into registers and create and do p1
+			for (int i = 0; i < 5; i++) {
+				state[i][0] = XOR(_mm256_setr_epi64x(ad_u64[i], 0, 0, 0), state[i][0]);
+			}
+
+			p1(state);
+		}
+	}
+
+
+	//WHAT IS THE POINT OF THIS? 
+	//V <= V XOR (0^(b-1) || 1)
+	state[4][1] = _mm256_or_si256(state[4][1], _mm256_setr_epi64x(0, 0, 0b11111111'00000000'00000000'00000000'00000000'00000000'00000000'00000000, 0));
+	
+	if (mlen) {
+		u64 progress = 0;
+		u64 data_u64[5] = { 0 };
+		while (progress < mlen) {
+
+			//Get next 40 bytes of data
+			load_data_into_u64(m, mlen, data_u64, &progress);
+			
+			//XOR it into registers and do p1
+			for (int i = 0; i < 5; i++) {
+				state[i][0] = XOR(_mm256_setr_epi64x(data_u64[i], 0, 0, 0), state[i][0]);
+			}
+			
+			p1(state);
+
+			//Extract ciphertext
+			memcpy(&c[progress - 40], &state[0][0].m256i_u64[0], sizeof(u64));
+			memcpy(&c[progress - 32], &state[1][0].m256i_u64[0], sizeof(u64));
+			memcpy(&c[progress - 24], &state[2][0].m256i_u64[0], sizeof(u64));
+			memcpy(&c[progress - 16], &state[3][0].m256i_u64[0], sizeof(u64));
+			memcpy(&c[progress - 8], &state[4][0].m256i_u64[0], sizeof(u64));
+		}
+	}
+
+
+	//Create tag (its size will be 240*8 = 1920 bits = 240 bytes.
+	//XOR key to state
+	for (int i = 0; i < 5; i++) {
+		state[i][0] = XOR(state[i][0], key[i][0]);
+		state[i][1] = XOR(state[i][1], key[i][1]);
+	}
+
+	//Extract tag  
+	memcpy(&tag[0], &state[0][0].m256i_u64[1], sizeof(u64));
+	memcpy(&tag[1], &state[0][0].m256i_u64[2], sizeof(u64));
+	memcpy(&tag[2], &state[0][0].m256i_u64[3], sizeof(u64));
+	memcpy(&tag[3], &state[0][1].m256i_u64[0], sizeof(u64));
+	memcpy(&tag[4], &state[0][1].m256i_u64[1], sizeof(u64));
+	memcpy(&tag[5], &state[0][1].m256i_u64[2], sizeof(u64));
+
+	memcpy(&tag[6], &state[1][0].m256i_u64[1], sizeof(u64));
+	memcpy(&tag[7], &state[1][0].m256i_u64[2], sizeof(u64));
+	memcpy(&tag[8], &state[1][0].m256i_u64[3], sizeof(u64));
+	memcpy(&tag[9], &state[1][1].m256i_u64[0], sizeof(u64));
+	memcpy(&tag[10], &state[1][1].m256i_u64[1], sizeof(u64));
+	memcpy(&tag[11], &state[1][1].m256i_u64[2], sizeof(u64));
+
+	memcpy(&tag[12], &state[2][0].m256i_u64[1], sizeof(u64));
+	memcpy(&tag[13], &state[2][0].m256i_u64[2], sizeof(u64));
+	memcpy(&tag[14], &state[2][0].m256i_u64[3], sizeof(u64));
+	memcpy(&tag[15], &state[2][1].m256i_u64[0], sizeof(u64));
+	memcpy(&tag[16], &state[2][1].m256i_u64[1], sizeof(u64));
+	memcpy(&tag[17], &state[2][1].m256i_u64[2], sizeof(u64));
+
+	memcpy(&tag[18], &state[3][0].m256i_u64[1], sizeof(u64));
+	memcpy(&tag[19], &state[3][0].m256i_u64[2], sizeof(u64));
+	memcpy(&tag[20], &state[3][0].m256i_u64[3], sizeof(u64));
+	memcpy(&tag[21], &state[3][1].m256i_u64[0], sizeof(u64));
+	memcpy(&tag[22], &state[3][1].m256i_u64[1], sizeof(u64));
+	memcpy(&tag[23], &state[3][1].m256i_u64[2], sizeof(u64));
+
+	memcpy(&tag[24], &state[4][0].m256i_u64[1], sizeof(u64));
+	memcpy(&tag[25], &state[4][0].m256i_u64[2], sizeof(u64));
+	memcpy(&tag[26], &state[4][0].m256i_u64[3], sizeof(u64));
+	memcpy(&tag[27], &state[4][1].m256i_u64[0], sizeof(u64));
+	memcpy(&tag[28], &state[4][1].m256i_u64[1], sizeof(u64));
+	memcpy(&tag[29], &state[4][1].m256i_u64[2], sizeof(u64));
+}
+
+int crypto_aead_decrypt(
+	u8 *c, const u64 clen,
+	const u8 *m,
+	const u8 *ad, const u64 adlen,
+	const u8 *nonce,
+	const u8 *k,
+	u64 *tag) {
+
+	YMM state_IV[5][2];
+	YMM state_V[5][2];
+	YMM key[5][2];
+	_mm256_zeroall(); //Makes sure all the just declared regs are 0.
+
+	//XOR key to empty state
+	create_key_YMM(k, key);
+	for (int i = 0; i < 5; i++) {
+		state_IV[i][0] = key[i][0];
+		state_IV[i][1] = key[i][1];
+	}
+
+	//Add a different constant to each capacity (identically to how primate permutations adds constants) to avoid ECB'esque problems... Constants chosen: 01, 02, 05, 0a, 15, 0b, 17, 0e, 
+	state_IV[0][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'1010'1110'00000000, 0), state_IV[0][0]);
+	state_IV[1][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0101'0111'00000000, 0), state_IV[1][0]);
+	state_IV[2][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0010'1011'00000000, 0), state_IV[2][0]);
+	state_IV[3][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0001'0101'00000000, 0), state_IV[3][0]);
+	state_IV[4][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0000'1010'00000000, 0), state_IV[4][0]);
+
+	//Handle nonce (40 byte in my implementation)
+	{
+		u64 nonce_u64[5] = { 0 };
+		int progress = 0;
+		load_data_into_u64(nonce, 30, nonce_u64, &progress);
+		state_IV[0][0] = XOR(state_IV[0][0], _mm256_setr_epi64x(nonce_u64[0], 0, 0, 0));
+		state_IV[1][0] = XOR(state_IV[1][0], _mm256_setr_epi64x(nonce_u64[1], 0, 0, 0));
+		state_IV[2][0] = XOR(state_IV[2][0], _mm256_setr_epi64x(nonce_u64[2], 0, 0, 0));
+		state_IV[3][0] = XOR(state_IV[3][0], _mm256_setr_epi64x(nonce_u64[3], 0, 0, 0));
+		state_IV[4][0] = XOR(state_IV[4][0], _mm256_setr_epi64x(nonce_u64[4], 0, 0, 0));
+		p1(state_IV);
+	}
+	
+	//Handle potential AD.
+	if (adlen) {
+		u64 progress = 0;
+		u64 ad_u64[5] = { 0 };
+		while (progress < adlen) {
+
+			//Get next 40 bytes of data
+			load_data_into_u64(ad, adlen, ad_u64, &progress);
+
+			//Load it into registers and create and do p1
+			for (int i = 0; i < 5; i++) {
+				state_IV[i][0] = XOR(_mm256_setr_epi64x(ad_u64[i], 0, 0, 0), state_IV[i][0]);
+			}
+
+			p1(state_IV);
+
+		}
+	}
+
+	//V <= p1^-1(C[w] || K XOR T)
+	//M[w] <= v_r XOR C[w-1]
+	//V <= V XOR M[w]10* || 0^c
+	{
+		//V <= p1^-1(C[w] || K XOR T)
+		u64 progress = clen >= 40 ? clen - 40 : 0;
+		u64 lastMLocation = progress;
+		u64 cipherblock[5] = { 0 };
+		load_data_into_u64(c, clen, cipherblock, &progress);
+
+		for (int i = 0; i < 5; i++) {
+			state_V[i][0] = XOR3(_mm256_setr_epi64x(cipherblock[i], 0, 0, 0), 
+								key[i][0], 
+								_mm256_setr_epi64x(0, tag[i * 6], tag[(i * 6) + 1], tag[(i * 6) + 2]));
+			state_V[i][1] = XOR(key[i][1], 
+								_mm256_setr_epi64x(tag[(i * 6) + 3], tag[(i * 6) + 4], tag[(i * 6) + 5], 0));
+		}
+		p1_inv(state_V);
+
+		//M[w] <= v_r XOR C[w-1]
+		YMM plaintext_YMM[5];
+		for (int i = 0; i < 5; i++) {
+			//If progress is not lastMLocation, it means that we should not use C[0] here.
+			if (lastMLocation == 0) {
+				//Its 0. Use IV_r
+				plaintext_YMM[i] = XOR(state_V[i][0], state_IV[i][0]);
+			}
+			else {
+				//Its not zero, use secondlast cipherblock
+				lastMLocation -= 40;
+				load_data_into_u64(c, clen, cipherblock, &lastMLocation);
+				plaintext_YMM[i] = XOR(state_V[i][0], _mm256_setr_epi64x(cipherblock[i], 0, 0, 0) );
+			}
+			
+		}
+
+		memcpy(&m[progress - 40], &plaintext_YMM[0].m256i_u64[0], sizeof(u64));
+		memcpy(&m[progress - 32], &plaintext_YMM[1].m256i_u64[0], sizeof(u64));
+		memcpy(&m[progress - 24], &plaintext_YMM[2].m256i_u64[0], sizeof(u64));
+		memcpy(&m[progress - 16], &plaintext_YMM[3].m256i_u64[0], sizeof(u64));
+		memcpy(&m[progress - 8], &plaintext_YMM[4].m256i_u64[0], sizeof(u64));
+
+		//V <= V XOR M[w]10* || 0^c
+		for (int i = 0; i < 5; i++) {
+			state_V[i][0] = XOR(_mm256_setr_epi64x(state_V[i][0].m256i_u64[0], 0, 0, 0), plaintext_YMM[i]);
+		}
+	}
+
+	for (int i = clen - 80; i >= 0; i -= 40) {
+		i64 progress = i;
+		u64 data_u64[5] = { 0 };
+		YMM plaintext_YMM[5];
+		
+		p1_inv(state_V);
+		
+		//Get next 40 bytes of data, unless we are at "the last cipherblock", then we need to use C[0] (which is the rate of state_IV) at this point. 
+		if (i == 0) {
+			for (int j = 0; j < 5; j++) {
+				data_u64[j] = state_IV[j][0].m256i_u64[0];
+			}
+			progress += 40;
+		}
+		else {
+			progress -= 40;
+			load_data_into_u64(c, clen, data_u64, &progress); //will increment progress with 40
+			progress += 40;
+		}
+		
+
+		for (int i = 0; i < 5; i++) {
+			//M[i] <= C[i-1] XOR V_r
+			plaintext_YMM[i] = XOR(state_V[i][0], _mm256_setr_epi64x(data_u64[i], 0, 0, 0));
+			
+			//V <= C[i-1] || VC
+			state_V[i][0].m256i_u64[0] = data_u64[i];
+		}
+
+		//print_state_as_hex(plaintext_YMM);
+
+		//Extract ciphertext
+		memcpy(&m[progress - 40], &plaintext_YMM[0].m256i_u64[0], sizeof(u64));
+		memcpy(&m[progress - 32], &plaintext_YMM[1].m256i_u64[0], sizeof(u64));
+		memcpy(&m[progress - 24], &plaintext_YMM[2].m256i_u64[0], sizeof(u64));
+		memcpy(&m[progress - 16], &plaintext_YMM[3].m256i_u64[0], sizeof(u64));
+		memcpy(&m[progress - 8], &plaintext_YMM[4].m256i_u64[0], sizeof(u64));
+	}
+	
+	//Check "tag", IV_c == V_c XOR 0^c-1 || 1
+	state_V[4][1] = _mm256_xor_si256(state_V[4][1], _mm256_setr_epi64x(0, 0, 0b11111111'00000000'00000000'00000000'00000000'00000000'00000000'00000000, 0));
+
+	for (int i = 0; i < 5; i++) {
+		YMM isEqualSec0 = _mm256_cmpeq_epi64(state_IV[i][0], state_V[i][0]);
+		YMM isEqualSec1 = _mm256_cmpeq_epi64(state_IV[i][1], state_V[i][1]);
+
+		//We only compare capacities, not rates
+		isEqualSec0.m256i_u64[0] = 0;
+		isEqualSec1.m256i_u64[0] = 0;
+
+		if (isEqualSec0.m256i_u64[1] == 0 || isEqualSec0.m256i_u64[2] == 0 || isEqualSec0.m256i_u64[3] == 0 ||
+			isEqualSec1.m256i_u64[1] == 0 || isEqualSec1.m256i_u64[2] == 0 || isEqualSec1.m256i_u64[3] == 0) {
+			//Not equal. Wipe data and 
+			//memset to 0 here
+			return 1;
+		}
+	}
+	return 0;
+	
+}
+
+void create_key_YMM(const u8 *k, YMM(*key)[2]) {
+	
+	//Expand key
+	int key_bits[10] = { 0 };
+
+	//First register section
+	//The low 8 bits are kept zero each time, as the rate should be zero and is stored here. 
+	key_bits[0] = (k[0] << 8) | (k[1] << 16) | (k[2] << 24);
+	key_bits[1] = (k[3] << 8) | (k[4] << 16) | (k[5] << 24);
+	key_bits[2] = (k[6] << 8) | (k[7] << 16) | (k[8] << 24);
+	key_bits[3] = (k[9] << 8) | (k[10] << 16) | (k[11] << 24);
+	key_bits[4] = (k[12] << 8) | (k[13] << 16) | (k[14] << 24);
+
+	//Second register section
+	//The high 8 bits are kept zeroed each time, as the size of 8 primate states takes 2240 bits. The first registers uses 1280 bits, so there is 64 bits per register in the second half unused
+	//It is more efficient to keep the high bits unused than the lower bits due to unneccesary shifting otherwise.
+	key_bits[5] = k[15] | (k[16] << 8) | (k[17] << 16);
+	key_bits[6] = k[18] | (k[19] << 8) | (k[20] << 16);
+	key_bits[7] = k[21] | (k[22] << 8) | (k[23] << 16);
+	key_bits[8] = k[24] | (k[25] << 8) | (k[26] << 16);
+	key_bits[9] = k[27] | (k[28] << 8) | (k[29] << 16);
+
+	//broadcast each of the 32 bits (24 if excluding zeroed space) to a 256bit YMM register. This means that each bit gets broadcast to 8 bits, which is ideal here.
+	//Key
+	key[0][0] = expand_bits_to_bytes(key_bits[0]);
+	key[1][0] = expand_bits_to_bytes(key_bits[1]);
+	key[2][0] = expand_bits_to_bytes(key_bits[2]);
+	key[3][0] = expand_bits_to_bytes(key_bits[3]);
+	key[4][0] = expand_bits_to_bytes(key_bits[4]);
+	key[0][1] = expand_bits_to_bytes(key_bits[5]);
+	key[1][1] = expand_bits_to_bytes(key_bits[6]);
+	key[2][1] = expand_bits_to_bytes(key_bits[7]);
+	key[3][1] = expand_bits_to_bytes(key_bits[8]);
+	key[4][1] = expand_bits_to_bytes(key_bits[9]);
+}
+
+
+/*
+Progress = progress in bytes.
+Loads 40 bytes into 5x u64. 8 bytes per u64
+Increments progress with 40 each time is has loaded 40 bytes (i.e. been called)
+*/
+void load_data_into_u64(u8 *m, u64 mlen, u64 rates[5], u64 *progress) {
+
+	//Are there 40 available bytes? Handle them easy now then.
+	if (*progress + 40 <= mlen) {
+		memcpy(rates, &m[*progress], sizeof(u8) * 40);
+		*progress += 40;
+		return;
+	}
+
+	//5x u64. 8 bytes each. 40 bytes in total.
+	//At some point during the next 40 bytes, we need to pad
+	for (int i = 0; i < 5; i++) {
+
+		//Do we need to pad this u64?
+		if (mlen >= *progress + 8) {
+			//No, there are 8 available bytes. 
+			memcpy(&rates[i], &m[*progress], sizeof(u8) * 8);
+		}
+		else {
+			//yes, there are less than 8 available. 
+			//Are there any available?
+			if (mlen < *progress) {
+				//No.
+				rates[i] = 0;
+			}
+			else
+			{
+				//Yes. How many are there left?
+				int available_bytes = mlen - *progress;
+
+				//Load remaining bytes into zeroed array (this is needed since we use XOR
+				rates[i] = 0x01; //Pad with 1 after the data.
+				for (int j = 0; j < available_bytes; j++) {
+					rates[i] <<= 8;
+					rates[i] |= m[*progress + (available_bytes - 1 - j)];
+				}
+			}
+		}
+		*progress += 8;
+	}
+}
+
+YMM expand_bits_to_bytes(int x)
+{
+	__m256i xbcast = _mm256_set1_epi32(x);    // we only use the low 32bits of each lane, but this is fine with AVX2
+
+											  // Each byte gets the source byte containing the corresponding bit
+	__m256i shufmask = _mm256_set_epi64x(
+		0x0303030303030303, 0x0202020202020202,
+		0x0101010101010101, 0x0000000000000000);
+	__m256i shuf = _mm256_shuffle_epi8(xbcast, shufmask);
+
+	__m256i andmask = _mm256_set1_epi64x(0x8040201008040201);  // every 8 bits -> 8 bytes, pattern repeats.
+	__m256i isolated_inverted = _mm256_andnot_si256(shuf, andmask);
+
+	// this is the extra step: compare each byte == 0 to produce 0 or -1
+	return _mm256_cmpeq_epi8(isolated_inverted, _mm256_setzero_si256());
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
 
 void debitslice_u8(unsigned char bitsliced[5], unsigned char *data);
 void transpose_byte_to_u64(unsigned char byte, u64 transposedData[5][4], int offset);
@@ -561,10 +984,10 @@ void detranspose_rate_to_bytes(__m256i *YMMs, unsigned char detransposedBytes[4]
 }
 
 
-/*
+
 We need to transpose chunks of the data of sizes that are equal to the rate-part (40 bits) of the primate-cipher.
 Thus we transpose 8 primate elements (stored in 8 bytes) at a time.
-*/
+
 void transpose_data_to_ratesize_u64(const unsigned char *data[4], u64 data_len, u64 transposed_data[5][4], u64 transpose_progress) {
 
 	for (int state_no = 0; state_no < 4; state_no++) {
@@ -587,10 +1010,10 @@ void transpose_data_to_ratesize_u64(const unsigned char *data[4], u64 data_len, 
 	}
 }
 
-/*
-* This functions accepts 4 nonces of length 120 bits ( = 24 primate elements) and transposes these bits
-* into an array of size n[YMM_no][stateNo][nonce-section]. Each nonce-section is 40 bits and 8 elements long.
-*/
+
+This functions accepts 4 nonces of length 120 bits ( = 24 primate elements) and transposes these bits
+into an array of size n[YMM_no][stateNo][nonce-section]. Each nonce-section is 40 bits and 8 elements long.
+
 void transpose_nonce_to_rate_u64(const unsigned char n[4][NonceLength], u64 transposed_nonce[5][4][3]) {
 
 	for (int state_no = 0; state_no < 4; state_no++) {
@@ -616,10 +1039,10 @@ void transpose_nonce_to_rate_u64(const unsigned char n[4][NonceLength], u64 tran
 	}
 }
 
-/*
-* This function takes an array with 4 capacities of 48 elements and transposes them into a register with the dimensions:
-* data[register_no][state_no]
-*/void transpose_key_to_capacity_u64(const unsigned char k[4][KeyLength], u64 transposedKey[5][4]) {
+
+This function takes an array with 4 capacities of 48 elements and transposes them into a register with the dimensions:
+data[register_no][state_no]
+void transpose_key_to_capacity_u64(const unsigned char k[4][KeyLength], u64 transposedKey[5][4]) {
 
 //We expect that the key is 240 bits = 48 primate elements (stored in bytes) long.
 	for (int state_no = 0; state_no < 4; state_no++) {

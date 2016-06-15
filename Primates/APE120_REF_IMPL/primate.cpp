@@ -209,10 +209,10 @@ void GenerateRoundConstants() //Generation of 5-bit round constant by using the 
 {
 	//Round constants for p_1
 	rc_p1[0]=1;
-	printf("\nRound constants for p_1: \n %.2x", rc_p1[0]);
+	//printf("\nRound constants for p_1: \n %.2x", rc_p1[0]);
 	for(int i=1; i<p1rounds; i++){
 		rc_p1[i] = ((rc_p1[i-1]<<1) ^ ((rc_p1[i-1]>>1)&1) ^ ((rc_p1[i-1]>>4)&1))&31;
-		printf("\n %.2x", rc_p1[i]);
+		//printf("\n %.2x", rc_p1[i]);
 	}
 }
 

@@ -5,21 +5,11 @@
 #include <float.h>
 #include <Windows.h>
 
-//120bit = 15 bytes
-//#define GibbonKey {0x00},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0}
-//#define GibbonKey {0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF}
-#define GibbonKey {0x0},	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0}
-//#define GibbonKey {0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02}
-#define GibbonKeyLength 15
 
-//120bit = 15 bytes
-#define GibbonNonce	{0x00}, {0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0}
-//#define GibbonNonce		{0x02}, {0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02}
-//#define GibbonNonce	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF}
-#define GibbonNonceLength 15
+#define ApeKey		{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0}, \
+					{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0}
 
-//Tag 120 bit = 15 bytes
-#define GibbonTagLength 15
+#define ApeNonce	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0}
 
 //Data. 40 bytes for this example
 #define DataOnes	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF}
@@ -37,13 +27,20 @@
 
 //Constants for datalength. Change as needed
 //#define MsgLength 80
-#define MsgLength 40
+#define MsgLength 120
 #define AdLength 40 
 
 void main() {
 
 	//data
-	unsigned char *msg = calloc(MsgLength, sizeof(u8));
+	unsigned char *msg = calloc(MsgLength + 40, sizeof(u8));
+	msg[0] = 0xFF;
+	msg[38] = 0xFF;
+	msg[39] = 0xFF;
+	
+	msg[77] = 0xFF;
+	msg[78] = 0xFF;
+	msg[79] = 0xFF;
 	unsigned char *decrypted_msg = calloc(MsgLength + 40, sizeof(u8)); //8mb (8421376 bytes)
 	unsigned char *c = calloc(MsgLength + 40, sizeof(u8)); //8mb (8421376 bytes)
 
@@ -53,10 +50,10 @@ void main() {
 														   //unsigned char *c = calloc(100, sizeof(u8)); //Make room for message + 40 extra byte due to how implementation works.. could be done more tidy
 
 														   //constant length data
-	const unsigned char key[GibbonKeyLength] = { GibbonKey };
-	const unsigned char nonce[GibbonNonceLength] = { GibbonNonce };
+	const unsigned char key[size_key_bytes] = { ApeKey };
+	const unsigned char nonce[size_nonce_bytes] = { ApeNonce };
 	const unsigned char ad[AdLength] = { DataOnes40 };
-	unsigned char tag[GibbonTagLength];
+	u64 tag[30];
 
 
 	Initialize();
@@ -242,14 +239,15 @@ void main() {
 	}
 	else {
 		//Just do a normal encryption/decryption with given #define-parameters.
-		crypto_aead_encrypt(c, msg, MsgLength, ad, AdLength, nonce, key, tag);
-		if (crypto_aead_decrypt(c, MsgLength, decrypted_msg, ad, AdLength, nonce, key, tag))
-			printf("Tag did not match!");
+		crypto_aead_encrypt(c, msg, MsgLength, ad, 0, nonce, key, tag);
+
+		if (crypto_aead_decrypt(c, MsgLength, decrypted_msg, ad, 0, nonce, key, tag))
+			printf("Tag did not match! \n");
 
 		//Output result of encryption and used data for it
 		if (OutputData) {
 			printf("Key: \n");
-			for (int i = 0; i < GibbonKeyLength; i++) {
+			for (int i = 0; i < size_key_bytes; i++) {
 				if ((i + 1) % 8 == 1 && i != 0)
 					printf("\t");
 				printf("%02x ", key[i]);
@@ -257,20 +255,22 @@ void main() {
 			printf("\n\n");
 
 			printf("Nonce: \n");
-			for (int i = 0; i < GibbonNonceLength; i++) {
+			for (int i = 0; i < size_nonce_bytes; i++) {
 				if ((i + 1) % 8 == 1 && i != 0)
 					printf("\t");
 				printf("%02x ", nonce[i]);
 			}
 			printf("\n\n");
 
+			/*
 			printf("Tag: \n");
-			for (int i = 0; i < GibbonKeyLength; i++) {
+			for (int i = 0; i < size_tag_u64 * 8; i++) {
 				if ((i + 1) % 8 == 1 && i != 0)
 					printf("\t");
 				printf("%02x ", tag[i]);
 			}
 			printf("\n\n");
+			*/
 
 			printf("Plaintext: \n");
 			for (int i = 0; i < MsgLength; i++) {

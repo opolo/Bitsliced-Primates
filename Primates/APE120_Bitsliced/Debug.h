@@ -1,8 +1,7 @@
-#include "Primates.h"
-#include <immintrin.h>
-#include <stdio.h>
+#include "Parameters.h"
 
 void print_state_as_hex(YMM(*state)[2]);
+
 /*
 void print_keys_hex(const unsigned char k[4][KeyLength]);
 void print_nonces_hex(const unsigned char npub[4][NonceLength]);

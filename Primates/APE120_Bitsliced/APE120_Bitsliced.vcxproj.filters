@@ -15,28 +15,31 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Primates.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Debug.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Encrypt.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Ref.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Primate.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Primates.h">
-      <Filter>Resource Files</Filter>
+    <ClInclude Include="Parameters.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Primate.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Debug.h">
-      <Filter>Resource Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Parameters.h">
-      <Filter>Resource Files</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Encrypt.h">
-      <Filter>Resource Files</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

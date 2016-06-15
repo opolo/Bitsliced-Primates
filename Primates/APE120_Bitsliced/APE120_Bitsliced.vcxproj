@@ -188,7 +188,7 @@
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Disabled</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -203,13 +203,14 @@
   <ItemGroup>
     <ClCompile Include="Debug.c" />
     <ClCompile Include="Encrypt.c" />
-    <ClCompile Include="Primates.c" />
+    <ClCompile Include="Primate.c" />
+    <ClCompile Include="Ref.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Debug.h" />
     <ClInclude Include="Encrypt.h" />
     <ClInclude Include="Parameters.h" />
-    <ClInclude Include="Primates.h" />
+    <ClInclude Include="Primate.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
