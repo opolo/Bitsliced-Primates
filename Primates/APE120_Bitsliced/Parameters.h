@@ -1,5 +1,6 @@
 #pragma once
 #include <immintrin.h>
+#include <stdio.h>
 
 typedef __m256i YMM;
 
@@ -46,5 +47,5 @@ typedef long long i64;
 
 #define Debug 1
 #define OutputData 1
-#define Benchmark 1
+#define Benchmark 0
 #define DisablePrimates 0

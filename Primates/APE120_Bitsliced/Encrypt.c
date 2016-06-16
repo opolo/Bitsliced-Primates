@@ -4,7 +4,7 @@
 #include <string.h>
 
 void create_key_YMM(const u8 *k, YMM(*key)[2]);
-void load_data_into_u64(u8 *m, u64 mlen, u64 rates[5], u64 *progress);
+void load_data_into_u64(const u8 *m, u64 mlen, u64 rates[5], u64 *progress);
 YMM expand_bits_to_bytes(int x);
 
 void crypto_aead_encrypt(
@@ -37,7 +37,7 @@ void crypto_aead_encrypt(
 	//Handle nonce (40 byte in my implementation)
 	{
 		u64 nonce_u64[5] = { 0 };
-		int progress = 0;
+		u64 progress = 0;
 		load_data_into_u64(nonce, 30, nonce_u64, &progress);
 		state[0][0] = XOR(state[0][0], _mm256_setr_epi64x(nonce_u64[0], 0, 0, 0));
 		state[1][0] = XOR(state[1][0], _mm256_setr_epi64x(nonce_u64[1], 0, 0, 0));
@@ -170,7 +170,7 @@ int crypto_aead_decrypt(
 	//Handle nonce (40 byte in my implementation)
 	{
 		u64 nonce_u64[5] = { 0 };
-		int progress = 0;
+		u64 progress = 0;
 		load_data_into_u64(nonce, 30, nonce_u64, &progress);
 		state_IV[0][0] = XOR(state_IV[0][0], _mm256_setr_epi64x(nonce_u64[0], 0, 0, 0));
 		state_IV[1][0] = XOR(state_IV[1][0], _mm256_setr_epi64x(nonce_u64[1], 0, 0, 0));
@@ -249,7 +249,7 @@ int crypto_aead_decrypt(
 	}
 	
 	
-	for (int i = clen - 80; i >= 0; i -= 40) {
+	for (i64 i = clen - 80; i >= 0; i -= 40) {
 		i64 progress = i;
 		u64 data_u64[5] = { 0 };
 		YMM plaintext_YMM[5];
@@ -352,7 +352,7 @@ Progress = progress in bytes.
 Loads 40 bytes into 5x u64. 8 bytes per u64
 Increments progress with 40 each time is has loaded 40 bytes (i.e. been called)
 */
-void load_data_into_u64(u8 *m, u64 mlen, u64 rates[5], u64 *progress) {
+void load_data_into_u64(const u8 *m, u64 mlen, u64 rates[5], u64 *progress) {
 
 	//Are there 40 available bytes? Handle them easy now then.
 	if (*progress + 40 <= mlen) {
@@ -380,7 +380,7 @@ void load_data_into_u64(u8 *m, u64 mlen, u64 rates[5], u64 *progress) {
 			else
 			{
 				//Yes. How many are there left?
-				int available_bytes = mlen - *progress;
+				i64 available_bytes = mlen - *progress;
 
 				//Load remaining bytes into zeroed array (this is needed since we use XOR
 				rates[i] = 0x01; //Pad with 1 after the data.

@@ -69,9 +69,9 @@ void main() {
 
 		printf("CPU frequency: %f \n", cpu_frequency);
 
-		int iterations_b = 10; //2000;
-		int iterations_kb = 10; //2000;
-		int iterations_mb = 10; //500;
+		int iterations_b = 2'000'000;
+		int iterations_kb = 0; // 2000;
+		int iterations_mb = 0; //500;
 
 		int b_test_size = 40;
 		int kb_test_size = 4000;
