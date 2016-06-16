@@ -69,7 +69,7 @@ void crypto_aead_encrypt(
 
 	//WHAT IS THE POINT OF THIS? 
 	//V <= V XOR (0^(b-1) || 1)
-	state[4][1] = _mm256_or_si256(state[4][1], _mm256_setr_epi64x(0, 0, 0b11111111'00000000'00000000'00000000'00000000'00000000'00000000'00000000, 0));
+	state[4][1] = _mm256_xor_si256(state[4][1], _mm256_setr_epi64x(0, 0, 0b11111111'00000000'00000000'00000000'00000000'00000000'00000000'00000000, 0));
 	
 	if (mlen) {
 		u64 progress = 0;
@@ -216,6 +216,7 @@ int crypto_aead_decrypt(
 			state_V[i][1] = XOR(key[i][1], 
 								_mm256_setr_epi64x(tag[(i * 6) + 3], tag[(i * 6) + 4], tag[(i * 6) + 5], 0));
 		}
+		
 		p1_inv(state_V);
 
 		//M[w] <= v_r XOR C[w-1]
@@ -240,13 +241,14 @@ int crypto_aead_decrypt(
 		memcpy(&m[progress - 24], &plaintext_YMM[2].m256i_u64[0], sizeof(u64));
 		memcpy(&m[progress - 16], &plaintext_YMM[3].m256i_u64[0], sizeof(u64));
 		memcpy(&m[progress - 8], &plaintext_YMM[4].m256i_u64[0], sizeof(u64));
-
+		
 		//V <= V XOR M[w]10* || 0^c
 		for (int i = 0; i < 5; i++) {
-			state_V[i][0] = XOR(_mm256_setr_epi64x(state_V[i][0].m256i_u64[0], 0, 0, 0), plaintext_YMM[i]);
+			state_V[i][0] = XOR(_mm256_setr_epi64x(plaintext_YMM[i].m256i_u64[0], 0, 0, 0), state_V[i][0]);
 		}
 	}
-
+	
+	
 	for (int i = clen - 80; i >= 0; i -= 40) {
 		i64 progress = i;
 		u64 data_u64[5] = { 0 };
@@ -267,7 +269,6 @@ int crypto_aead_decrypt(
 			progress += 40;
 		}
 		
-
 		for (int i = 0; i < 5; i++) {
 			//M[i] <= C[i-1] XOR V_r
 			plaintext_YMM[i] = XOR(state_V[i][0], _mm256_setr_epi64x(data_u64[i], 0, 0, 0));
@@ -276,7 +277,6 @@ int crypto_aead_decrypt(
 			state_V[i][0].m256i_u64[0] = data_u64[i];
 		}
 
-		//print_state_as_hex(plaintext_YMM);
 
 		//Extract ciphertext
 		memcpy(&m[progress - 40], &plaintext_YMM[0].m256i_u64[0], sizeof(u64));
@@ -285,7 +285,7 @@ int crypto_aead_decrypt(
 		memcpy(&m[progress - 16], &plaintext_YMM[3].m256i_u64[0], sizeof(u64));
 		memcpy(&m[progress - 8], &plaintext_YMM[4].m256i_u64[0], sizeof(u64));
 	}
-	
+
 	//Check "tag", IV_c == V_c XOR 0^c-1 || 1
 	state_V[4][1] = _mm256_xor_si256(state_V[4][1], _mm256_setr_epi64x(0, 0, 0b11111111'00000000'00000000'00000000'00000000'00000000'00000000'00000000, 0));
 
@@ -293,9 +293,11 @@ int crypto_aead_decrypt(
 		YMM isEqualSec0 = _mm256_cmpeq_epi64(state_IV[i][0], state_V[i][0]);
 		YMM isEqualSec1 = _mm256_cmpeq_epi64(state_IV[i][1], state_V[i][1]);
 
-		//We only compare capacities, not rates
-		isEqualSec0.m256i_u64[0] = 0;
-		isEqualSec1.m256i_u64[0] = 0;
+		//We only compare capacities - not rates, so clean rates. 
+		//Also ignore last u64 of second section. The inv_p1 sbox is also applied to this section and turns the 0's into 1's here. Normally shift-rows clear it, but not in the inverse operation 
+		//It is cheaper to just clean it here, than to do it everytime in the inverse operation...
+		isEqualSec0.m256i_u64[0] = 1;
+		isEqualSec1.m256i_u64[3] = 1;
 
 		if (isEqualSec0.m256i_u64[1] == 0 || isEqualSec0.m256i_u64[2] == 0 || isEqualSec0.m256i_u64[3] == 0 ||
 			isEqualSec1.m256i_u64[1] == 0 || isEqualSec1.m256i_u64[2] == 0 || isEqualSec1.m256i_u64[3] == 0) {

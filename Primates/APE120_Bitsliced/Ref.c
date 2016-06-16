@@ -27,29 +27,22 @@
 
 //Constants for datalength. Change as needed
 //#define MsgLength 80
-#define MsgLength 120
+#define MsgLength 40
 #define AdLength 40 
 
 void main() {
 
 	//data
 	unsigned char *msg = calloc(MsgLength + 40, sizeof(u8));
-	msg[0] = 0xFF;
-	msg[38] = 0xFF;
-	msg[39] = 0xFF;
-	
-	msg[77] = 0xFF;
-	msg[78] = 0xFF;
-	msg[79] = 0xFF;
 	unsigned char *decrypted_msg = calloc(MsgLength + 40, sizeof(u8)); //8mb (8421376 bytes)
 	unsigned char *c = calloc(MsgLength + 40, sizeof(u8)); //8mb (8421376 bytes)
 
-														   //data
-														   //const unsigned char msg[MsgLength] = { DataMix40 , DataAscend8 };
-														   //const unsigned char decrypted_msg[MsgLength];
-														   //unsigned char *c = calloc(100, sizeof(u8)); //Make room for message + 40 extra byte due to how implementation works.. could be done more tidy
+	//data
+	//const unsigned char msg[MsgLength] = { DataMix40 , DataAscend8 };
+	//const unsigned char decrypted_msg[MsgLength];
+	//unsigned char *c = calloc(100, sizeof(u8)); //Make room for message + 40 extra byte due to how implementation works.. could be done more tidy
 
-														   //constant length data
+	//constant length data
 	const unsigned char key[size_key_bytes] = { ApeKey };
 	const unsigned char nonce[size_nonce_bytes] = { ApeNonce };
 	const unsigned char ad[AdLength] = { DataOnes40 };
@@ -76,9 +69,9 @@ void main() {
 
 		printf("CPU frequency: %f \n", cpu_frequency);
 
-		int iterations_b = 2000;
-		int iterations_kb = 2000;
-		int iterations_mb = 500;
+		int iterations_b = 10; //2000;
+		int iterations_kb = 10; //2000;
+		int iterations_mb = 10; //500;
 
 		int b_test_size = 40;
 		int kb_test_size = 4000;
