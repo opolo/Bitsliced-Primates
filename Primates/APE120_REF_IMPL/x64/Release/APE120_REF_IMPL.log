@@ -1,9 +1,9 @@
-﻿  encrypt.cpp
-  primate.cpp
-  ref.cpp
+﻿  ref.cpp
 ref.cpp(262): warning C4244: '=': conversion from 'unsigned __int64' to 'unsigned char', possible loss of data
 ref.cpp(264): warning C4244: '=': conversion from 'unsigned __int64' to 'unsigned char', possible loss of data
   Generating code
-  All 26 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  1 of 26 functions ( 3.8%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   APE120_REF_IMPL.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\Release\APE120_REF_IMPL.exe

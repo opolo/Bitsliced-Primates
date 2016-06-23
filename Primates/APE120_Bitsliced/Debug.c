@@ -1,5 +1,11 @@
 #include "Debug.h"
 
+void print_state_as_hex_with_label(u8 *label, YMM(*state)[2]) {
+	printf("\n");
+	printf("%s", label);
+	print_state_as_hex(state);
+}
+
 void print_state_as_hex(YMM(*state)[2]) {
 
 	//Print u64 index for help

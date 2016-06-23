@@ -20,19 +20,21 @@ void crypto_aead_encrypt(
 	YMM key[5][2];
 	_mm256_zeroall(); //Makes sure all the just declared regs are 0.
 
-	//XOR key to empty state
+	//XOR key to empty state... It will only be stored in the capacity
 	create_key_YMM(k, key);
 	for (int i = 0; i < 5; i++) {
 		state[i][0] = key[i][0];
 		state[i][1] = key[i][1];
 	}
 
-	//Add a different constant to each capacity (identically to how primate permutations adds constants) to avoid ECB'esque problems... Constants chosen: 01, 02, 05, 0a, 15, 0b, 17, 0e, 
-	state[0][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'1010'1110'00000000, 0), state[0][0]);
-	state[1][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0101'0111'00000000, 0), state[1][0]);
-	state[2][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0010'1011'00000000, 0), state[2][0]);
-	state[3][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0001'0101'00000000, 0), state[3][0]);
-	state[4][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0000'1010'00000000, 0), state[4][0]);
+	//Add a different constant to first bit of each rate (identically to how primate permutations adds constants) to avoid ECB'esque problems... Constants chosen: 01, 02, 05, 0a, 15, 0b, 17, 0e, 
+	state[0][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'1010'1110'00000000), state[0][0]);
+	state[1][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0101'0111'00000000), state[1][0]);
+	state[2][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0010'1011'00000000), state[2][0]);
+	state[3][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0001'0101'00000000), state[3][0]);
+	state[4][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0000'1010'00000000), state[4][0]);
+
+	p1(state);
 
 	//Handle nonce (40 byte in my implementation)
 	{
@@ -160,12 +162,14 @@ int crypto_aead_decrypt(
 		state_IV[i][1] = key[i][1];
 	}
 
-	//Add a different constant to each capacity (identically to how primate permutations adds constants) to avoid ECB'esque problems... Constants chosen: 01, 02, 05, 0a, 15, 0b, 17, 0e, 
-	state_IV[0][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'1010'1110'00000000, 0), state_IV[0][0]);
-	state_IV[1][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0101'0111'00000000, 0), state_IV[1][0]);
-	state_IV[2][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0010'1011'00000000, 0), state_IV[2][0]);
-	state_IV[3][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0001'0101'00000000, 0), state_IV[3][0]);
-	state_IV[4][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0000'1010'00000000, 0), state_IV[4][0]);
+	//Add a different constant to second element of each rate (identically to how primate permutations adds constants, but for the rate) to avoid ECB'esque problems... Constants chosen: 01, 02, 05, 0a, 15, 0b, 17, 0e, 
+	state_IV[0][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'1010'1110'00000000), state_IV[0][0]);
+	state_IV[1][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0101'0111'00000000), state_IV[1][0]);
+	state_IV[2][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0010'1011'00000000), state_IV[2][0]);
+	state_IV[3][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0001'0101'00000000), state_IV[3][0]);
+	state_IV[4][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0000'1010'00000000), state_IV[4][0]);
+
+	p1(state_IV);
 
 	//Handle nonce (40 byte in my implementation)
 	{

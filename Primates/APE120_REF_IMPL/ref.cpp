@@ -22,7 +22,7 @@
 
 int main()
 {
-	printf("Gibbon-120 reference implementation: \n");
+	printf("APE-120 reference implementation: \n");
 
 	if (1) {
 		const unsigned char ad[AdLength] = { DataOnes40 };
@@ -34,9 +34,9 @@ int main()
 		QueryPerformanceFrequency(&start);
 		cpu_frequency = (double)(start.QuadPart) / 1000.0; //Frequency: Ticks per milisecond on the system.
 
-		int iterations_b = 2000;
-		int iterations_kb = 2000;
-		int iterations_mb = 50;
+		int iterations_b = 200'000;
+		int iterations_kb = 20'000;
+		int iterations_mb = 20;
 
 		int b_test_size = 40;
 		int kb_test_size = 4000;

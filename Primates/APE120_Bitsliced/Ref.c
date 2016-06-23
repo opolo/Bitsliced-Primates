@@ -70,8 +70,8 @@ void main() {
 		printf("CPU frequency: %f \n", cpu_frequency);
 
 		int iterations_b = 2'000'000;
-		int iterations_kb = 0; // 2000;
-		int iterations_mb = 0; //500;
+		int iterations_kb = 10'000;
+		int iterations_mb = 50;
 
 		int b_test_size = 40;
 		int kb_test_size = 4000;
@@ -93,6 +93,7 @@ void main() {
 		double slowestEncryption_mb = DBL_MIN;
 		double averageSpeed_mb = 0;
 
+		
 		//b loop
 		for (int i = 0; i < iterations_b; i++) {
 			msg = calloc(b_test_size, sizeof(u8));
@@ -109,6 +110,11 @@ void main() {
 			QueryPerformanceCounter(&finish);
 
 			double clocks_taken = (double)(finish.QuadPart - start.QuadPart);
+
+			if (i % (iterations_b / 10) == 0) {
+				//One tenth through...
+				printf("Progress: %i/10 through. \n", (i / (iterations_b / 10) + 1));
+			}
 
 			if (clocks_taken < fastestEncryption_b)
 				fastestEncryption_b = clocks_taken;
@@ -138,7 +144,7 @@ void main() {
 		printf("Slowest enc- & decryption: %f \n", slowestEncryption_b / cpu_frequency);
 		printf("Average enc- & decryption speed: %f \n", averageSpeed_b / cpu_frequency);
 		printf("\n\n");
-
+		
 
 		//kb loop
 		for (int i = 0; i < iterations_kb; i++) {
@@ -155,6 +161,11 @@ void main() {
 			QueryPerformanceCounter(&finish);
 
 			double clocks_taken = (double)(finish.QuadPart - start.QuadPart);
+
+			if (i % (iterations_kb / 10) == 0) {
+				//One tenth through...
+				printf("Progress: %i/10 through. \n", (i / (iterations_kb / 10) + 1));
+			}
 
 			if (clocks_taken < fastestEncryption_kb)
 				fastestEncryption_kb = clocks_taken;
@@ -185,6 +196,8 @@ void main() {
 		printf("Average enc- & decryption speed: %f", averageSpeed_kb / cpu_frequency);
 		printf("\n\n");
 
+		
+		
 		//mb loop
 		for (int i = 0; i < iterations_mb; i++) {
 			msg = calloc(mb_test_size, sizeof(u8));
@@ -200,6 +213,11 @@ void main() {
 			QueryPerformanceCounter(&finish);
 
 			double clocks_taken = (double)(finish.QuadPart - start.QuadPart);
+
+			if (i % (iterations_mb / 10) == 0) {
+				//One tenth through...
+				printf("Progress: %i/10 through. \n", (i / (iterations_mb / 10) + 1));
+			}
 
 			if (clocks_taken < fastestEncryption_mb)
 				fastestEncryption_mb = clocks_taken;
@@ -229,12 +247,13 @@ void main() {
 		printf("Slowest enc- & decryption: %f \n", slowestEncryption_mb / cpu_frequency);
 		printf("Average enc- & decryption speed: %f", averageSpeed_mb / cpu_frequency);
 		printf("\n\n");
+
 	}
 	else {
 		//Just do a normal encryption/decryption with given #define-parameters.
-		crypto_aead_encrypt(c, msg, MsgLength, ad, 0, nonce, key, tag);
+		crypto_aead_encrypt(c, msg, MsgLength, ad, AdLength, nonce, key, tag);
 
-		if (crypto_aead_decrypt(c, MsgLength, decrypted_msg, ad, 0, nonce, key, tag))
+		if (crypto_aead_decrypt(c, MsgLength, decrypted_msg, ad, AdLength, nonce, key, tag))
 			printf("Tag did not match! \n");
 
 		//Output result of encryption and used data for it

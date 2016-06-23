@@ -1,0 +1,10 @@
+﻿  Test.c
+Test.c(166): warning C4477: 'printf' : format string '%u' requires an argument of type 'unsigned int', but variadic argument 1 has type 'unsigned __int64'
+  Test.c(166): note: consider using '%llu' in the format string
+  Test.c(166): note: consider using '%Iu' in the format string
+  Test.c(166): note: consider using '%I64u' in the format string
+  Generating code
+  All 13 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  MixColBenchmark.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\Release\MixColBenchmark.exe
+  MixColBenchmark.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\Release\MixColBenchmark.pdb (Full PDB)

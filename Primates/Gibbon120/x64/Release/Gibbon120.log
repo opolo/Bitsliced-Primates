@@ -20,8 +20,8 @@ Primate.c(4): warning C4305: 'initializing': truncation from 'unsigned int' to '
 Primate.c(274): warning C4013: 'printf' undefined; assuming extern returning int
   Ref.c
   Generating code
-c:\hobby\thesis\primates\gibbon120\encrypt.c(153): warning C4752: found Intel(R) Advanced Vector Extensions; consider using /arch:AVX
 c:\hobby\thesis\primates\gibbon120\encrypt.c(86): warning C4752: found Intel(R) Advanced Vector Extensions; consider using /arch:AVX
+c:\hobby\thesis\primates\gibbon120\encrypt.c(153): warning C4752: found Intel(R) Advanced Vector Extensions; consider using /arch:AVX
   All 19 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
   Finished generating code
   Gibbon120.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\Release\Gibbon120.exe

@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "APE120_Bitsliced", "APE120_Bitsliced.vcxproj", "{24106CFD-7F12-439C-90BD-D641B650BCEA}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "APE120", "APE120_Bitsliced.vcxproj", "{24106CFD-7F12-439C-90BD-D641B650BCEA}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "APE120_REF_IMPL", "..\APE120_REF_IMPL\APE120_REF_IMPL.vcxproj", "{7358BCDC-3AEB-4DCE-93A4-813F2387C5FB}"
 EndProject
@@ -14,6 +14,10 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Hanuman120", "..\Hanuman120\Hanuman120.vcxproj", "{B21C9DE4-40BF-40BF-8993-505847555FCD}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Hanuman120_REF_IMPL", "..\Hanuman120_REF_IMPL\Hanuman120_REF_IMPL.vcxproj", "{941E4656-0CF4-44DE-AEAB-6EA0757FB7EB}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PRIMATEs_MCMatrices", "..\PRIMATEs_MCMatrices\PRIMATEs_MCMatrices.vcxproj", "{9EE827B2-F7B7-42A0-98D5-16384B25B8D0}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MixColBenchmark", "MixColBenchmark\MixColBenchmark.vcxproj", "{2724A0D4-AE17-47F8-A6DA-BACC0977A73B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -97,6 +101,30 @@ Global
 		{941E4656-0CF4-44DE-AEAB-6EA0757FB7EB}.Release|x64.Build.0 = Release|x64
 		{941E4656-0CF4-44DE-AEAB-6EA0757FB7EB}.Release|x86.ActiveCfg = Release|Win32
 		{941E4656-0CF4-44DE-AEAB-6EA0757FB7EB}.Release|x86.Build.0 = Release|Win32
+		{9EE827B2-F7B7-42A0-98D5-16384B25B8D0}.Debug|x64.ActiveCfg = Debug|x64
+		{9EE827B2-F7B7-42A0-98D5-16384B25B8D0}.Debug|x64.Build.0 = Debug|x64
+		{9EE827B2-F7B7-42A0-98D5-16384B25B8D0}.Debug|x86.ActiveCfg = Debug|Win32
+		{9EE827B2-F7B7-42A0-98D5-16384B25B8D0}.Debug|x86.Build.0 = Debug|Win32
+		{9EE827B2-F7B7-42A0-98D5-16384B25B8D0}.grr|x64.ActiveCfg = Release|x64
+		{9EE827B2-F7B7-42A0-98D5-16384B25B8D0}.grr|x64.Build.0 = Release|x64
+		{9EE827B2-F7B7-42A0-98D5-16384B25B8D0}.grr|x86.ActiveCfg = Release|Win32
+		{9EE827B2-F7B7-42A0-98D5-16384B25B8D0}.grr|x86.Build.0 = Release|Win32
+		{9EE827B2-F7B7-42A0-98D5-16384B25B8D0}.Release|x64.ActiveCfg = Release|x64
+		{9EE827B2-F7B7-42A0-98D5-16384B25B8D0}.Release|x64.Build.0 = Release|x64
+		{9EE827B2-F7B7-42A0-98D5-16384B25B8D0}.Release|x86.ActiveCfg = Release|Win32
+		{9EE827B2-F7B7-42A0-98D5-16384B25B8D0}.Release|x86.Build.0 = Release|Win32
+		{2724A0D4-AE17-47F8-A6DA-BACC0977A73B}.Debug|x64.ActiveCfg = Debug|x64
+		{2724A0D4-AE17-47F8-A6DA-BACC0977A73B}.Debug|x64.Build.0 = Debug|x64
+		{2724A0D4-AE17-47F8-A6DA-BACC0977A73B}.Debug|x86.ActiveCfg = Debug|Win32
+		{2724A0D4-AE17-47F8-A6DA-BACC0977A73B}.Debug|x86.Build.0 = Debug|Win32
+		{2724A0D4-AE17-47F8-A6DA-BACC0977A73B}.grr|x64.ActiveCfg = Release|x64
+		{2724A0D4-AE17-47F8-A6DA-BACC0977A73B}.grr|x64.Build.0 = Release|x64
+		{2724A0D4-AE17-47F8-A6DA-BACC0977A73B}.grr|x86.ActiveCfg = Release|Win32
+		{2724A0D4-AE17-47F8-A6DA-BACC0977A73B}.grr|x86.Build.0 = Release|Win32
+		{2724A0D4-AE17-47F8-A6DA-BACC0977A73B}.Release|x64.ActiveCfg = Release|x64
+		{2724A0D4-AE17-47F8-A6DA-BACC0977A73B}.Release|x64.Build.0 = Release|x64
+		{2724A0D4-AE17-47F8-A6DA-BACC0977A73B}.Release|x86.ActiveCfg = Release|Win32
+		{2724A0D4-AE17-47F8-A6DA-BACC0977A73B}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

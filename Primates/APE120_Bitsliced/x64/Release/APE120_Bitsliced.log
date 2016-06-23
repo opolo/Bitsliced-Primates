@@ -1,15 +1,15 @@
 ﻿  Debug.c
   Encrypt.c
-Encrypt.c(239): warning C4090: 'function': different 'const' qualifiers
-Encrypt.c(240): warning C4090: 'function': different 'const' qualifiers
-Encrypt.c(241): warning C4090: 'function': different 'const' qualifiers
-Encrypt.c(242): warning C4090: 'function': different 'const' qualifiers
 Encrypt.c(243): warning C4090: 'function': different 'const' qualifiers
-Encrypt.c(282): warning C4090: 'function': different 'const' qualifiers
-Encrypt.c(283): warning C4090: 'function': different 'const' qualifiers
-Encrypt.c(284): warning C4090: 'function': different 'const' qualifiers
-Encrypt.c(285): warning C4090: 'function': different 'const' qualifiers
+Encrypt.c(244): warning C4090: 'function': different 'const' qualifiers
+Encrypt.c(245): warning C4090: 'function': different 'const' qualifiers
+Encrypt.c(246): warning C4090: 'function': different 'const' qualifiers
+Encrypt.c(247): warning C4090: 'function': different 'const' qualifiers
 Encrypt.c(286): warning C4090: 'function': different 'const' qualifiers
+Encrypt.c(287): warning C4090: 'function': different 'const' qualifiers
+Encrypt.c(288): warning C4090: 'function': different 'const' qualifiers
+Encrypt.c(289): warning C4090: 'function': different 'const' qualifiers
+Encrypt.c(290): warning C4090: 'function': different 'const' qualifiers
   Primate.c
   Ref.c
   Generating code

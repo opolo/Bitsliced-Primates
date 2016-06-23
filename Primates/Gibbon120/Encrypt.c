@@ -20,12 +20,12 @@ void initialize_common(YMM(*state)[2], const u8 *k, const u8 *nonce, YMM key[5],
 	state[3][0] = _mm256_xor_si256(state[3][0], key[3]);
 	state[4][0] = _mm256_xor_si256(state[4][0], key[4]);
 	
-	//Add a different constant to each capacity (identically to how primate permutations adds constants) to avoid ECB'esque problems... Constants chosen: 01, 02, 05, 0a, 15, 0b, 17, 0e, 
-	state[0][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'1010'1110'00000000, 0), state[0][0]);
-	state[1][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0101'0111'00000000, 0), state[1][0]);
-	state[2][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0010'1011'00000000, 0), state[2][0]);
-	state[3][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0001'0101'00000000, 0), state[3][0]);
-	state[4][0] = XOR(_mm256_set_epi64x(0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0000'1010'00000000, 0), state[4][0]);
+	//Add a different constant to second element of each rate (identically to how primate permutations adds constants, but for the rate) to avoid ECB'esque problems... Constants chosen: 01, 02, 05, 0a, 15, 0b, 17, 0e, 
+	state[0][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'1010'1110'00000000), state[0][0]);
+	state[1][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0101'0111'00000000), state[1][0]);
+	state[2][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0010'1011'00000000), state[2][0]);
+	state[3][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0001'0101'00000000), state[3][0]);
+	state[4][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0000'1010'00000000), state[4][0]);
 
 	
 	//AD
