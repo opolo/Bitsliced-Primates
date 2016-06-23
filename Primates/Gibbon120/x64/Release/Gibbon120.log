@@ -1,28 +1,18 @@
-﻿cl : Command line warning D9002: ignoring unknown option '-g'
-  Debug.c
-Debug.c(6): warning C4013: 'printf' undefined; assuming extern returning int
-  Encrypt.c
-Encrypt.c(40): warning C4090: 'function': different 'const' qualifiers
-Encrypt.c(51): warning C4090: 'function': different 'const' qualifiers
-Encrypt.c(68): warning C4028: formal parameter 3 different from declaration
-Encrypt.c(68): warning C4028: formal parameter 5 different from declaration
-Encrypt.c(82): warning C4090: 'function': different 'const' qualifiers
-Encrypt.c(134): warning C4028: formal parameter 5 different from declaration
-Encrypt.c(159): warning C4090: 'function': different 'const' qualifiers
-Encrypt.c(160): warning C4090: 'function': different 'const' qualifiers
-Encrypt.c(161): warning C4090: 'function': different 'const' qualifiers
-Encrypt.c(162): warning C4090: 'function': different 'const' qualifiers
-Encrypt.c(163): warning C4090: 'function': different 'const' qualifiers
-Encrypt.c(239): warning C4090: 'function': different 'const' qualifiers
-Encrypt.c(275): warning C4244: 'initializing': conversion from 'u64' to 'int', possible loss of data
-  Primate.c
-Primate.c(4): warning C4305: 'initializing': truncation from 'unsigned int' to 'char'
-Primate.c(274): warning C4013: 'printf' undefined; assuming extern returning int
-  Ref.c
+﻿  Ref.c
+Ref.c(93): warning C4133: 'function': incompatible types - from 'u64 [30]' to 'u8 *'
+Ref.c(94): warning C4133: 'function': incompatible types - from 'u64 [30]' to 'u8 *'
+Ref.c(140): warning C4133: 'function': incompatible types - from 'u64 [30]' to 'u8 *'
+Ref.c(141): warning C4133: 'function': incompatible types - from 'u64 [30]' to 'u8 *'
+Ref.c(187): warning C4133: 'function': incompatible types - from 'u64 [30]' to 'u8 *'
+Ref.c(188): warning C4133: 'function': incompatible types - from 'u64 [30]' to 'u8 *'
+Ref.c(231): warning C4133: 'function': incompatible types - from 'u64 [30]' to 'u8 *'
+Ref.c(233): warning C4133: 'function': incompatible types - from 'u64 [30]' to 'u8 *'
   Generating code
-c:\hobby\thesis\primates\gibbon120\encrypt.c(86): warning C4752: found Intel(R) Advanced Vector Extensions; consider using /arch:AVX
-c:\hobby\thesis\primates\gibbon120\encrypt.c(153): warning C4752: found Intel(R) Advanced Vector Extensions; consider using /arch:AVX
-  All 19 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+c:\hobby\thesis\primates\gibbon120\encrypt.c(92): warning C4752: found Intel(R) Advanced Vector Extensions; consider using /arch:AVX
+c:\hobby\thesis\primates\gibbon120\encrypt.c(164): warning C4752: found Intel(R) Advanced Vector Extensions; consider using /arch:AVX
+  6 of 20 functions (30.0%) were compiled, the rest were copied from previous compilation.
+    1 functions were new in current compilation
+    1 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   Gibbon120.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\Release\Gibbon120.exe
   Gibbon120.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\Release\Gibbon120.pdb (Full PDB)

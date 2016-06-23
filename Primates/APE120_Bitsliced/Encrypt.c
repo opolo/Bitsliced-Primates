@@ -4,7 +4,7 @@
 #include <string.h>
 
 void create_key_YMM(const u8 *k, YMM(*key)[2]);
-void load_data_into_u64(const u8 *m, u64 mlen, u64 rates[5], u64 *progress);
+int load_data_into_u64(const u8 *m, u64 mlen, u64 rates[5], u64 *progress);
 YMM expand_bits_to_bytes(int x);
 
 void crypto_aead_encrypt(
@@ -57,7 +57,12 @@ void crypto_aead_encrypt(
 		while (progress < adlen) {
 
 			//Get next 40 bytes of data
-			load_data_into_u64(ad, adlen, ad_u64, &progress);
+			int shouldPadCapacity = load_data_into_u64(ad, adlen, ad_u64, &progress);
+			if (shouldPadCapacity) {
+				for (int i = 0; i < 5; i++) {
+					state[i][0] = XOR(state[i][0], _mm256_setr_epi64x(0, 0xFF, 0, 0));
+				}
+			}
 
 			//Load it into registers and create and do p1
 			for (int i = 0; i < 5; i++) {
@@ -79,8 +84,13 @@ void crypto_aead_encrypt(
 		while (progress < mlen) {
 
 			//Get next 40 bytes of data
-			load_data_into_u64(m, mlen, data_u64, &progress);
-			
+			int shouldPadCapacity = load_data_into_u64(m, mlen, data_u64, &progress);
+			if (shouldPadCapacity) {
+				for (int i = 0; i < 5; i++) {
+					state[i][0] = XOR(state[i][0], _mm256_setr_epi64x(0, 0xFF, 0, 0));
+				}
+			}
+
 			//XOR it into registers and do p1
 			for (int i = 0; i < 5; i++) {
 				state[i][0] = XOR(_mm256_setr_epi64x(data_u64[i], 0, 0, 0), state[i][0]);
@@ -191,7 +201,13 @@ int crypto_aead_decrypt(
 		while (progress < adlen) {
 
 			//Get next 40 bytes of data
-			load_data_into_u64(ad, adlen, ad_u64, &progress);
+			int shouldPadCapacity = load_data_into_u64(ad, adlen, ad_u64, &progress);
+
+			if (shouldPadCapacity) {
+				for (int i = 0; i < 5; i++) {
+					state_IV[i][0] = XOR(state_IV[i][0], _mm256_setr_epi64x(0, 0xFF, 0, 0));
+				}
+			}
 
 			//Load it into registers and create and do p1
 			for (int i = 0; i < 5; i++) {
@@ -247,8 +263,14 @@ int crypto_aead_decrypt(
 		memcpy(&m[progress - 8], &plaintext_YMM[4].m256i_u64[0], sizeof(u64));
 		
 		//V <= V XOR M[w]10* || 0^c
+		int isFractional = clen % 40;
 		for (int i = 0; i < 5; i++) {
-			state_V[i][0] = XOR(_mm256_setr_epi64x(plaintext_YMM[i].m256i_u64[0], 0, 0, 0), state_V[i][0]);
+			if (isFractional) {
+				state_V[i][0] = XOR(_mm256_setr_epi64x(plaintext_YMM[i].m256i_u64[0], 0, 0, 0), state_V[i][0]);
+			}
+			else {
+				state_V[i][0] = XOR(_mm256_setr_epi64x(plaintext_YMM[i].m256i_u64[0], 0xFF, 0, 0), state_V[i][0]);
+			}
 		}
 	}
 	
@@ -355,14 +377,20 @@ void create_key_YMM(const u8 *k, YMM(*key)[2]) {
 Progress = progress in bytes.
 Loads 40 bytes into 5x u64. 8 bytes per u64
 Increments progress with 40 each time is has loaded 40 bytes (i.e. been called)
+
+Returns 1 if last bytes was loaded and message was integral. Else 0.
 */
-void load_data_into_u64(const u8 *m, u64 mlen, u64 rates[5], u64 *progress) {
+int load_data_into_u64(const u8 *m, u64 mlen, u64 rates[5], u64 *progress) {
 
 	//Are there 40 available bytes? Handle them easy now then.
 	if (*progress + 40 <= mlen) {
 		memcpy(rates, &m[*progress], sizeof(u8) * 40);
 		*progress += 40;
-		return;
+		
+		if (*progress == mlen) {
+			return 1;
+		}
+		return 0;
 	}
 
 	//5x u64. 8 bytes each. 40 bytes in total.
@@ -396,6 +424,8 @@ void load_data_into_u64(const u8 *m, u64 mlen, u64 rates[5], u64 *progress) {
 		}
 		*progress += 8;
 	}
+
+	return 0;
 }
 
 YMM expand_bits_to_bytes(int x)

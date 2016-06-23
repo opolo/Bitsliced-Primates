@@ -4,22 +4,13 @@
 #include <time.h>
 #include <float.h>
 #include <Windows.h>
+#include <stdlib.h>
 
-//120bit = 15 bytes
-//#define GibbonKey {0x00},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0}
-//#define GibbonKey {0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF}
-#define GibbonKey {0x0},	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0}
-//#define GibbonKey {0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02}
-#define GibbonKeyLength 15
+int cmpfunc(const void * a, const void * b);
 
-//120bit = 15 bytes
-#define GibbonNonce	{0x00}, {0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0}
-//#define GibbonNonce		{0x02}, {0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02},	{0x02}
-//#define GibbonNonce	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF}
-#define GibbonNonceLength 15
-
-//Tag 120 bit = 15 bytes
-#define GibbonTagLength 15
+#define HanumanKey	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0}, \
+					
+#define ApeNonce	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x00},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0},	{0x0}
 
 //Data. 40 bytes for this example
 #define DataOnes	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF},	{0xFF}
@@ -37,13 +28,13 @@
 
 //Constants for datalength. Change as needed
 //#define MsgLength 80
-#define MsgLength 40
+#define MsgLength 80
 #define AdLength 40 
 
 void main() {
 
 	//data
-	unsigned char *msg = calloc(MsgLength, sizeof(u8));
+	unsigned char *msg = calloc(MsgLength + 40, sizeof(u8));
 	unsigned char *decrypted_msg = calloc(MsgLength + 40, sizeof(u8)); //8mb (8421376 bytes)
 	unsigned char *c = calloc(MsgLength + 40, sizeof(u8)); //8mb (8421376 bytes)
 
@@ -53,10 +44,10 @@ void main() {
 														   //unsigned char *c = calloc(100, sizeof(u8)); //Make room for message + 40 extra byte due to how implementation works.. could be done more tidy
 
 														   //constant length data
-	const unsigned char key[GibbonKeyLength] = { GibbonKey };
-	const unsigned char nonce[GibbonNonceLength] = { GibbonNonce };
+	const unsigned char key[size_key_bytes] = { HanumanKey };
+	const unsigned char nonce[size_nonce_bytes] = { ApeNonce };
 	const unsigned char ad[AdLength] = { DataOnes40 };
-	unsigned char tag[GibbonTagLength];
+	u64 tag[30];
 
 
 	Initialize();
@@ -77,29 +68,19 @@ void main() {
 		QueryPerformanceFrequency(&start);
 		cpu_frequency = (double)(start.QuadPart) / 1000.0; //Frequency: Ticks per milisecond on the system.
 
-		int iterations_b = 2000;
-		int iterations_kb = 2000;
-		int iterations_mb = 500;
+		printf("CPU frequency: %f \n", cpu_frequency);
+
+		int iterations_b = 2'000'000;
+		int iterations_kb = 10'000;
+		int iterations_mb = 50;
 
 		int b_test_size = 40;
 		int kb_test_size = 4000;
 		int mb_test_size = 4'000'000;
 
-		//Data for storing benchmark results for
-		//byte-loop
-		double fastestEncryption_b = DBL_MAX;
-		double slowestEncryption_b = DBL_MIN;
-		double averageSpeed_b = 0;
-
-		//kb-loop
-		double fastestEncryption_kb = DBL_MAX;
-		double slowestEncryption_kb = DBL_MIN;
-		double averageSpeed_kb = 0;
-
-		//mb-loop
-		double fastestEncryption_mb = DBL_MAX;
-		double slowestEncryption_mb = DBL_MIN;
-		double averageSpeed_mb = 0;
+		double *results_b = calloc(iterations_b, sizeof(double));
+		double *results_kb = calloc(iterations_kb, sizeof(double));
+		double *results_mb = calloc(iterations_mb, sizeof(double));
 
 		//b loop
 		for (int i = 0; i < iterations_b; i++) {
@@ -116,35 +97,35 @@ void main() {
 
 			QueryPerformanceCounter(&finish);
 
-			double clocks_taken = (double)(finish.QuadPart - start.QuadPart);
+			results_b[i] = (double)(finish.QuadPart - start.QuadPart);
 
-			if (clocks_taken < fastestEncryption_b)
-				fastestEncryption_b = clocks_taken;
-			if (clocks_taken > slowestEncryption_b)
-				slowestEncryption_b = clocks_taken;
-			averageSpeed_b += clocks_taken;
+			if (i % (iterations_b / 10) == 0) {
+				//One tenth through...
+				printf("Progress: %i/10 through. \n", (i / (iterations_b / 10) + 1));
+			}
 
 			free(msg);
 			free(decrypted_msg);
 			free(c);
 		}
-		averageSpeed_b = averageSpeed_b / iterations_b;
-		double cycles_per_byte_b = 1 / (b_test_size / averageSpeed_b);
+		qsort(results_b, iterations_b, sizeof(double), cmpfunc);
+		double medianSpeed_b = results_b[iterations_b / 2];
+		double cycles_per_byte_b = 1 / (b_test_size / medianSpeed_b);
 
 		//Output results:
 		printf("*** byte-loop: *** \n");
 		printf("Iterations: %i \n", iterations_b);
 		printf("Test size (bytes): %i \n", b_test_size);
-		printf("Average cycles/byte: %f", cycles_per_byte_b);
+		printf("Median cycles/byte: %f", cycles_per_byte_b);
 		printf("\n");
 		printf("Speed in clocks: \n");
-		printf("Fastest enc- & decryption: %f \n", fastestEncryption_b);
-		printf("Slowest enc- & decryption: %f \n", slowestEncryption_b);
-		printf("Average enc- & decryption speed: %f \n", averageSpeed_b);
+		printf("Fastest enc- & decryption: %f \n", results_b[0]);
+		printf("Slowest enc- & decryption: %f \n", results_b[iterations_b - 1]);
+		printf("Median enc- & decryption speed: %f \n", medianSpeed_b);
 		printf("Speed in milliseconds: \n");
-		printf("Fastest enc- & decryption: %f \n", fastestEncryption_b / cpu_frequency);
-		printf("Slowest enc- & decryption: %f \n", slowestEncryption_b / cpu_frequency);
-		printf("Average enc- & decryption speed: %f \n", averageSpeed_b / cpu_frequency);
+		printf("Fastest enc- & decryption: %f \n", results_b[0] / cpu_frequency);
+		printf("Slowest enc- & decryption: %f \n", results_b[iterations_b - 1] / cpu_frequency);
+		printf("Median enc- & decryption speed: %f \n", medianSpeed_b / cpu_frequency);
 		printf("\n\n");
 
 
@@ -162,36 +143,38 @@ void main() {
 
 			QueryPerformanceCounter(&finish);
 
-			double clocks_taken = (double)(finish.QuadPart - start.QuadPart);
+			results_kb[i] = (double)(finish.QuadPart - start.QuadPart);
 
-			if (clocks_taken < fastestEncryption_kb)
-				fastestEncryption_kb = clocks_taken;
-			if (clocks_taken > slowestEncryption_kb)
-				slowestEncryption_kb = clocks_taken;
-			averageSpeed_kb += clocks_taken;
+			if (i % (iterations_kb / 10) == 0) {
+				//One tenth through...
+				printf("Progress: %i/10 through. \n", (i / (iterations_kb / 10) + 1));
+			}
 
 			free(msg);
 			free(decrypted_msg);
 			free(c);
 		}
-		averageSpeed_kb = averageSpeed_kb / iterations_kb;
-		double cycles_per_byte_kb = 1 / (kb_test_size / averageSpeed_kb);
+		qsort(results_kb, iterations_kb, sizeof(double), cmpfunc);
+		double medianSpeed_kb = results_kb[iterations_kb / 2];
+		double cycles_per_byte_kb = 1 / (kb_test_size / medianSpeed_kb);
 
 		//Output results:
 		printf("*** kilobyte-loop: *** \n");
 		printf("Iterations: %i \n", iterations_kb);
 		printf("Test size (bytes): %i \n", kb_test_size);
-		printf("Average cycles/byte: %f", cycles_per_byte_kb);
+		printf("Median cycles/byte: %f", cycles_per_byte_kb);
 		printf("\n");
 		printf("Speed in clocks: \n");
-		printf("Fastest enc- & decryption: %f \n", fastestEncryption_kb);
-		printf("Slowest enc- & decryption: %f \n", slowestEncryption_kb);
-		printf("Average enc- & decryption speed: %f \n", averageSpeed_kb);
+		printf("Fastest enc- & decryption: %f \n", results_kb[0]);
+		printf("Slowest enc- & decryption: %f \n", results_kb[iterations_kb - 1]);
+		printf("Average enc- & decryption speed: %f \n", medianSpeed_kb);
 		printf("Speed in milliseconds: \n");
-		printf("Fastest enc- & decryption: %f \n", fastestEncryption_kb / cpu_frequency);
-		printf("Slowest enc- & decryption: %f \n", slowestEncryption_kb / cpu_frequency);
-		printf("Average enc- & decryption speed: %f", averageSpeed_kb / cpu_frequency);
+		printf("Fastest enc- & decryption: %f \n", results_kb[0] / cpu_frequency);
+		printf("Slowest enc- & decryption: %f \n", results_kb[iterations_kb - 1] / cpu_frequency);
+		printf("Average enc- & decryption speed: %f", medianSpeed_kb / cpu_frequency);
 		printf("\n\n");
+
+
 
 		//mb loop
 		for (int i = 0; i < iterations_mb; i++) {
@@ -207,47 +190,53 @@ void main() {
 
 			QueryPerformanceCounter(&finish);
 
-			double clocks_taken = (double)(finish.QuadPart - start.QuadPart);
+			results_mb[i] = (double)(finish.QuadPart - start.QuadPart);
 
-			if (clocks_taken < fastestEncryption_mb)
-				fastestEncryption_mb = clocks_taken;
-			if (clocks_taken > slowestEncryption_mb)
-				slowestEncryption_mb = clocks_taken;
-			averageSpeed_mb += clocks_taken;
+			if (i % (iterations_mb / 10) == 0) {
+				//One tenth through...
+				printf("Progress: %i/10 through. \n", (i / (iterations_mb / 10) + 1));
+			}
 
 			free(msg);
 			free(decrypted_msg);
 			free(c);
 		}
-		averageSpeed_mb = averageSpeed_mb / iterations_mb;
-		double cycles_per_byte_mb = 1 / (mb_test_size / averageSpeed_mb);
+		qsort(results_mb, iterations_mb, sizeof(double), cmpfunc);
+		double medianSpeed_mb = results_mb[iterations_mb / 2];
+		double cycles_per_byte_mb = 1 / (mb_test_size / medianSpeed_mb);
 
 		//Output results:
 		printf("*** megabyte-loop: *** \n");
 		printf("Iterations: %i \n", iterations_mb);
 		printf("Test size (bytes): %i \n", mb_test_size);
-		printf("Average cycles/byte: %f", cycles_per_byte_mb);
+		printf("Median cycles/byte: %f", cycles_per_byte_mb);
 		printf("\n");
 		printf("Speed in clocks: \n");
-		printf("Fastest enc- & decryption: %f \n", fastestEncryption_mb);
-		printf("Slowest enc- & decryption: %f \n", slowestEncryption_mb);
-		printf("Average enc- & decryption speed: %f \n", averageSpeed_mb);
+		printf("Fastest enc- & decryption: %f \n", results_mb[0]);
+		printf("Slowest enc- & decryption: %f \n", results_mb[iterations_mb - 1]);
+		printf("Average enc- & decryption speed: %f \n", medianSpeed_mb);
 		printf("Speed in milliseconds: \n");
-		printf("Fastest enc- & decryption: %f \n", fastestEncryption_mb / cpu_frequency);
-		printf("Slowest enc- & decryption: %f \n", slowestEncryption_mb / cpu_frequency);
-		printf("Average enc- & decryption speed: %f", averageSpeed_mb / cpu_frequency);
+		printf("Fastest enc- & decryption: %f \n", results_mb[0] / cpu_frequency);
+		printf("Slowest enc- & decryption: %f \n", results_mb[iterations_mb - 1] / cpu_frequency);
+		printf("Average enc- & decryption speed: %f", medianSpeed_mb / cpu_frequency);
 		printf("\n\n");
+
+		free(results_b);
+		free(results_kb);
+		free(results_mb);
+
 	}
 	else {
 		//Just do a normal encryption/decryption with given #define-parameters.
 		crypto_aead_encrypt(c, msg, MsgLength, ad, AdLength, nonce, key, tag);
+
 		if (crypto_aead_decrypt(c, MsgLength, decrypted_msg, ad, AdLength, nonce, key, tag))
-			printf("Tag did not match!");
+			printf("Tag did not match! \n");
 
 		//Output result of encryption and used data for it
 		if (OutputData) {
 			printf("Key: \n");
-			for (int i = 0; i < GibbonKeyLength; i++) {
+			for (int i = 0; i < size_key_bytes; i++) {
 				if ((i + 1) % 8 == 1 && i != 0)
 					printf("\t");
 				printf("%02x ", key[i]);
@@ -255,20 +244,22 @@ void main() {
 			printf("\n\n");
 
 			printf("Nonce: \n");
-			for (int i = 0; i < GibbonNonceLength; i++) {
+			for (int i = 0; i < size_nonce_bytes; i++) {
 				if ((i + 1) % 8 == 1 && i != 0)
 					printf("\t");
 				printf("%02x ", nonce[i]);
 			}
 			printf("\n\n");
 
+			/*
 			printf("Tag: \n");
-			for (int i = 0; i < GibbonKeyLength; i++) {
-				if ((i + 1) % 8 == 1 && i != 0)
-					printf("\t");
-				printf("%02x ", tag[i]);
+			for (int i = 0; i < size_tag_u64 * 8; i++) {
+			if ((i + 1) % 8 == 1 && i != 0)
+			printf("\t");
+			printf("%02x ", tag[i]);
 			}
 			printf("\n\n");
+			*/
 
 			printf("Plaintext: \n");
 			for (int i = 0; i < MsgLength; i++) {
@@ -301,4 +292,9 @@ void main() {
 	}
 
 	getchar();
+}
+
+int cmpfunc(const void * a, const void * b)
+{
+	return (int)(*(double*)a - *(double*)b);
 }

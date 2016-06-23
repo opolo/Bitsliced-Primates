@@ -4,7 +4,7 @@
 #include <string.h>
 
 void init_bitslice_state(YMM *key, const u8 *n, const u8 *k, YMM(*state)[2]);
-void load_data_into_u64(u8 *m, u64 mlen, u64 rates[5], u64 *progress);
+int load_data_into_u64(const u8 *m, u64 mlen, u64 rates[5], u64 *progress);
 YMM expand_bits_to_bytes(int x);
 
 void initialize_common(YMM(*state)[2], const u8 *k, const u8 *nonce, YMM key[5], u64 adlen, const u8 *ad) {
@@ -48,7 +48,14 @@ void initialize_common(YMM(*state)[2], const u8 *k, const u8 *nonce, YMM key[5],
 		}
 		
 		//Handle last upto 40 bytes of data
-		load_data_into_u64(ad, adlen, data, &progress);
+		int shouldPadCapacity = load_data_into_u64(ad, adlen, data, &progress);
+
+		if (shouldPadCapacity) {
+			for (int i = 0; i < 5; i++) {
+				state[i][0] = XOR(state[i][0], _mm256_setr_epi64x(0, 0xFF, 0, 0));
+			}
+		}
+
 		state[0][0] = XOR(_mm256_setr_epi64x(data[0], 0, 0, 0), state[0][0]);
 		state[1][0] = XOR(_mm256_setr_epi64x(data[1], 0, 0, 0), state[1][0]);
 		state[2][0] = XOR(_mm256_setr_epi64x(data[2], 0, 0, 0), state[2][0]);
@@ -79,7 +86,13 @@ void crypto_aead_encrypt(
 	while (progress < mlen) {
 		
 		//Get next 40 bytes of data
-		load_data_into_u64(m, mlen, data_u64, &progress);
+		int shouldPadCapacity = load_data_into_u64(m, mlen, data_u64, &progress);
+
+		if (shouldPadCapacity) {
+			for (int i = 0; i < 5; i++) {
+				state[i][0] = XOR(state[i][0], _mm256_setr_epi64x(0, 0xFF, 0, 0));
+			}
+		}
 
 		//Load it into registers and create ciphertext and new state_rate by XOR v_r with message.
 		for (int i = 0; i < 5; i++) {
@@ -145,7 +158,13 @@ int crypto_aead_decrypt(
 	while (progress < clen) {
 
 		//Get next 40 bytes of data
-		load_data_into_u64(c, clen, data_u64, &progress);
+		int shouldPadCapacity = load_data_into_u64(c, clen, data_u64, &progress);
+
+		if (shouldPadCapacity) {
+			for (int i = 0; i < 5; i++) {
+				state[i][0] = XOR(state[i][0], _mm256_setr_epi64x(0, 0xFF, 0, 0));
+			}
+		}
 
 		//Load it into registers and create ciphertext and new state_rate by XOR v_r with message.
 		for (int i = 0; i < 5; i++) {
@@ -243,14 +262,20 @@ int crypto_aead_decrypt(
 /*
 Progress = progress in bytes.
 Loads 40 bytes into 5x u64. 8 bytes per u64
+
+Returns 1 if last bytes was loaded and message was integral. Else 0.
 */
-void load_data_into_u64(u8 *m, u64 mlen, u64 rates[5], u64 *progress) {
+int load_data_into_u64(const u8 *m, u64 mlen, u64 rates[5], u64 *progress) {
 	
 	//Are there 40 available bytes? Handle them easy now then.
 	if (*progress + 40 <= mlen) {
 		memcpy(rates, &m[*progress], sizeof(u8) * 40);
 		*progress += 40;
-		return;
+
+		if (*progress == mlen) {
+			return 1;
+		}
+		return 0;
 	}
 
 	//5x u64. 8 bytes each. 40 bytes in total.
@@ -272,7 +297,7 @@ void load_data_into_u64(u8 *m, u64 mlen, u64 rates[5], u64 *progress) {
 			else
 			{
 				//Yes. How many are there left?
-				int available_bytes = mlen - *progress;
+				i64 available_bytes = mlen - *progress;
 				
 				//Load remaining bytes into zeroed array (this is needed since we use XOR
 				rates[i] = 0x01; //Pad with 1 after the data.
@@ -284,6 +309,7 @@ void load_data_into_u64(u8 *m, u64 mlen, u64 rates[5], u64 *progress) {
 		}
 		*progress += 8; 
 	}
+	return 0;
 }
 
 static const __m256i ymm_all_zero = { 0, 0, 0, 0 };

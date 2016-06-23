@@ -1,5 +1,6 @@
 #include "Primate.h"
 #include "Debug.h"
+#include <stdio.h>
 
 static const __m256i m256iAllOne = { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
@@ -415,74 +416,175 @@ void shiftrows(__m256i (*state)[2]) {
 }
 
 void mixcolumns(__m256i (*state)[2]) {
+	/*
+	A7:
+	1       2       15      9       9       15      2
+	2       5       28      29      27      23      11
+	11      20      3       5       4       29      1
+	1       9       27      10      12      11      31
+	31      26      29      7       22      24      16
+	16      26      17      25      3       29      29
+	29      15      16      31      23      9       2
+	*/
+
 	__m256i T2_regs[5][2];
+	__m256i T3_regs[5][2];
+	__m256i T4_regs[5][2];
+	__m256i T5_regs[5];
+	__m256i T7_regs[5];
 	__m256i T8_regs[5][2];
 	__m256i T9_regs[5][2];
+	__m256i T10_regs[5];
+	__m256i T11_regs[5][2];
+	__m256i T12_regs[5];
 	__m256i T15_regs[5][2];
-	__m256i T4_regs[5][2];
+	__m256i T16_regs[5][2];
+	__m256i T17_regs[5];
+	__m256i T20_regs[5];
+	__m256i T22_regs[5];
+	__m256i T23_regs[5];
+	__m256i T24_regs[5];
+	__m256i T25_regs[5];
+	__m256i T26_regs[5];
+	__m256i T27_regs[5][2];
+	__m256i T28_regs[5];
+	__m256i T29_regs[5][2];
+	__m256i T31_regs[5][2];
 
-	__m256i temp_state[5][2];
+	T2(state, T2_regs); //T2
+	T2(T2_regs, T4_regs); //T4
+	T2(T4_regs, T8_regs); //T8
+	T2(T8_regs, T16_regs); //T16
 
-	for (int row = 0; row < state_row_count; row++)
-	{
-		//printf("Before: \n");
-		//print_state_as_hex(state);
+						   //T03
+	for (int i = 0; i < 5; i++) {
+		T3_regs[i][0] = XOR(state[i][0], T2_regs[i][0]);
+		T3_regs[i][1] = XOR(state[i][1], T2_regs[i][1]);
+	}
 
-		//T2
-		T2(state, T2_regs);
+	//T5
+	for (int i = 0; i < 5; i++) {
+		T5_regs[i] = XOR(state[i][0], T4_regs[i][0]);
+	}
 
-		T2(T2_regs, T4_regs); //T4
-		T2(T4_regs, T8_regs); //T8
+	//T7
+	for (int i = 0; i < 5; i++) {
+		T7_regs[i] = XOR3(state[i][0], T4_regs[i][0], T2_regs[i][0]);
+	}
 
-		//T9
-		for (int i = 0; i < 5; i++) {
-			T9_regs[i][0] = XOR(state[i][0], T8_regs[i][0]);
-			T9_regs[i][1] = XOR(state[i][1], T8_regs[i][1]);
-		}
+	//T9
+	for (int i = 0; i < 5; i++) {
+		T9_regs[i][0] = XOR(state[i][0], T8_regs[i][0]);
+		T9_regs[i][1] = XOR(state[i][1], T8_regs[i][1]);
+	}
 
-		//T15
-		for (int i = 0; i < 5; i++) {
-			T15_regs[i][0] = XOR4(state[i][0], T2_regs[i][0], T4_regs[i][0], T8_regs[i][0]);
-			T15_regs[i][1] = XOR4(state[i][1], T2_regs[i][1], T4_regs[i][1], T8_regs[i][1]);
-		}
+	//T10
+	for (int i = 0; i < 5; i++) {
+		T10_regs[i] = XOR(T8_regs[i][0], T2_regs[i][0]);
+	}
 
-		//Shuffle bytes upwards due to lines 1,2,3,4 in matrix.
-		for (int i = 0; i < 5; i++) {
-			temp_state[i][0] = _mm256_permute4x64_epi64(state[i][0], 0b00'11'10'01); // fill first 64 bits with second 64 bits (01 index), second 64 with third 64 bits (10 index) etc.
-			temp_state[i][0].m256i_u64[3] = state[i][1].m256i_u64[0]; //Test if this is faster when done..
+	//T11
+	for (int i = 0; i < 5; i++) {
+		T11_regs[i][0] = XOR3(state[i][0], T8_regs[i][0], T2_regs[i][0]);
+		T11_regs[i][1] = XOR3(state[i][1], T8_regs[i][1], T2_regs[i][1]);
+	}
 
-			temp_state[i][1] = _mm256_permute4x64_epi64(state[i][1], 0b00'11'10'01);
-			temp_state[i][1].m256i_u64[3] = 0; 
-		}
+	//T12
+	for (int i = 0; i < 5; i++) {
+		T12_regs[i] = XOR(T4_regs[i][1], T8_regs[i][1]);
+	}
 
-		//handle last line of matrix. Align all rows on the third u64
-		YMM aligned_last_row0[5];
-		YMM aligned_last_row1[5];
-		YMM aligned_last_row2[5];
-		YMM aligned_last_row3[5];
-		YMM aligned_last_row4[5];
-		YMM aligned_last_row5[5];
-		YMM aligned_last_row6[5];
-		for (int i = 0; i < 5; i++) {
-			aligned_last_row0[i] = _mm256_setr_epi64x(0, 0, state[i][0].m256i_u64[0], 0);
-			aligned_last_row1[i] = _mm256_setr_epi64x(0, 0, T2_regs[i][0].m256i_u64[1], 0);
-			aligned_last_row2[i] = _mm256_setr_epi64x(0, 0, T15_regs[i][0].m256i_u64[2], 0);
-			aligned_last_row3[i] = _mm256_setr_epi64x(0, 0, T9_regs[i][0].m256i_u64[3], 0);
-			aligned_last_row4[i] = _mm256_setr_epi64x(0, 0, T9_regs[i][1].m256i_u64[0], 0);
-			aligned_last_row5[i] = _mm256_setr_epi64x(0, 0, T15_regs[i][1].m256i_u64[1], 0);
-			aligned_last_row6[i] = _mm256_setr_epi64x(0, 0, T2_regs[i][1].m256i_u64[2], 0);
-		}
+	//T15
+	for (int i = 0; i < 5; i++) {
+		T15_regs[i][0] = XOR4(state[i][0], T2_regs[i][0], T4_regs[i][0], T8_regs[i][0]);
+		T15_regs[i][1] = XOR4(state[i][1], T2_regs[i][1], T4_regs[i][1], T8_regs[i][1]);
+	}
 
-		YMM last_row_calculated[5];
-		for (int i = 0; i < 5; i++) {
-			last_row_calculated[i] = XOR7(aligned_last_row0[i], aligned_last_row1[i], aligned_last_row2[i], aligned_last_row3[i], aligned_last_row4[i], aligned_last_row5[i], aligned_last_row6[i]);
-		}
+	//T17
+	for (int i = 0; i < 5; i++) {
+		T17_regs[i] = XOR(state[i][0], T16_regs[i][0]);
+	}
 
-		//Assign data to state
-		for (int i = 0; i < 5; i++) {
-			state[i][0] = temp_state[i][0];
-			state[i][1] = XOR(temp_state[i][1], last_row_calculated[i]);
-		}
+	//T20
+	for (int i = 0; i < 5; i++) {
+		T20_regs[i] = XOR(T16_regs[i][0], T4_regs[i][0]);
+	}
+
+	//T22
+	for (int i = 0; i < 5; i++) {
+		T22_regs[i] = XOR3(T16_regs[i][1], T4_regs[i][1], T2_regs[i][1]);
+	}
+
+	//T23
+	for (int i = 0; i < 5; i++) {
+		T23_regs[i] = XOR3(T16_regs[i][1], T3_regs[i][1], T4_regs[i][1]);
+	}
+
+	//T24
+	for (int i = 0; i < 5; i++) {
+		T24_regs[i] = XOR(T16_regs[i][1], T8_regs[i][1]);
+	}
+
+	//T25
+	for (int i = 0; i < 5; i++) {
+		T25_regs[i] = XOR3(T16_regs[i][0], T8_regs[i][0], state[i][0]);
+	}
+
+	//T26
+	for (int i = 0; i < 5; i++) {
+		T26_regs[i] = XOR3(T16_regs[i][0], T8_regs[i][0], T2_regs[i][0]);
+	}
+
+	//T27
+	for (int i = 0; i < 5; i++) {
+		T27_regs[i][0] = XOR4(T16_regs[i][0], T8_regs[i][0], T2_regs[i][0], state[i][0]);
+		T27_regs[i][1] = XOR4(T16_regs[i][1], T8_regs[i][1], T2_regs[i][1], state[i][1]);
+	}
+
+	//T28
+	for (int i = 0; i < 5; i++) {
+		T28_regs[i] = XOR3(T16_regs[i][0], T8_regs[i][0], T4_regs[i][0]);
+	}
+
+	//T29
+	for (int i = 0; i < 5; i++) {
+		T29_regs[i][0] = XOR4(T16_regs[i][0], T8_regs[i][0], T4_regs[i][0], state[i][0]);
+		T29_regs[i][1] = XOR4(T16_regs[i][1], T8_regs[i][1], T4_regs[i][1], state[i][1]);
+	}
+
+	//T31
+	for (int i = 0; i < 5; i++) {
+		T31_regs[i][0] = XOR5(T16_regs[i][0], T8_regs[i][0], T4_regs[i][0], T2_regs[i][0], state[i][0]);
+		T31_regs[i][1] = XOR5(T16_regs[i][1], T8_regs[i][1], T4_regs[i][1], T2_regs[i][1], state[i][1]);
+	}
+
+	YMM secondstate_calculated[5];
+	YMM firststate_calculated[5];
+	for (int i = 0; i < 5; i++) {
+		firststate_calculated[i] = XOR7(
+			_mm256_setr_epi64x(state[i][0].m256i_u64[0], T2_regs[i][0].m256i_u64[0], T11_regs[i][0].m256i_u64[0], state[i][0].m256i_u64[0]),
+			_mm256_setr_epi64x(T2_regs[i][0].m256i_u64[1], T5_regs[i].m256i_u64[1], T20_regs[i].m256i_u64[1], T9_regs[i][0].m256i_u64[1]),
+			_mm256_setr_epi64x(T15_regs[i][0].m256i_u64[2], T28_regs[i].m256i_u64[2], T3_regs[i][0].m256i_u64[2], T27_regs[i][0].m256i_u64[2]),
+			_mm256_setr_epi64x(T9_regs[i][0].m256i_u64[3], T29_regs[i][0].m256i_u64[3], T5_regs[i].m256i_u64[3], T10_regs[i].m256i_u64[3]),
+			_mm256_setr_epi64x(T9_regs[i][1].m256i_u64[0], T27_regs[i][1].m256i_u64[0], T4_regs[i][1].m256i_u64[0], T12_regs[i].m256i_u64[0]),
+			_mm256_setr_epi64x(T15_regs[i][1].m256i_u64[1], T23_regs[i].m256i_u64[1], T29_regs[i][1].m256i_u64[1], T11_regs[i][1].m256i_u64[1]),
+			_mm256_setr_epi64x(T2_regs[i][1].m256i_u64[2], T11_regs[i][1].m256i_u64[2], state[i][1].m256i_u64[2], T31_regs[i][1].m256i_u64[2]));
+
+
+		secondstate_calculated[i] = XOR7(
+			_mm256_setr_epi64x(T31_regs[i][0].m256i_u64[0], T16_regs[i][0].m256i_u64[0], T29_regs[i][0].m256i_u64[0], 0),
+			_mm256_setr_epi64x(T26_regs[i].m256i_u64[1], T26_regs[i].m256i_u64[1], T15_regs[i][0].m256i_u64[1], 0),
+			_mm256_setr_epi64x(T29_regs[i][0].m256i_u64[2], T17_regs[i].m256i_u64[2], T16_regs[i][0].m256i_u64[2], 0),
+			_mm256_setr_epi64x(T7_regs[i].m256i_u64[3], T25_regs[i].m256i_u64[3], T31_regs[i][0].m256i_u64[3], 0),
+			_mm256_setr_epi64x(T22_regs[i].m256i_u64[0], T3_regs[i][1].m256i_u64[0], T23_regs[i].m256i_u64[0], 0),
+			_mm256_setr_epi64x(T24_regs[i].m256i_u64[1], T29_regs[i][1].m256i_u64[1], T9_regs[i][1].m256i_u64[1], 0),
+			_mm256_setr_epi64x(T16_regs[i][1].m256i_u64[2], T29_regs[i][1].m256i_u64[2], T2_regs[i][1].m256i_u64[2], 0));
+	}
+
+	//Assign data to state
+	for (int i = 0; i < 5; i++) {
+		state[i][0] = firststate_calculated[i];
+		state[i][1] = secondstate_calculated[i];
 	}
 }
 
