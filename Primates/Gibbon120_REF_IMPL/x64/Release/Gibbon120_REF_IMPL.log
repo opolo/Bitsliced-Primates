@@ -1,48 +1,11 @@
-﻿  ref.cpp
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(56): error C2440: 'initializing': cannot convert from 'void *' to 'u64 *'
-  ..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(56): note: Conversion from 'void*' to pointer to non-'void' requires an explicit cast
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(57): error C2440: 'initializing': cannot convert from 'void *' to 'u64 *'
-  ..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(57): note: Conversion from 'void*' to pointer to non-'void' requires an explicit cast
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(58): error C2440: 'initializing': cannot convert from 'void *' to 'u64 *'
-  ..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(58): note: Conversion from 'void*' to pointer to non-'void' requires an explicit cast
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(65): error C2065: 'msg': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(66): error C2065: 'decrypted_msg': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(67): error C2065: 'c': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(71): error C2065: 'c': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(71): error C2065: 'msg': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(71): error C2065: 'tag': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(72): error C2065: 'c': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(72): error C2065: 'decrypted_msg': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(72): error C2065: 'tag': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(85): error C2065: 'msg': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(86): error C2065: 'decrypted_msg': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(87): error C2065: 'c': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(89): error C2065: 'cmpfunc': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(114): error C2065: 'msg': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(115): error C2065: 'decrypted_msg': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(116): error C2065: 'c': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(120): error C2065: 'c': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(120): error C2065: 'msg': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(120): error C2065: 'tag': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(121): error C2065: 'c': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(121): error C2065: 'decrypted_msg': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(121): error C2065: 'tag': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(133): error C2065: 'msg': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(134): error C2065: 'decrypted_msg': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(135): error C2065: 'c': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(137): error C2065: 'cmpfunc': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(161): error C2065: 'msg': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(162): error C2065: 'decrypted_msg': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(163): error C2065: 'c': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(167): error C2065: 'c': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(167): error C2065: 'msg': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(167): error C2065: 'tag': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(168): error C2065: 'c': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(168): error C2065: 'decrypted_msg': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(168): error C2065: 'tag': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(180): error C2065: 'msg': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(181): error C2065: 'decrypted_msg': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(182): error C2065: 'c': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(184): error C2065: 'cmpfunc': undeclared identifier
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(244): warning C4244: '=': conversion from 'unsigned __int64' to 'unsigned char', possible loss of data
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(246): warning C4244: '=': conversion from 'unsigned __int64' to 'unsigned char', possible loss of data
+﻿  encrypt.cpp
+  primate.cpp
+  ref.cpp
+..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(269): warning C4244: '=': conversion from 'unsigned __int64' to 'unsigned char', possible loss of data
+..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(271): warning C4244: '=': conversion from 'unsigned __int64' to 'unsigned char', possible loss of data
+..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1gibbon120\ref\ref.cpp(310): warning C4244: 'return': conversion from 'u64' to 'int', possible loss of data
+  Generating code
+  All 25 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  Gibbon120_REF_IMPL.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\Release\Gibbon120_REF_IMPL.exe
+  Gibbon120_REF_IMPL.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\Release\Gibbon120_REF_IMPL.pdb (Full PDB)

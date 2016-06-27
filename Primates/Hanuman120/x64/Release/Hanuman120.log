@@ -1,6 +1,10 @@
-﻿  Ref.c
+﻿  Debug.c
+  Encrypt.c
+  Primate.c
+  Ref.c
+Ref.c(326): warning C4244: 'return': conversion from 'const u64' to 'int', possible loss of data
   Generating code
-  4 of 19 functions (21.1%) were compiled, the rest were copied from previous compilation.
+  20 of 20 functions (100.0%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
     0 functions had inline decision re-evaluated but remain unchanged
   Finished generating code

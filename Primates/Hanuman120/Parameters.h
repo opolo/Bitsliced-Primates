@@ -1,6 +1,6 @@
-#pragma once
-#pragma once
+#ifndef Parameters
 #include <immintrin.h>
+#include <stdio.h>
 
 //HANUMAN
 
@@ -10,6 +10,17 @@ typedef unsigned char u8;
 typedef unsigned int u32;
 typedef unsigned long long u64;
 typedef long long i64;
+
+//For the MSVC compilers, since they do not support extract/insert intrinsics... I dont know if versions after 19.00 will support it, so I only test for this version (which I sometimes use for debugging).
+#if (_MSC_VER == 1900)
+#define _mm256_extract_epi64(a, b) a.m256i_u64[b]
+#define _mm256_extract_epi8(a, b) a.m256i_u8[b]
+#define _custom_mm256_insert_epi64(a, value, index) a.m256i_u64[index] = value
+#define _custom_mm256_insert_epi8(a, value, index) a.m256i_u8[index] = value
+#else
+#define _custom_mm256_insert_epi64(a, value, index) a = _mm256_insert_epi64(a, value, index)
+#define _custom_mm256_insert_epi8(a, value, index) a = _mm256_insert_epi8(a, value, index)
+#endif
 
 //Bit-wise operations on AVX registers
 #define XOR(a, b) _mm256_xor_si256(a, b)
@@ -51,3 +62,5 @@ typedef long long i64;
 #define OutputData 1
 #define Benchmark 1
 #define DisablePrimates 0
+
+#endif // !Parameters

@@ -1,17 +1,10 @@
 ﻿  Debug.c
   Encrypt.c
-Encrypt.c(178): warning C4090: 'function': different 'const' qualifiers
-Encrypt.c(179): warning C4090: 'function': different 'const' qualifiers
-Encrypt.c(180): warning C4090: 'function': different 'const' qualifiers
-Encrypt.c(181): warning C4090: 'function': different 'const' qualifiers
-Encrypt.c(182): warning C4090: 'function': different 'const' qualifiers
-Encrypt.c(258): warning C4090: 'function': different 'const' qualifiers
   Primate.c
   Ref.c
+Ref.c(326): warning C4244: 'return': conversion from 'const u64' to 'int', possible loss of data
   Generating code
-  1 of 20 functions ( 5.0%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    0 functions had inline decision re-evaluated but remain unchanged
+  All 21 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
   Finished generating code
   Gibbon120.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\Release\Gibbon120.exe
   Gibbon120.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\Release\Gibbon120.pdb (Full PDB)

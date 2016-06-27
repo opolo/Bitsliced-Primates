@@ -14,11 +14,11 @@ void initialize_common(YMM(*state)[2], const u8 *k, const u8 *nonce, YMM key[5],
 	init_bitslice_state(key, nonce, k, state);
 	
 	//Add a different constant to each capacity (identically to how primate permutations adds constants) to avoid ECB'esque problems... Constants chosen: 01, 02, 05, 0a, 15, 0b, 17, 0e, 
-	state[0][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'1010'1110'00000000), state[0][0]);
-	state[1][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0101'0111'00000000), state[1][0]);
-	state[2][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0010'1011'00000000), state[2][0]);
-	state[3][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0001'0101'00000000), state[3][0]);
-	state[4][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0000'1010'00000000), state[4][0]);
+	state[0][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b0000000000000000000000000000000000000000000000001010111000000000), state[0][0]);
+	state[1][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b0000000000000000000000000000000000000000000000000101011100000000), state[1][0]);
+	state[2][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b0000000000000000000000000000000000000000000000000010101100000000), state[2][0]);
+	state[3][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b0000000000000000000000000000000000000000000000000001010100000000), state[3][0]);
+	state[4][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b0000000000000000000000000000000000000000000000000000101000000000), state[4][0]);
 
 	p1(state);
 
@@ -92,11 +92,16 @@ void crypto_aead_encrypt(
 		}
 
 		//Extract ciphertext
-		memcpy(&c[progress - 40], &state[0][0].m256i_u64[0], sizeof(u64));
-		memcpy(&c[progress - 32], &state[1][0].m256i_u64[0], sizeof(u64));
-		memcpy(&c[progress - 24], &state[2][0].m256i_u64[0], sizeof(u64));
-		memcpy(&c[progress - 16], &state[3][0].m256i_u64[0], sizeof(u64));
-		memcpy(&c[progress - 8], &state[4][0].m256i_u64[0], sizeof(u64));
+		u64 c0 = _mm256_extract_epi64(state[0][0], 0);
+		u64 c1 = _mm256_extract_epi64(state[1][0], 0);
+		u64 c2 = _mm256_extract_epi64(state[2][0], 0);
+		u64 c3 = _mm256_extract_epi64(state[3][0], 0);
+		u64 c4 = _mm256_extract_epi64(state[4][0], 0);
+		memcpy(&c[progress - 40], &c0, sizeof(u64));
+		memcpy(&c[progress - 32], &c1, sizeof(u64));
+		memcpy(&c[progress - 24], &c2, sizeof(u64));
+		memcpy(&c[progress - 16], &c3, sizeof(u64));
+		memcpy(&c[progress - 8], &c4, sizeof(u64));
 
 		p1(state);
 	}
@@ -113,14 +118,16 @@ void crypto_aead_encrypt(
 
 
 	//Extract 120bit tag that is not part of rate..., And to where key was just XORed 
-	memcpy(&tag[0], &state[0][0].m256i_u64[1], sizeof(u64));
-	memcpy(&tag[8], &state[1][0].m256i_u64[1], sizeof(u8) * 7);
+	u64 t0 = _mm256_extract_epi64(state[0][0], 1);
+	u64 t1 = _mm256_extract_epi64(state[1][0], 1);
+	memcpy(&tag[0], &t0, sizeof(u64));
+	memcpy(&tag[8], &t1, sizeof(u8) * 7);
 
 }
 
 int crypto_aead_decrypt(
 	u8 *c, u64 clen,
-	const u8 *m,
+	u8 *m,
 	const u8 *ad, const u64 adlen,
 	const u8 *nonce,
 	const u8 *k,
@@ -148,18 +155,23 @@ int crypto_aead_decrypt(
 
 		//Load it into registers and create ciphertext and new state_rate by XOR v_r with message.
 		for (int i = 0; i < 5; i++) {
-			dec_m[i] = XOR(_mm256_setr_epi64x(data_u64[i], state[i][0].m256i_u64[1], state[i][0].m256i_u64[2], state[i][0].m256i_u64[3]), state[i][0]);
+			dec_m[i] = XOR(_mm256_setr_epi64x(data_u64[i], _mm256_extract_epi64(state[i][0], 1), _mm256_extract_epi64(state[i][0], 2), _mm256_extract_epi64(state[i][0], 3)), state[i][0]);
 			if (progress < clen) {
-				state[i][0].m256i_u64[0] = data_u64[i];
+				_custom_mm256_insert_epi64(state[i][0], data_u64[i], 0);
 			}
 		}
 
 		//Extract ciphertext
-		memcpy(&m[progress - 40], &dec_m[0].m256i_u64[0], sizeof(u64));
-		memcpy(&m[progress - 32], &dec_m[1].m256i_u64[0], sizeof(u64));
-		memcpy(&m[progress - 24], &dec_m[2].m256i_u64[0], sizeof(u64));
-		memcpy(&m[progress - 16], &dec_m[3].m256i_u64[0], sizeof(u64));
-		memcpy(&m[progress - 8], &dec_m[4].m256i_u64[0], sizeof(u64));
+		u64 m0 = _mm256_extract_epi64(dec_m[0], 0);
+		u64 m1 = _mm256_extract_epi64(dec_m[1], 0);
+		u64 m2 = _mm256_extract_epi64(dec_m[2], 0);
+		u64 m3 = _mm256_extract_epi64(dec_m[3], 0);
+		u64 m4 = _mm256_extract_epi64(dec_m[4], 0);
+		memcpy(&m[progress - 40], &m0, sizeof(u64));
+		memcpy(&m[progress - 32], &m1, sizeof(u64));
+		memcpy(&m[progress - 24], &m2, sizeof(u64));
+		memcpy(&m[progress - 16], &m3, sizeof(u64));
+		memcpy(&m[progress - 8], &m4, sizeof(u64));
 
 		//If we are done decrypting, we XOR the last decrypted message with potential padding to the state to prepare for creating the tag.
 		if (progress > clen) {
@@ -185,10 +197,12 @@ int crypto_aead_decrypt(
 						int padding_bytes = 8 - (clen_last_blocksize - clen_pad_progress);
 
 						//Shift data to the left to add padding by shifting back afterwards (and insert 0x01 at the front, before shifting back)
-						dec_m[i].m256i_u64[0] <<= 8 * padding_bytes;
-						dec_m[i].m256i_u64[0] >>= 8; //Make space for 0x01 byte
-						dec_m[i].m256i_u64[0] |= 0b00000001'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
-						dec_m[i].m256i_u64[0] >>= 8 * (padding_bytes - 1); //Shift remaining back.
+						u64 t = _mm256_extract_epi64(dec_m[i], 0);
+						t <<= 8 * padding_bytes;
+						t >>= 8; //Make space for 0x01 byte
+						t |= 0b0000000100000000000000000000000000000000000000000000000000000000;
+						t >>= 8 * (padding_bytes - 1); //Shift remaining back.
+						_custom_mm256_insert_epi64(dec_m[i], t, 0);
 					}
 				}
 				clen_pad_progress += 8;
@@ -203,7 +217,7 @@ int crypto_aead_decrypt(
 	//state[0][0].m256i_u64[1] and 7 first bytes of state[1][0].m256i_u64[1] contains the tag
 	state[0][0] = XOR(key[0], state[0][0]);
 	state[1][0] = XOR(key[1], state[1][0]);
-	state[1][0].m256i_u8[15] = 0x00; //We only compare 120 bits, not 128.
+	_custom_mm256_insert_epi8(state[1][0], 0x00, 15); //We only compare 120 bits, not 128.
 
 
 
@@ -222,7 +236,7 @@ int crypto_aead_decrypt(
 	YMM isEqual0 = _mm256_cmpeq_epi64(state[0][0], old_tag_0);
 	YMM isEqual1 = _mm256_cmpeq_epi64(state[1][0], old_tag_1);
 
-	if (isEqual0.m256i_u64[1], isEqual1.m256i_u64[1]) {
+	if (_mm256_extract_epi64(isEqual0, 1) && _mm256_extract_epi64(isEqual1, 1)) {
 		return 0;
 	}
 	memset(m, 0, clen);

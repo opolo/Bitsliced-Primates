@@ -7,21 +7,41 @@
 
 int cmpfunc(const void * a, const void * b);
 
+#if (_MSC_VER == 1900)
+static unsigned long long cpucycles(void)
+{
+	return __rdtsc();
+}
+#elif defined(__x86_64__)
+static unsigned long long cpucycles(void)
+{
+	unsigned long long result;
+	__asm__ __volatile__
+	(
+		".byte 15;.byte 49\n"
+		"shlq $32,%%rdx\n"
+		"orq %%rdx,%%rax"
+		: "=a" (result) ::  "%rdx"
+	);
+	return result;
+}
+#endif
 
 void main() {
 	
 	//Run only on one core
 	SetThreadAffinityMask(GetCurrentThread(), 0x00000008); //Run on fourth core
 
-	u64 start, finish, cpu_frequency;
+	u64 start;
+	u64 cpu_frequency;
 
-	start = __rdtsc();
+	printf("Estimating cycle counter frequency... ");
+	cpu_frequency = cpucycles();
 	Sleep(5000);
-	finish = __rdtsc();
-	cpu_frequency = (finish - start) / 5;
-	printf("CPU frequency: %llu \n", cpu_frequency);
+	cpu_frequency = (cpucycles() - cpu_frequency) / 5;
+	printf("%f GHz\n", cpu_frequency / 1e9);
 
-	int iterations = 50'000;
+	int iterations = 50000;
 	int iterations_per_iterations = 10;
 		
 	u64 *results_p1 = calloc(iterations, sizeof(u64));
@@ -47,96 +67,88 @@ void main() {
 			state[j][0] = _mm256_setzero_si256();
 			state[j][1] = _mm256_setzero_si256();
 		}
-		start = __rdtsc();
+		start = cpucycles();
 		for (int n = 0; n < iterations_per_iterations; n++) {
 			p1(state);
 		}
-		finish = __rdtsc();
-		results_p1[i] = (finish - start);
+		results_p1[i] = cpucycles() - start;
 
 		//p2
 		for (int j = 0; j < 5; j++) {
 			state[j][0] = _mm256_setzero_si256();
 			state[j][1] = _mm256_setzero_si256();
 		}
-		start = __rdtsc();
+		start = cpucycles();
 		for (int n = 0; n < iterations_per_iterations; n++) {
 			p2(state);
 		}
-		finish = __rdtsc();
-		results_p2[i] = (finish - start);
+		results_p2[i] = cpucycles() - start;
 
 		//p3
 		for (int j = 0; j < 5; j++) {
 			state[j][0] = _mm256_setzero_si256();
 			state[j][1] = _mm256_setzero_si256();
 		}
-		start = __rdtsc();
+		start = cpucycles();
 		for (int n = 0; n < iterations_per_iterations; n++) {
 			p3(state);
 		}
-		finish = __rdtsc();
-		results_p3[i] = (finish - start);
+		results_p3[i] = cpucycles() - start;
 
 		//p4
 		for (int j = 0; j < 5; j++) {
 			state[j][0] = _mm256_setzero_si256();
 			state[j][1] = _mm256_setzero_si256();
 		}
-		start = __rdtsc();
+		start = cpucycles();
 		for (int n = 0; n < iterations_per_iterations; n++) {
 			p4(state);
 		}
-		finish = __rdtsc();
-		results_p4[i] = (finish - start);
+		results_p4[i] = cpucycles() - start;
 
 		//inv_p1
 		for (int j = 0; j < 5; j++) {
 			state[j][0] = _mm256_setzero_si256();
 			state[j][1] = _mm256_setzero_si256();
 		}
-		start = __rdtsc();
+		start = cpucycles();
 		for (int n = 0; n < iterations_per_iterations; n++) {
 			p1_inv(state);
 		}
-		finish = __rdtsc();
-		results_inv_p1[i] = (finish - start);
+		results_inv_p1[i] = cpucycles() - start;
 
 		//inv_p2
 		for (int j = 0; j < 5; j++) {
 			state[j][0] = _mm256_setzero_si256();
 			state[j][1] = _mm256_setzero_si256();
 		}
-		start = __rdtsc();
+		start = cpucycles();
 		for (int n = 0; n < iterations_per_iterations; n++) {
 			p2_inv(state);
 		}
-		finish = __rdtsc();
-		results_inv_p2[i] = (finish - start);
+		results_inv_p2[i] = cpucycles() - start;
 
 		//inv_p3
 		for (int j = 0; j < 5; j++) {
 			state[j][0] = _mm256_setzero_si256();
 			state[j][1] = _mm256_setzero_si256();
 		}
-		start = __rdtsc();
+		start = cpucycles();
 		for (int n = 0; n < iterations_per_iterations; n++) {
 			p3_inv(state);
 		}
-		finish = __rdtsc();
-		results_inv_p3[i] = (finish - start);
+		results_inv_p3[i] = cpucycles() - start;
 
 		//inv_p4
 		for (int j = 0; j < 5; j++) {
 			state[j][0] = _mm256_setzero_si256();
 			state[j][1] = _mm256_setzero_si256();
 		}
-		start = __rdtsc();
+		start = cpucycles();
 		for (int n = 0; n < iterations_per_iterations; n++) {
 			p4_inv(state);
 		}
-		finish = __rdtsc();
-		results_inv_p4[i] = (finish - start);
+		results_inv_p4[i] = cpucycles() - start;
 	}
 
 	//Calculate results
