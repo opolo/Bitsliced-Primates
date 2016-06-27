@@ -47,7 +47,7 @@ typedef long long i64;
 #define p4_rounds 12
 
 
-#define Debug 0
+#define Debug 1
 #define OutputData 1
-#define Benchmark 0
+#define Benchmark 1
 #define DisablePrimates 0

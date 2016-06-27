@@ -28,11 +28,11 @@ void crypto_aead_encrypt(
 	}
 
 	//Add a different constant to first bit of each rate (identically to how primate permutations adds constants) to avoid ECB'esque problems... Constants chosen: 01, 02, 05, 0a, 15, 0b, 17, 0e, 
-	state[0][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'1010'1110'00000000), state[0][0]);
-	state[1][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0101'0111'00000000), state[1][0]);
-	state[2][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0010'1011'00000000), state[2][0]);
-	state[3][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0001'0101'00000000), state[3][0]);
-	state[4][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0000'1010'00000000), state[4][0]);
+	state[0][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b0000000000000000000000000000000000000000000000001010111000000000), state[0][0]);
+	state[1][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b0000000000000000000000000000000000000000000000000101011100000000), state[1][0]);
+	state[2][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b0000000000000000000000000000000000000000000000000010101100000000), state[2][0]);
+	state[3][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b0000000000000000000000000000000000000000000000000001010100000000), state[3][0]);
+	state[4][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b0000000000000000000000000000000000000000000000000000101000000000), state[4][0]);
 
 	p1(state);
 
@@ -76,7 +76,7 @@ void crypto_aead_encrypt(
 
 	//WHAT IS THE POINT OF THIS? 
 	//V <= V XOR (0^(b-1) || 1)
-	state[4][1] = _mm256_xor_si256(state[4][1], _mm256_setr_epi64x(0, 0, 0b11111111'00000000'00000000'00000000'00000000'00000000'00000000'00000000, 0));
+	state[4][1] = _mm256_xor_si256(state[4][1], _mm256_setr_epi64x(0, 0, 0b1111111100000000000000000000000000000000000000000000000000000000, 0));
 	
 	if (mlen) {
 		u64 progress = 0;
@@ -99,11 +99,16 @@ void crypto_aead_encrypt(
 			p1(state);
 
 			//Extract ciphertext
-			memcpy(&c[progress - 40], &state[0][0].m256i_u64[0], sizeof(u64));
-			memcpy(&c[progress - 32], &state[1][0].m256i_u64[0], sizeof(u64));
-			memcpy(&c[progress - 24], &state[2][0].m256i_u64[0], sizeof(u64));
-			memcpy(&c[progress - 16], &state[3][0].m256i_u64[0], sizeof(u64));
-			memcpy(&c[progress - 8], &state[4][0].m256i_u64[0], sizeof(u64));
+			u64 c0 = _mm256_extract_epi64(state[0][0], 0);
+			u64 c1 = _mm256_extract_epi64(state[1][0], 0);
+			u64 c2 = _mm256_extract_epi64(state[2][0], 0);
+			u64 c3 = _mm256_extract_epi64(state[3][0], 0);
+			u64 c4 = _mm256_extract_epi64(state[4][0], 0);
+			memcpy(&c[progress - 40], &c0, sizeof(u64));
+			memcpy(&c[progress - 32], &c1, sizeof(u64));
+			memcpy(&c[progress - 24], &c2, sizeof(u64));
+			memcpy(&c[progress - 16], &c3, sizeof(u64));
+			memcpy(&c[progress - 8], &c4, sizeof(u64));
 		}
 	}
 
@@ -115,46 +120,46 @@ void crypto_aead_encrypt(
 		state[i][1] = XOR(state[i][1], key[i][1]);
 	}
 
-	//Extract tag  
-	memcpy(&tag[0], &state[0][0].m256i_u64[1], sizeof(u64));
-	memcpy(&tag[1], &state[0][0].m256i_u64[2], sizeof(u64));
-	memcpy(&tag[2], &state[0][0].m256i_u64[3], sizeof(u64));
-	memcpy(&tag[3], &state[0][1].m256i_u64[0], sizeof(u64));
-	memcpy(&tag[4], &state[0][1].m256i_u64[1], sizeof(u64));
-	memcpy(&tag[5], &state[0][1].m256i_u64[2], sizeof(u64));
+	//Extract tag
+	tag[0] = _mm256_extract_epi64(state[0][0], 1);
+	tag[1] = _mm256_extract_epi64(state[0][0], 2);
+	tag[2] = _mm256_extract_epi64(state[0][0], 3);
+	tag[3] = _mm256_extract_epi64(state[0][1], 0);
+	tag[4] = _mm256_extract_epi64(state[0][1], 1);
+	tag[5] = _mm256_extract_epi64(state[0][1], 2);
+		    
+	tag[6] = _mm256_extract_epi64(state[1][0], 1);
+	tag[7] = _mm256_extract_epi64(state[1][0], 2);
+	tag[8] = _mm256_extract_epi64(state[1][0], 3);
+	tag[9] = _mm256_extract_epi64(state[1][1], 0);
+	tag[10] = _mm256_extract_epi64(state[1][1], 1);
+	tag[11] = _mm256_extract_epi64(state[1][1], 2);
+		   
+	tag[12] = _mm256_extract_epi64(state[2][0], 1);
+	tag[13] = _mm256_extract_epi64(state[2][0], 2);
+	tag[14] = _mm256_extract_epi64(state[2][0], 3);
+	tag[15] = _mm256_extract_epi64(state[2][1], 0);
+	tag[16] = _mm256_extract_epi64(state[2][1], 1);
+	tag[17] = _mm256_extract_epi64(state[2][1], 2);
+		    
+	tag[18] = _mm256_extract_epi64(state[3][0], 1);
+	tag[19] = _mm256_extract_epi64(state[3][0], 2);
+	tag[20] = _mm256_extract_epi64(state[3][0], 3);
+	tag[21] = _mm256_extract_epi64(state[3][1], 0);
+	tag[22] = _mm256_extract_epi64(state[3][1], 1);
+	tag[23] = _mm256_extract_epi64(state[3][1], 2);
 
-	memcpy(&tag[6], &state[1][0].m256i_u64[1], sizeof(u64));
-	memcpy(&tag[7], &state[1][0].m256i_u64[2], sizeof(u64));
-	memcpy(&tag[8], &state[1][0].m256i_u64[3], sizeof(u64));
-	memcpy(&tag[9], &state[1][1].m256i_u64[0], sizeof(u64));
-	memcpy(&tag[10], &state[1][1].m256i_u64[1], sizeof(u64));
-	memcpy(&tag[11], &state[1][1].m256i_u64[2], sizeof(u64));
-
-	memcpy(&tag[12], &state[2][0].m256i_u64[1], sizeof(u64));
-	memcpy(&tag[13], &state[2][0].m256i_u64[2], sizeof(u64));
-	memcpy(&tag[14], &state[2][0].m256i_u64[3], sizeof(u64));
-	memcpy(&tag[15], &state[2][1].m256i_u64[0], sizeof(u64));
-	memcpy(&tag[16], &state[2][1].m256i_u64[1], sizeof(u64));
-	memcpy(&tag[17], &state[2][1].m256i_u64[2], sizeof(u64));
-
-	memcpy(&tag[18], &state[3][0].m256i_u64[1], sizeof(u64));
-	memcpy(&tag[19], &state[3][0].m256i_u64[2], sizeof(u64));
-	memcpy(&tag[20], &state[3][0].m256i_u64[3], sizeof(u64));
-	memcpy(&tag[21], &state[3][1].m256i_u64[0], sizeof(u64));
-	memcpy(&tag[22], &state[3][1].m256i_u64[1], sizeof(u64));
-	memcpy(&tag[23], &state[3][1].m256i_u64[2], sizeof(u64));
-
-	memcpy(&tag[24], &state[4][0].m256i_u64[1], sizeof(u64));
-	memcpy(&tag[25], &state[4][0].m256i_u64[2], sizeof(u64));
-	memcpy(&tag[26], &state[4][0].m256i_u64[3], sizeof(u64));
-	memcpy(&tag[27], &state[4][1].m256i_u64[0], sizeof(u64));
-	memcpy(&tag[28], &state[4][1].m256i_u64[1], sizeof(u64));
-	memcpy(&tag[29], &state[4][1].m256i_u64[2], sizeof(u64));
+	tag[24] = _mm256_extract_epi64(state[4][0], 1);
+	tag[25] = _mm256_extract_epi64(state[4][0], 2);
+	tag[26] = _mm256_extract_epi64(state[4][0], 3);
+	tag[27] = _mm256_extract_epi64(state[4][1], 0);
+	tag[28] = _mm256_extract_epi64(state[4][1], 1);
+	tag[29] = _mm256_extract_epi64(state[4][1], 2);
 }
 
 int crypto_aead_decrypt(
 	u8 *c, const u64 clen,
-	const u8 *m,
+	u8 *m,
 	const u8 *ad, const u64 adlen,
 	const u8 *nonce,
 	const u8 *k,
@@ -173,11 +178,11 @@ int crypto_aead_decrypt(
 	}
 
 	//Add a different constant to second element of each rate (identically to how primate permutations adds constants, but for the rate) to avoid ECB'esque problems... Constants chosen: 01, 02, 05, 0a, 15, 0b, 17, 0e, 
-	state_IV[0][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'1010'1110'00000000), state_IV[0][0]);
-	state_IV[1][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0101'0111'00000000), state_IV[1][0]);
-	state_IV[2][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0010'1011'00000000), state_IV[2][0]);
-	state_IV[3][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0001'0101'00000000), state_IV[3][0]);
-	state_IV[4][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b00000000'00000000'00000000'00000000'00000000'00000000'0000'1010'00000000), state_IV[4][0]);
+	state_IV[0][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b0000000000000000000000000000000000000000000000001010111000000000), state_IV[0][0]);
+	state_IV[1][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b0000000000000000000000000000000000000000000000000101011100000000), state_IV[1][0]);
+	state_IV[2][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b0000000000000000000000000000000000000000000000000010101100000000), state_IV[2][0]);
+	state_IV[3][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b0000000000000000000000000000000000000000000000000001010100000000), state_IV[3][0]);
+	state_IV[4][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b0000000000000000000000000000000000000000000000000000101000000000), state_IV[4][0]);
 
 	p1(state_IV);
 
@@ -256,20 +261,25 @@ int crypto_aead_decrypt(
 			
 		}
 
-		memcpy(&m[progress - 40], &plaintext_YMM[0].m256i_u64[0], sizeof(u64));
-		memcpy(&m[progress - 32], &plaintext_YMM[1].m256i_u64[0], sizeof(u64));
-		memcpy(&m[progress - 24], &plaintext_YMM[2].m256i_u64[0], sizeof(u64));
-		memcpy(&m[progress - 16], &plaintext_YMM[3].m256i_u64[0], sizeof(u64));
-		memcpy(&m[progress - 8], &plaintext_YMM[4].m256i_u64[0], sizeof(u64));
+		u64 m0 = _mm256_extract_epi64(plaintext_YMM[0], 0);
+		u64 m1 = _mm256_extract_epi64(plaintext_YMM[1], 0);
+		u64 m2 = _mm256_extract_epi64(plaintext_YMM[2], 0);
+		u64 m3 = _mm256_extract_epi64(plaintext_YMM[3], 0);
+		u64 m4 = _mm256_extract_epi64(plaintext_YMM[4], 0);
+		memcpy(&m[progress - 40], &m0, sizeof(u64));
+		memcpy(&m[progress - 32], &m1, sizeof(u64));
+		memcpy(&m[progress - 24], &m2, sizeof(u64));
+		memcpy(&m[progress - 16], &m3, sizeof(u64));
+		memcpy(&m[progress - 8], &m4, sizeof(u64));
 		
 		//V <= V XOR M[w]10* || 0^c
 		int isFractional = clen % 40;
 		for (int i = 0; i < 5; i++) {
 			if (isFractional) {
-				state_V[i][0] = XOR(_mm256_setr_epi64x(plaintext_YMM[i].m256i_u64[0], 0, 0, 0), state_V[i][0]);
+				state_V[i][0] = XOR(_mm256_setr_epi64x(_mm256_extract_epi64(plaintext_YMM[i], 0), 0, 0, 0), state_V[i][0]);
 			}
 			else {
-				state_V[i][0] = XOR(_mm256_setr_epi64x(plaintext_YMM[i].m256i_u64[0], 0xFF, 0, 0), state_V[i][0]);
+				state_V[i][0] = XOR(_mm256_setr_epi64x(_mm256_extract_epi64(plaintext_YMM[i], 0), 0xFF, 0, 0), state_V[i][0]);
 			}
 		}
 	}
@@ -285,7 +295,7 @@ int crypto_aead_decrypt(
 		//Get next 40 bytes of data, unless we are at "the last cipherblock", then we need to use C[0] (which is the rate of state_IV) at this point. 
 		if (i == 0) {
 			for (int j = 0; j < 5; j++) {
-				data_u64[j] = state_IV[j][0].m256i_u64[0];
+				data_u64[j] = _mm256_extract_epi64(state_IV[j][0], 0);
 			}
 			progress += 40;
 		}
@@ -300,20 +310,25 @@ int crypto_aead_decrypt(
 			plaintext_YMM[i] = XOR(state_V[i][0], _mm256_setr_epi64x(data_u64[i], 0, 0, 0));
 			
 			//V <= C[i-1] || VC
-			state_V[i][0].m256i_u64[0] = data_u64[i];
+			_mm256_insert_epi64(state_V[i][0], data_u64[i], 0);
 		}
 
 
 		//Extract ciphertext
-		memcpy(&m[progress - 40], &plaintext_YMM[0].m256i_u64[0], sizeof(u64));
-		memcpy(&m[progress - 32], &plaintext_YMM[1].m256i_u64[0], sizeof(u64));
-		memcpy(&m[progress - 24], &plaintext_YMM[2].m256i_u64[0], sizeof(u64));
-		memcpy(&m[progress - 16], &plaintext_YMM[3].m256i_u64[0], sizeof(u64));
-		memcpy(&m[progress - 8], &plaintext_YMM[4].m256i_u64[0], sizeof(u64));
+		u64 m0 = _mm256_extract_epi64(plaintext_YMM[0], 0);
+		u64 m1 = _mm256_extract_epi64(plaintext_YMM[1], 0);
+		u64 m2 = _mm256_extract_epi64(plaintext_YMM[2], 0);
+		u64 m3 = _mm256_extract_epi64(plaintext_YMM[3], 0);
+		u64 m4 = _mm256_extract_epi64(plaintext_YMM[4], 0);
+		memcpy(&m[progress - 40], &m0, sizeof(u64));
+		memcpy(&m[progress - 32], &m1, sizeof(u64));
+		memcpy(&m[progress - 24], &m2, sizeof(u64));
+		memcpy(&m[progress - 16], &m3, sizeof(u64));
+		memcpy(&m[progress - 8], &m4, sizeof(u64));
 	}
 
 	//Check "tag", IV_c == V_c XOR 0^c-1 || 1
-	state_V[4][1] = _mm256_xor_si256(state_V[4][1], _mm256_setr_epi64x(0, 0, 0b11111111'00000000'00000000'00000000'00000000'00000000'00000000'00000000, 0));
+	state_V[4][1] = _mm256_xor_si256(state_V[4][1], _mm256_setr_epi64x(0, 0, 0b1111111100000000000000000000000000000000000000000000000000000000, 0));
 
 	for (int i = 0; i < 5; i++) {
 		YMM isEqualSec0 = _mm256_cmpeq_epi64(state_IV[i][0], state_V[i][0]);
@@ -322,11 +337,12 @@ int crypto_aead_decrypt(
 		//We only compare capacities - not rates, so clean rates. 
 		//Also ignore last u64 of second section. The inv_p1 sbox is also applied to this section and turns the 0's into 1's here. Normally shift-rows clear it, but not in the inverse operation 
 		//It is cheaper to just clean it here, than to do it everytime in the inverse operation...
-		isEqualSec0.m256i_u64[0] = 1;
-		isEqualSec1.m256i_u64[3] = 1;
+		_mm256_insert_epi64(isEqualSec0, 0, 0);
+		_mm256_insert_epi64(isEqualSec1, 0, 3);
 
-		if (isEqualSec0.m256i_u64[1] == 0 || isEqualSec0.m256i_u64[2] == 0 || isEqualSec0.m256i_u64[3] == 0 ||
-			isEqualSec1.m256i_u64[1] == 0 || isEqualSec1.m256i_u64[2] == 0 || isEqualSec1.m256i_u64[3] == 0) {
+
+		if (_mm256_extract_epi64(isEqualSec0, 1) == 0 || _mm256_extract_epi64(isEqualSec0, 2) == 0 || _mm256_extract_epi64(isEqualSec0, 3) == 0 ||
+			_mm256_extract_epi64(isEqualSec1, 0) == 0 || _mm256_extract_epi64(isEqualSec1, 1) == 0 || _mm256_extract_epi64(isEqualSec1, 2) == 0) {
 			//Not equal. Wipe data and 
 			//memset to 0 here
 			return 1;

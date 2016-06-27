@@ -1,4 +1,5 @@
 #include "Debug.h"
+#include <stdio.h>
 
 void print_state_as_hex_with_label(u8 *label, YMM(*state)[2]) {
 	printf("\n");

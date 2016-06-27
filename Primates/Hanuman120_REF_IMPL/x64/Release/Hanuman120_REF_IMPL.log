@@ -1,8 +1,8 @@
 ﻿  encrypt.cpp
   primate.cpp
   ref.cpp
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1hanuman120\ref\ref.cpp(262): warning C4244: '=': conversion from 'unsigned __int64' to 'unsigned char', possible loss of data
-..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1hanuman120\ref\ref.cpp(264): warning C4244: '=': conversion from 'unsigned __int64' to 'unsigned char', possible loss of data
+..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1hanuman120\ref\ref.cpp(265): warning C4244: '=': conversion from 'unsigned __int64' to 'unsigned char', possible loss of data
+..\..\Bitsliced-AEAD\Reference_implementations\crypto_aead\primatesv1hanuman120\ref\ref.cpp(267): warning C4244: '=': conversion from 'unsigned __int64' to 'unsigned char', possible loss of data
   Generating code
   All 22 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
   Finished generating code

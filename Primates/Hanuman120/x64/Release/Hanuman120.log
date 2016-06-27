@@ -1,18 +1,8 @@
 ﻿  Ref.c
-Ref.c(93): warning C4133: 'function': incompatible types - from 'u64 [30]' to 'u8 *'
-Ref.c(94): warning C4133: 'function': incompatible types - from 'u64 [30]' to 'u8 *'
-Ref.c(140): warning C4133: 'function': incompatible types - from 'u64 [30]' to 'u8 *'
-Ref.c(141): warning C4133: 'function': incompatible types - from 'u64 [30]' to 'u8 *'
-Ref.c(187): warning C4133: 'function': incompatible types - from 'u64 [30]' to 'u8 *'
-Ref.c(188): warning C4133: 'function': incompatible types - from 'u64 [30]' to 'u8 *'
-Ref.c(231): warning C4133: 'function': incompatible types - from 'u64 [30]' to 'u8 *'
-Ref.c(233): warning C4133: 'function': incompatible types - from 'u64 [30]' to 'u8 *'
   Generating code
-c:\hobby\thesis\primates\hanuman120\encrypt.c(84): warning C4752: found Intel(R) Advanced Vector Extensions; consider using /arch:AVX
-c:\hobby\thesis\primates\hanuman120\encrypt.c(144): warning C4752: found Intel(R) Advanced Vector Extensions; consider using /arch:AVX
-  9 of 19 functions (47.4%) were compiled, the rest were copied from previous compilation.
-    1 functions were new in current compilation
-    1 functions had inline decision re-evaluated but remain unchanged
+  4 of 19 functions (21.1%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   Hanuman120.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\Release\Hanuman120.exe
   Hanuman120.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\Release\Hanuman120.pdb (Full PDB)

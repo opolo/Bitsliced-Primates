@@ -9,18 +9,12 @@ void T2(__m256i (*state)[2], __m256i (*new_state)[2]);
 void sbox(__m256i (*state)[2]);
 void shiftrows(__m256i (*state)[2]);
 void mixcolumns(__m256i (*state)[2]);
-void mixcolumns2(__m256i (*state)[2]);
-void mixcolumns_inv_2(__m256i (*state)[2]);
 
 void sbox_inv(__m256i (*state)[2]);
 void shiftrows_inv(__m256i (*state)[2]);
 void mixcolumns_inv(__m256i (*state)[2]);
 
-static const __m256i m256iAllOne = { 
-0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+static __m256i m256iAllOne;
 
 static YMM p1_constants_bit0[12];
 static YMM p1_constants_bit1[12];
@@ -30,6 +24,8 @@ static YMM p1_constants_bit4[12];
 
 
 void Initialize() {
+	m256iAllOne = _mm256_set1_epi64x(0xFFFFFFFFFFFFFFFF);
+
 	/*
 	Round constants for p_1:
 	01, 02, 05, 0a, 15, 0b, 17, 0e, 1d, 1b, 16, 0c
@@ -43,69 +39,69 @@ void Initialize() {
 
 	//Set the bits to 1111'1111 in the column two, second row byte, if the roundconstant has a onebit on this indice
 	//p1
-	p1_constants_bit0[0] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
+	p1_constants_bit0[0] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
 	p1_constants_bit0[1] = _mm256_set_epi64x(0, 0, 0, 0);
-	p1_constants_bit0[2] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
+	p1_constants_bit0[2] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
 	p1_constants_bit0[3] = _mm256_set_epi64x(0, 0, 0, 0);
-	p1_constants_bit0[4] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
-	p1_constants_bit0[5] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
-	p1_constants_bit0[6] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
+	p1_constants_bit0[4] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
+	p1_constants_bit0[5] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
+	p1_constants_bit0[6] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
 	p1_constants_bit0[7] = _mm256_set_epi64x(0, 0, 0, 0);
-	p1_constants_bit0[8] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
-	p1_constants_bit0[9] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
+	p1_constants_bit0[8] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
+	p1_constants_bit0[9] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
 	p1_constants_bit0[10] = _mm256_set_epi64x(0, 0, 0, 0);
 	p1_constants_bit0[11] = _mm256_set_epi64x(0, 0, 0, 0);
 
 	p1_constants_bit1[0] = _mm256_set_epi64x(0, 0, 0, 0);
-	p1_constants_bit1[1] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
+	p1_constants_bit1[1] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
 	p1_constants_bit1[2] = _mm256_set_epi64x(0, 0, 0, 0);
-	p1_constants_bit1[3] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
+	p1_constants_bit1[3] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
 	p1_constants_bit1[4] = _mm256_set_epi64x(0, 0, 0, 0);
-	p1_constants_bit1[5] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
-	p1_constants_bit1[6] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
-	p1_constants_bit1[7] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
+	p1_constants_bit1[5] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
+	p1_constants_bit1[6] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
+	p1_constants_bit1[7] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
 	p1_constants_bit1[8] = _mm256_set_epi64x(0, 0, 0, 0);
-	p1_constants_bit1[9] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
-	p1_constants_bit1[10] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
+	p1_constants_bit1[9] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
+	p1_constants_bit1[10] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
 	p1_constants_bit1[11] = _mm256_set_epi64x(0, 0, 0, 0);
 
 	p1_constants_bit2[0] = _mm256_set_epi64x(0, 0, 0, 0);
 	p1_constants_bit2[1] = _mm256_set_epi64x(0, 0, 0, 0);
-	p1_constants_bit2[2] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
+	p1_constants_bit2[2] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
 	p1_constants_bit2[3] = _mm256_set_epi64x(0, 0, 0, 0);
-	p1_constants_bit2[4] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
+	p1_constants_bit2[4] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
 	p1_constants_bit2[5] = _mm256_set_epi64x(0, 0, 0, 0);
-	p1_constants_bit2[6] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
-	p1_constants_bit2[7] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
-	p1_constants_bit2[8] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
+	p1_constants_bit2[6] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
+	p1_constants_bit2[7] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
+	p1_constants_bit2[8] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
 	p1_constants_bit2[9] = _mm256_set_epi64x(0, 0, 0, 0);
-	p1_constants_bit2[10] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
-	p1_constants_bit2[11] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
+	p1_constants_bit2[10] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
+	p1_constants_bit2[11] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
 
 	p1_constants_bit3[0] = _mm256_set_epi64x(0, 0, 0, 0);
 	p1_constants_bit3[1] = _mm256_set_epi64x(0, 0, 0, 0);
 	p1_constants_bit3[2] = _mm256_set_epi64x(0, 0, 0, 0);
-	p1_constants_bit3[3] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
+	p1_constants_bit3[3] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
 	p1_constants_bit3[4] = _mm256_set_epi64x(0, 0, 0, 0);
-	p1_constants_bit3[5] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
+	p1_constants_bit3[5] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
 	p1_constants_bit3[6] = _mm256_set_epi64x(0, 0, 0, 0);
-	p1_constants_bit3[7] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
-	p1_constants_bit3[8] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
-	p1_constants_bit3[9] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
+	p1_constants_bit3[7] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
+	p1_constants_bit3[8] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
+	p1_constants_bit3[9] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
 	p1_constants_bit3[10] = _mm256_set_epi64x(0, 0, 0, 0);
-	p1_constants_bit3[11] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
+	p1_constants_bit3[11] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
 
 	p1_constants_bit4[0] = _mm256_set_epi64x(0, 0, 0, 0);
 	p1_constants_bit4[1] = _mm256_set_epi64x(0, 0, 0, 0);
 	p1_constants_bit4[2] = _mm256_set_epi64x(0, 0, 0, 0);
 	p1_constants_bit4[3] = _mm256_set_epi64x(0, 0, 0, 0);
-	p1_constants_bit4[4] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
+	p1_constants_bit4[4] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
 	p1_constants_bit4[5] = _mm256_set_epi64x(0, 0, 0, 0);
-	p1_constants_bit4[6] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
+	p1_constants_bit4[6] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
 	p1_constants_bit4[7] = _mm256_set_epi64x(0, 0, 0, 0);
-	p1_constants_bit4[8] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
-	p1_constants_bit4[9] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
-	p1_constants_bit4[10] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
+	p1_constants_bit4[8] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
+	p1_constants_bit4[9] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
+	p1_constants_bit4[10] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000ULL, 0);
 	p1_constants_bit4[11] = _mm256_set_epi64x(0, 0, 0, 0);
 }
 
@@ -125,58 +121,94 @@ void test_primates() {
 
 	//Expected values p1:
 	YMM YMM_p1_output_expected[5][2];
-	YMM_p1_output_expected[0][0] = _mm256_setr_epi64x(18374966855136771840, 72056498804555775, 72056494526300160, 18446742978476114175);
-	YMM_p1_output_expected[1][0] = _mm256_setr_epi64x(71776123339472895, 18446463698227757055, 281474959933440, 281474959998975);
-	YMM_p1_output_expected[2][0] = _mm256_setr_epi64x(18446744069414649600, 72056498804555775, 71777218572779520, 72056494526300415);
-	YMM_p1_output_expected[3][0] = _mm256_setr_epi64x(281470681743615, 18374967950370078975, 18446742974197989375, 4278255615);
-	YMM_p1_output_expected[4][0] = _mm256_setr_epi64x(280379759984895, 71776123339472895, 18374687574904996095, 18374966859414896895);
+	YMM_p1_output_expected[0][0] = _mm256_setr_epi64x(18374966855136771840ULL, 72056498804555775ULL, 72056494526300160ULL, 18446742978476114175ULL);
+	YMM_p1_output_expected[1][0] = _mm256_setr_epi64x(71776123339472895ULL, 18446463698227757055ULL, 281474959933440ULL, 281474959998975ULL);
+	YMM_p1_output_expected[2][0] = _mm256_setr_epi64x(18446744069414649600ULL, 72056498804555775ULL, 71777218572779520ULL, 72056494526300415ULL);
+	YMM_p1_output_expected[3][0] = _mm256_setr_epi64x(281470681743615ULL, 18374967950370078975ULL, 18446742974197989375ULL, 4278255615ULL);
+	YMM_p1_output_expected[4][0] = _mm256_setr_epi64x(280379759984895ULL, 71776123339472895ULL, 18374687574904996095ULL, 18374966859414896895ULL);
 
-	YMM_p1_output_expected[0][1] = _mm256_setr_epi64x(18446462603027808255, 18374686483949813760, 18446462598732906495, 0);
-	YMM_p1_output_expected[1][1] = _mm256_setr_epi64x(281470681808640, 18446463693949566720, 18446744073692839680, 0);
-	YMM_p1_output_expected[2][1] = _mm256_setr_epi64x(71776119061217535, 1099511562495, 18374966859414961920, 0);
-	YMM_p1_output_expected[3][1] = _mm256_setr_epi64x(18374966855136771840, 18374967950370078720, 1095216660735, 0);
-	YMM_p1_output_expected[4][1] = _mm256_setr_epi64x(18446744069414584575, 18446463698227757055, 18374967950353367295, 0);
+	YMM_p1_output_expected[0][1] = _mm256_setr_epi64x(18446462603027808255ULL, 18374686483949813760ULL, 18446462598732906495ULL, 0ULL);
+	YMM_p1_output_expected[1][1] = _mm256_setr_epi64x(281470681808640ULL, 18446463693949566720ULL, 18446744073692839680ULL, 0ULL);
+	YMM_p1_output_expected[2][1] = _mm256_setr_epi64x(71776119061217535ULL, 1099511562495ULL, 18374966859414961920ULL, 0ULL);
+	YMM_p1_output_expected[3][1] = _mm256_setr_epi64x(18374966855136771840ULL, 18374967950370078720ULL, 1095216660735ULL, 0ULL);
+	YMM_p1_output_expected[4][1] = _mm256_setr_epi64x(18446744069414584575ULL, 18446463698227757055ULL, 18374967950353367295ULL, 0ULL);
 
 
 	//Test if results matched
-	for (int i = 0; i < 5; i++) {
-		//They get set to all 1 if equal. Else 0.
-		YMM p1_compared_0 = _mm256_cmpeq_epi64(YMM_p1_output_expected[i][0], YMM_p1_input[i][0]);
-		YMM p1_compared_1 = _mm256_cmpeq_epi64(YMM_p1_output_expected[i][1], YMM_p1_input[i][1]);
+	//They get set to all 1 if equal. Else 0.
+	YMM p1_compared_0 = _mm256_cmpeq_epi64(YMM_p1_output_expected[0][0], YMM_p1_input[0][0]);
+	YMM p1_compared_1 = _mm256_cmpeq_epi64(YMM_p1_output_expected[0][1], YMM_p1_input[0][1]);
+	if (_mm256_extract_epi64(p1_compared_0, 0) == 0 || _mm256_extract_epi64(p1_compared_0, 1) == 0 ||
+		_mm256_extract_epi64(p1_compared_0, 2) == 0 || _mm256_extract_epi64(p1_compared_0, 3) == 0 ||
+		_mm256_extract_epi64(p1_compared_1, 0) == 0 || _mm256_extract_epi64(p1_compared_1, 1) == 0 ||
+		_mm256_extract_epi64(p1_compared_1, 2) == 0 || _mm256_extract_epi64(p1_compared_1, 3) == 0) {
+		printf("P1 not working \n");
+	}
 
-		//Iterate over each of the 4 u64 in each ymm
-		for (int j = 0; j < 4; j++) {
-			u64 equal_p1_0 = p1_compared_0.m256i_u64[j];
-			u64 equal_p1_1 = p1_compared_1.m256i_u64[j];
+	//They get set to all 1 if equal. Else 0.
+	p1_compared_0 = _mm256_cmpeq_epi64(YMM_p1_output_expected[1][0], YMM_p1_input[1][0]);
+	p1_compared_1 = _mm256_cmpeq_epi64(YMM_p1_output_expected[1][1], YMM_p1_input[1][1]);
+	if (_mm256_extract_epi64(p1_compared_0, 0) == 0 || _mm256_extract_epi64(p1_compared_0, 1) == 0 ||
+		_mm256_extract_epi64(p1_compared_0, 2) == 0 || _mm256_extract_epi64(p1_compared_0, 3) == 0 ||
+		_mm256_extract_epi64(p1_compared_1, 0) == 0 || _mm256_extract_epi64(p1_compared_1, 1) == 0 ||
+		_mm256_extract_epi64(p1_compared_1, 2) == 0 || _mm256_extract_epi64(p1_compared_1, 3) == 0) {
+		printf("P1 not working \n");
+	}
 
+	//They get set to all 1 if equal. Else 0.
+	p1_compared_0 = _mm256_cmpeq_epi64(YMM_p1_output_expected[2][0], YMM_p1_input[2][0]);
+	p1_compared_1 = _mm256_cmpeq_epi64(YMM_p1_output_expected[2][1], YMM_p1_input[2][1]);
+	if (_mm256_extract_epi64(p1_compared_0, 0) == 0 || _mm256_extract_epi64(p1_compared_0, 1) == 0 ||
+		_mm256_extract_epi64(p1_compared_0, 2) == 0 || _mm256_extract_epi64(p1_compared_0, 3) == 0 ||
+		_mm256_extract_epi64(p1_compared_1, 0) == 0 || _mm256_extract_epi64(p1_compared_1, 1) == 0 ||
+		_mm256_extract_epi64(p1_compared_1, 2) == 0 || _mm256_extract_epi64(p1_compared_1, 3) == 0) {
+		printf("P1 not working \n");
+	}
 
-			if (equal_p1_0 == 0 || equal_p1_1 == 0)
-				printf("P1 not working \n");
-		}
+	//They get set to all 1 if equal. Else 0.
+	p1_compared_0 = _mm256_cmpeq_epi64(YMM_p1_output_expected[3][0], YMM_p1_input[3][0]);
+	p1_compared_1 = _mm256_cmpeq_epi64(YMM_p1_output_expected[3][1], YMM_p1_input[3][1]);
+	if (_mm256_extract_epi64(p1_compared_0, 0) == 0 || _mm256_extract_epi64(p1_compared_0, 1) == 0 ||
+		_mm256_extract_epi64(p1_compared_0, 2) == 0 || _mm256_extract_epi64(p1_compared_0, 3) == 0 ||
+		_mm256_extract_epi64(p1_compared_1, 0) == 0 || _mm256_extract_epi64(p1_compared_1, 1) == 0 ||
+		_mm256_extract_epi64(p1_compared_1, 2) == 0 || _mm256_extract_epi64(p1_compared_1, 3) == 0) {
+		printf("P1 not working \n");
+	}
+
+	//They get set to all 1 if equal. Else 0.
+	p1_compared_0 = _mm256_cmpeq_epi64(YMM_p1_output_expected[4][0], YMM_p1_input[4][0]);
+	p1_compared_1 = _mm256_cmpeq_epi64(YMM_p1_output_expected[4][1], YMM_p1_input[4][1]);
+	if (_mm256_extract_epi64(p1_compared_0, 0) == 0 || _mm256_extract_epi64(p1_compared_0, 1) == 0 ||
+		_mm256_extract_epi64(p1_compared_0, 2) == 0 || _mm256_extract_epi64(p1_compared_0, 3) == 0 ||
+		_mm256_extract_epi64(p1_compared_1, 0) == 0 || _mm256_extract_epi64(p1_compared_1, 1) == 0 ||
+		_mm256_extract_epi64(p1_compared_1, 2) == 0 || _mm256_extract_epi64(p1_compared_1, 3) == 0) {
+		printf("P1 not working \n");
 	}
 
 	p1_inv(YMM_p1_input);
 
-	//The last u64 of the second reg-section is not used by our state, and SE makes it all 1's. Make it zero to have it match the expected value of 0 again.
-	for (int i = 0; i < 5; i++) {
-		YMM_p1_input[i][1].m256i_u64[3] = 0;
-	}
-
-	//test if inversing results matched
-	for (int i = 0; i < 5; i++) {
-		//They get set to all 1 if equal. Else 0.
-		YMM p1_compared_0 = _mm256_cmpeq_epi64(_mm256_setzero_si256(), YMM_p1_input[i][0]);
-		YMM p1_compared_1 = _mm256_cmpeq_epi64(_mm256_setzero_si256(), YMM_p1_input[i][1]);
-
-		//Iterate over each of the 4 u64 in each ymm
-		for (int j = 0; j < 4; j++) {
-			u64 equal_p1_0 = p1_compared_0.m256i_u64[j];
-			u64 equal_p1_1 = p1_compared_1.m256i_u64[j];
-
-
-			if (equal_p1_0 == 0 || equal_p1_1 == 0)
-				printf("P1 inv not working \n");
-		}
+	//test if inversing results matched... Dont test last 64 bits of section 2, as they are not part of the state (and sub elements turn the 0s there to 1s...)
+	if (_mm256_extract_epi64(YMM_p1_input[0][0], 0) != 0 || _mm256_extract_epi64(YMM_p1_input[0][0], 1) != 0 || 
+		_mm256_extract_epi64(YMM_p1_input[0][0], 2) != 0 || _mm256_extract_epi64(YMM_p1_input[0][0], 3) != 0 || 
+		_mm256_extract_epi64(YMM_p1_input[1][0], 0) != 0 || _mm256_extract_epi64(YMM_p1_input[1][0], 1) != 0 || 
+		_mm256_extract_epi64(YMM_p1_input[1][0], 2) != 0 || _mm256_extract_epi64(YMM_p1_input[1][0], 3) != 0 || 
+		_mm256_extract_epi64(YMM_p1_input[2][0], 0) != 0 || _mm256_extract_epi64(YMM_p1_input[2][0], 1) != 0 || 
+		_mm256_extract_epi64(YMM_p1_input[2][0], 2) != 0 || _mm256_extract_epi64(YMM_p1_input[2][0], 3) != 0 || 
+		_mm256_extract_epi64(YMM_p1_input[3][0], 0) != 0 || _mm256_extract_epi64(YMM_p1_input[3][0], 1) != 0 || 
+		_mm256_extract_epi64(YMM_p1_input[3][0], 2) != 0 || _mm256_extract_epi64(YMM_p1_input[3][0], 3) != 0 || 
+		_mm256_extract_epi64(YMM_p1_input[4][0], 0) != 0 || _mm256_extract_epi64(YMM_p1_input[4][0], 1) != 0 ||
+		_mm256_extract_epi64(YMM_p1_input[4][0], 2) != 0 || _mm256_extract_epi64(YMM_p1_input[4][0], 3) != 0 ||
+		_mm256_extract_epi64(YMM_p1_input[0][1], 0) != 0 || _mm256_extract_epi64(YMM_p1_input[0][1], 1) != 0 || 
+		_mm256_extract_epi64(YMM_p1_input[0][1], 2) != 0 ||
+		_mm256_extract_epi64(YMM_p1_input[1][1], 0) != 0 || _mm256_extract_epi64(YMM_p1_input[1][1], 1) != 0 || 
+		_mm256_extract_epi64(YMM_p1_input[1][1], 2) != 0 ||
+		_mm256_extract_epi64(YMM_p1_input[2][1], 0) != 0 || _mm256_extract_epi64(YMM_p1_input[2][1], 1) != 0 ||
+		_mm256_extract_epi64(YMM_p1_input[2][1], 2) != 0 ||
+		_mm256_extract_epi64(YMM_p1_input[3][1], 0) != 0 || _mm256_extract_epi64(YMM_p1_input[3][1], 1) != 0 || 
+		_mm256_extract_epi64(YMM_p1_input[3][1], 2) != 0 ||
+		_mm256_extract_epi64(YMM_p1_input[4][1], 0) != 0 || _mm256_extract_epi64(YMM_p1_input[4][1], 1) != 0 ||
+		_mm256_extract_epi64(YMM_p1_input[4][1], 2) != 0) {
+			printf("P1 inv not working \n");
 	}
 }
 
@@ -483,21 +515,21 @@ void mixcolumns_inv(__m256i (*state)[2]) {
 	YMM aligned_first_state_row_6[5];
 	for (int i = 0; i < 5; i++) {
 
-		aligned_first_state_row_0[i] = _mm256_setr_epi64x(T2_regs[i][0].m256i_u64[0],	T29_regs[i][0].m256i_u64[0], T16_regs[i][0].m256i_u64[0],	T31_regs[i][0].m256i_u64[0]);
-		aligned_first_state_row_1[i] = _mm256_setr_epi64x(T9_regs[i][0].m256i_u64[1],	T29_regs[i][0].m256i_u64[1], T24_regs[i].m256i_u64[1],	T11_regs[i][0].m256i_u64[1]);
-		aligned_first_state_row_2[i] = _mm256_setr_epi64x(T23_regs[i].m256i_u64[2],		T3_regs[i][0].m256i_u64[2],  T22_regs[i].m256i_u64[2],	T12_regs[i].m256i_u64[2]);
-		aligned_first_state_row_3[i] = _mm256_setr_epi64x(T31_regs[i][0].m256i_u64[3],	T25_regs[i].m256i_u64[3],	  T7_regs[i].m256i_u64[3],	T10_regs[i].m256i_u64[3]);
-		aligned_first_state_row_4[i] = _mm256_setr_epi64x(T16_regs[i][1].m256i_u64[0],	T17_regs[i].m256i_u64[0],	 T29_regs[i][1].m256i_u64[0],	T27_regs[i][1].m256i_u64[0]);
-		aligned_first_state_row_5[i] = _mm256_setr_epi64x(T15_regs[i][1].m256i_u64[1],	T26_regs[i].m256i_u64[1],	 T26_regs[i].m256i_u64[1],	T9_regs[i][1].m256i_u64[1]);
-		aligned_first_state_row_6[i] = _mm256_setr_epi64x(T29_regs[i][1].m256i_u64[2],	T16_regs[i][1].m256i_u64[2], T31_regs[i][1].m256i_u64[2],	state[i][1].m256i_u64[2]);
+		aligned_first_state_row_0[i] = _mm256_setr_epi64x(_mm256_extract_epi64(T2_regs[i][0],  0),	_mm256_extract_epi64(T29_regs[i][0], 0), _mm256_extract_epi64(T16_regs[i][0], 0),	_mm256_extract_epi64(T31_regs[i][0], 0));
+		aligned_first_state_row_1[i] = _mm256_setr_epi64x(_mm256_extract_epi64(T9_regs[i][0],  1),	_mm256_extract_epi64(T29_regs[i][0], 1), _mm256_extract_epi64(T24_regs[i], 1),		_mm256_extract_epi64(T11_regs[i][0], 1));
+		aligned_first_state_row_2[i] = _mm256_setr_epi64x(_mm256_extract_epi64(T23_regs[i],	   2),		_mm256_extract_epi64(T3_regs[i][0], 2),  _mm256_extract_epi64(T22_regs[i], 2),		_mm256_extract_epi64(T12_regs[i], 2));
+		aligned_first_state_row_3[i] = _mm256_setr_epi64x(_mm256_extract_epi64(T31_regs[i][0], 3),	_mm256_extract_epi64(T25_regs[i], 3),	 _mm256_extract_epi64(T7_regs[i], 3),		_mm256_extract_epi64(T10_regs[i], 3));
+		aligned_first_state_row_4[i] = _mm256_setr_epi64x(_mm256_extract_epi64(T16_regs[i][1], 0),	_mm256_extract_epi64(T17_regs[i], 0),	 _mm256_extract_epi64(T29_regs[i][1], 0),	_mm256_extract_epi64(T27_regs[i][1], 0));
+		aligned_first_state_row_5[i] = _mm256_setr_epi64x(_mm256_extract_epi64(T15_regs[i][1], 1),	_mm256_extract_epi64(T26_regs[i], 1),	 _mm256_extract_epi64(T26_regs[i], 1),		_mm256_extract_epi64(T9_regs[i][1], 1));
+		aligned_first_state_row_6[i] = _mm256_setr_epi64x(_mm256_extract_epi64(T29_regs[i][1], 2),	_mm256_extract_epi64(T16_regs[i][1], 2), _mm256_extract_epi64(T31_regs[i][1], 2),	_mm256_extract_epi64(state[i][1], 2));
 
-		aligned_second_state_row_0[i] = _mm256_setr_epi64x(state[i][0].m256i_u64[0],	T11_regs[i][0].m256i_u64[0], T2_regs[i][0].m256i_u64[0], 0);
-		aligned_second_state_row_1[i] = _mm256_setr_epi64x(T29_regs[i][0].m256i_u64[1], T23_regs[i].m256i_u64[1], T15_regs[i][0].m256i_u64[1], 0);
-		aligned_second_state_row_2[i] = _mm256_setr_epi64x(T4_regs[i][0].m256i_u64[2],	T27_regs[i][0].m256i_u64[2], T9_regs[i][0].m256i_u64[2], 0);
-		aligned_second_state_row_3[i] = _mm256_setr_epi64x(T5_regs[i][0].m256i_u64[3],	T29_regs[i][0].m256i_u64[3], T9_regs[i][0].m256i_u64[3], 0);
-		aligned_second_state_row_4[i] = _mm256_setr_epi64x(T3_regs[i][1].m256i_u64[0],  T28_regs[i].m256i_u64[0], T15_regs[i][1].m256i_u64[0], 0);
-		aligned_second_state_row_5[i] = _mm256_setr_epi64x(T20_regs[i].m256i_u64[1], T5_regs[i][1].m256i_u64[1],  T2_regs[i][1].m256i_u64[1], 0);
-		aligned_second_state_row_6[i] = _mm256_setr_epi64x(T11_regs[i][1].m256i_u64[2], T2_regs[i][1].m256i_u64[2],  state[i][1].m256i_u64[2], 0);
+		aligned_second_state_row_0[i] = _mm256_setr_epi64x(_mm256_extract_epi64(state[i][0],	0),	_mm256_extract_epi64(T11_regs[i][0], 0), _mm256_extract_epi64(T2_regs[i][0], 0), 0);
+		aligned_second_state_row_1[i] = _mm256_setr_epi64x(_mm256_extract_epi64(T29_regs[i][0], 1), _mm256_extract_epi64(T23_regs[i], 1),	 _mm256_extract_epi64(T15_regs[i][0], 1), 0);
+		aligned_second_state_row_2[i] = _mm256_setr_epi64x(_mm256_extract_epi64(T4_regs[i][0],	2),	_mm256_extract_epi64(T27_regs[i][0], 2), _mm256_extract_epi64(T9_regs[i][0], 2), 0);
+		aligned_second_state_row_3[i] = _mm256_setr_epi64x(_mm256_extract_epi64(T5_regs[i][0],	3),	_mm256_extract_epi64(T29_regs[i][0], 3), _mm256_extract_epi64(T9_regs[i][0], 3), 0);
+		aligned_second_state_row_4[i] = _mm256_setr_epi64x(_mm256_extract_epi64(T3_regs[i][1],	0), _mm256_extract_epi64(T28_regs[i], 0),	 _mm256_extract_epi64(T15_regs[i][1], 0), 0);
+		aligned_second_state_row_5[i] = _mm256_setr_epi64x(_mm256_extract_epi64(T20_regs[i],	1), _mm256_extract_epi64(T5_regs[i][1], 1),  _mm256_extract_epi64(T2_regs[i][1], 1), 0);
+		aligned_second_state_row_6[i] = _mm256_setr_epi64x(_mm256_extract_epi64(T11_regs[i][1], 2), _mm256_extract_epi64(T2_regs[i][1], 2),  _mm256_extract_epi64(state[i][1], 2), 0);
 	}
 
 	YMM last_row_calculated[5];
@@ -661,23 +693,23 @@ void mixcolumns(__m256i (*state)[2]) {
 	YMM firststate_calculated[5];
 	for (int i = 0; i < 5; i++) {
 		firststate_calculated[i] = XOR7(
-			_mm256_setr_epi64x(state[i][0].m256i_u64[0],	T2_regs[i][0].m256i_u64[0],	 T11_regs[i][0].m256i_u64[0], state[i][0].m256i_u64[0]),
-			_mm256_setr_epi64x(T2_regs[i][0].m256i_u64[1],	T5_regs[i].m256i_u64[1],  T20_regs[i].m256i_u64[1], T9_regs[i][0].m256i_u64[1]),
-			_mm256_setr_epi64x(T15_regs[i][0].m256i_u64[2], T28_regs[i].m256i_u64[2], T3_regs[i][0].m256i_u64[2], T27_regs[i][0].m256i_u64[2]),
-			_mm256_setr_epi64x(T9_regs[i][0].m256i_u64[3],	T29_regs[i][0].m256i_u64[3], T5_regs[i].m256i_u64[3], T10_regs[i].m256i_u64[3]),
-			_mm256_setr_epi64x(T9_regs[i][1].m256i_u64[0],	T27_regs[i][1].m256i_u64[0], T4_regs[i][1].m256i_u64[0], T12_regs[i].m256i_u64[0]),
-			_mm256_setr_epi64x(T15_regs[i][1].m256i_u64[1], T23_regs[i].m256i_u64[1], T29_regs[i][1].m256i_u64[1], T11_regs[i][1].m256i_u64[1]),
-			_mm256_setr_epi64x(T2_regs[i][1].m256i_u64[2],	T11_regs[i][1].m256i_u64[2], state[i][1].m256i_u64[2], T31_regs[i][1].m256i_u64[2]));
+			_mm256_setr_epi64x(_mm256_extract_epi64(state[i][0], 0),	_mm256_extract_epi64(T2_regs[i][0], 0),	 _mm256_extract_epi64(T11_regs[i][0], 0),	_mm256_extract_epi64(state[i][0], 0)),
+			_mm256_setr_epi64x(_mm256_extract_epi64(T2_regs[i][0], 1),	_mm256_extract_epi64(T5_regs[i], 1),	 _mm256_extract_epi64(T20_regs[i], 1),		_mm256_extract_epi64(T9_regs[i][0], 1)),
+			_mm256_setr_epi64x(_mm256_extract_epi64(T15_regs[i][0], 2), _mm256_extract_epi64(T28_regs[i], 2),	 _mm256_extract_epi64(T3_regs[i][0], 2),	_mm256_extract_epi64(T27_regs[i][0], 2)),
+			_mm256_setr_epi64x(_mm256_extract_epi64(T9_regs[i][0], 3),	_mm256_extract_epi64(T29_regs[i][0], 3), _mm256_extract_epi64(T5_regs[i], 3),		_mm256_extract_epi64(T10_regs[i], 3)),
+			_mm256_setr_epi64x(_mm256_extract_epi64(T9_regs[i][1], 0),	_mm256_extract_epi64(T27_regs[i][1], 0), _mm256_extract_epi64(T4_regs[i][1], 0),	_mm256_extract_epi64(T12_regs[i], 0)),
+			_mm256_setr_epi64x(_mm256_extract_epi64(T15_regs[i][1], 1), _mm256_extract_epi64(T23_regs[i], 1),	 _mm256_extract_epi64(T29_regs[i][1], 1),	_mm256_extract_epi64(T11_regs[i][1], 1)),
+			_mm256_setr_epi64x(_mm256_extract_epi64(T2_regs[i][1], 2),	_mm256_extract_epi64(T11_regs[i][1], 2), _mm256_extract_epi64(state[i][1], 2),		_mm256_extract_epi64(T31_regs[i][1], 2)));
 
 
 		secondstate_calculated[i] = XOR7(
-			_mm256_setr_epi64x(T31_regs[i][0].m256i_u64[0], T16_regs[i][0].m256i_u64[0], T29_regs[i][0].m256i_u64[0], 0),
-			_mm256_setr_epi64x(T26_regs[i].m256i_u64[1], T26_regs[i].m256i_u64[1], T15_regs[i][0].m256i_u64[1], 0),
-			_mm256_setr_epi64x(T29_regs[i][0].m256i_u64[2], T17_regs[i].m256i_u64[2], T16_regs[i][0].m256i_u64[2], 0),
-			_mm256_setr_epi64x(T7_regs[i].m256i_u64[3], T25_regs[i].m256i_u64[3], T31_regs[i][0].m256i_u64[3], 0),
-			_mm256_setr_epi64x(T22_regs[i].m256i_u64[0], T3_regs[i][1].m256i_u64[0], T23_regs[i].m256i_u64[0], 0),
-			_mm256_setr_epi64x(T24_regs[i].m256i_u64[1], T29_regs[i][1].m256i_u64[1], T9_regs[i][1].m256i_u64[1], 0),
-			_mm256_setr_epi64x(T16_regs[i][1].m256i_u64[2], T29_regs[i][1].m256i_u64[2], T2_regs[i][1].m256i_u64[2], 0));
+			_mm256_setr_epi64x(_mm256_extract_epi64(T31_regs[i][0], 0), _mm256_extract_epi64(T16_regs[i][0], 0), _mm256_extract_epi64(T29_regs[i][0], 0), 0),
+			_mm256_setr_epi64x(_mm256_extract_epi64(T26_regs[i], 1),	_mm256_extract_epi64(T26_regs[i], 1),	 _mm256_extract_epi64(T15_regs[i][0], 1), 0),
+			_mm256_setr_epi64x(_mm256_extract_epi64(T29_regs[i][0], 2), _mm256_extract_epi64(T17_regs[i], 2),	 _mm256_extract_epi64(T16_regs[i][0], 2), 0),
+			_mm256_setr_epi64x(_mm256_extract_epi64(T7_regs[i], 3),		_mm256_extract_epi64(T25_regs[i], 3),	 _mm256_extract_epi64(T31_regs[i][0], 3), 0),
+			_mm256_setr_epi64x(_mm256_extract_epi64(T22_regs[i], 0),	_mm256_extract_epi64(T3_regs[i][1], 0),  _mm256_extract_epi64(T23_regs[i], 0), 0),
+			_mm256_setr_epi64x(_mm256_extract_epi64(T24_regs[i], 1),	_mm256_extract_epi64(T29_regs[i][1], 1), _mm256_extract_epi64(T9_regs[i][1], 1), 0),
+			_mm256_setr_epi64x(_mm256_extract_epi64(T16_regs[i][1], 2), _mm256_extract_epi64(T29_regs[i][1], 2), _mm256_extract_epi64(T2_regs[i][1], 2), 0));
 	}
 
 	//Assign data to state

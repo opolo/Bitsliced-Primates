@@ -2,10 +2,7 @@
 #include "Debug.h"
 #include <stdio.h>
 
-static const __m256i m256iAllOne = { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
+static __m256i m256iAllOne;
 
 static YMM p1_constants_bit0[12];
 static YMM p1_constants_bit1[12];
@@ -36,6 +33,8 @@ void Initialize() {
 	Round constants for p_3:
 	1e, 1c, 19, 13, 06, 0d
 	*/
+
+	m256iAllOne = _mm256_set1_epi64x(0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111111);
 
 	//Set the bits to 1111'1111 in the column two, second row byte, if the roundconstant has a onebit on this indice
 	//p1

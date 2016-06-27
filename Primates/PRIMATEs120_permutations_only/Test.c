@@ -9,25 +9,30 @@ int cmpfunc(const void * a, const void * b);
 
 
 void main() {
-	LARGE_INTEGER start, finish;
-	double cpu_frequency;
-	QueryPerformanceFrequency(&start);
-	cpu_frequency = (double)(start.QuadPart) / 1000.0; //Frequency: Ticks per milisecond on the system.
+	
+	//Run only on one core
+	SetThreadAffinityMask(GetCurrentThread(), 0x00000008); //Run on fourth core
 
-	printf("CPU frequency: %f \n", cpu_frequency);
+	u64 start, finish, cpu_frequency;
 
-	int iterations = 500'000;
+	start = __rdtsc();
+	Sleep(5000);
+	finish = __rdtsc();
+	cpu_frequency = (finish - start) / 5;
+	printf("CPU frequency: %llu \n", cpu_frequency);
+
+	int iterations = 50'000;
 	int iterations_per_iterations = 10;
 		
-	double *results_p1 = calloc(iterations, sizeof(double));
-	double *results_p2 = calloc(iterations, sizeof(double));
-	double *results_p3 = calloc(iterations, sizeof(double));
-	double *results_p4 = calloc(iterations, sizeof(double));
+	u64 *results_p1 = calloc(iterations, sizeof(u64));
+	u64 *results_p2 = calloc(iterations, sizeof(u64));
+	u64 *results_p3 = calloc(iterations, sizeof(u64));
+	u64 *results_p4 = calloc(iterations, sizeof(u64));
 		
-	double *results_inv_p1 = calloc(iterations, sizeof(double));
-	double *results_inv_p2 = calloc(iterations, sizeof(double));
-	double *results_inv_p3 = calloc(iterations, sizeof(double));
-	double *results_inv_p4 = calloc(iterations, sizeof(double));
+	u64 *results_inv_p1 = calloc(iterations, sizeof(u64));
+	u64 *results_inv_p2 = calloc(iterations, sizeof(u64));
+	u64 *results_inv_p3 = calloc(iterations, sizeof(u64));
+	u64 *results_inv_p4 = calloc(iterations, sizeof(u64));
 
 	for (int i = 0; i < iterations; i++) {
 		YMM state[5][2];
@@ -42,115 +47,115 @@ void main() {
 			state[j][0] = _mm256_setzero_si256();
 			state[j][1] = _mm256_setzero_si256();
 		}
-		QueryPerformanceCounter(&start);
+		start = __rdtsc();
 		for (int n = 0; n < iterations_per_iterations; n++) {
 			p1(state);
 		}
-		QueryPerformanceCounter(&finish);
-		results_p1[i] = (double)(finish.QuadPart - start.QuadPart);
+		finish = __rdtsc();
+		results_p1[i] = (finish - start);
 
 		//p2
 		for (int j = 0; j < 5; j++) {
 			state[j][0] = _mm256_setzero_si256();
 			state[j][1] = _mm256_setzero_si256();
 		}
-		QueryPerformanceCounter(&start);
+		start = __rdtsc();
 		for (int n = 0; n < iterations_per_iterations; n++) {
 			p2(state);
 		}
-		QueryPerformanceCounter(&finish);
-		results_p2[i] = (double)(finish.QuadPart - start.QuadPart);
+		finish = __rdtsc();
+		results_p2[i] = (finish - start);
 
 		//p3
 		for (int j = 0; j < 5; j++) {
 			state[j][0] = _mm256_setzero_si256();
 			state[j][1] = _mm256_setzero_si256();
 		}
-		QueryPerformanceCounter(&start);
+		start = __rdtsc();
 		for (int n = 0; n < iterations_per_iterations; n++) {
 			p3(state);
 		}
-		QueryPerformanceCounter(&finish);
-		results_p3[i] = (double)(finish.QuadPart - start.QuadPart);
+		finish = __rdtsc();
+		results_p3[i] = (finish - start);
 
 		//p4
 		for (int j = 0; j < 5; j++) {
 			state[j][0] = _mm256_setzero_si256();
 			state[j][1] = _mm256_setzero_si256();
 		}
-		QueryPerformanceCounter(&start);
+		start = __rdtsc();
 		for (int n = 0; n < iterations_per_iterations; n++) {
 			p4(state);
 		}
-		QueryPerformanceCounter(&finish);
-		results_p4[i] = (double)(finish.QuadPart - start.QuadPart);
+		finish = __rdtsc();
+		results_p4[i] = (finish - start);
 
 		//inv_p1
 		for (int j = 0; j < 5; j++) {
 			state[j][0] = _mm256_setzero_si256();
 			state[j][1] = _mm256_setzero_si256();
 		}
-		QueryPerformanceCounter(&start);
+		start = __rdtsc();
 		for (int n = 0; n < iterations_per_iterations; n++) {
 			p1_inv(state);
 		}
-		QueryPerformanceCounter(&finish);
-		results_inv_p1[i] = (double)(finish.QuadPart - start.QuadPart);
+		finish = __rdtsc();
+		results_inv_p1[i] = (finish - start);
 
 		//inv_p2
 		for (int j = 0; j < 5; j++) {
 			state[j][0] = _mm256_setzero_si256();
 			state[j][1] = _mm256_setzero_si256();
 		}
-		QueryPerformanceCounter(&start);
+		start = __rdtsc();
 		for (int n = 0; n < iterations_per_iterations; n++) {
 			p2_inv(state);
 		}
-		QueryPerformanceCounter(&finish);
-		results_inv_p2[i] = (double)(finish.QuadPart - start.QuadPart);
+		finish = __rdtsc();
+		results_inv_p2[i] = (finish - start);
 
 		//inv_p3
 		for (int j = 0; j < 5; j++) {
 			state[j][0] = _mm256_setzero_si256();
 			state[j][1] = _mm256_setzero_si256();
 		}
-		QueryPerformanceCounter(&start);
+		start = __rdtsc();
 		for (int n = 0; n < iterations_per_iterations; n++) {
 			p3_inv(state);
 		}
-		QueryPerformanceCounter(&finish);
-		results_inv_p3[i] = (double)(finish.QuadPart - start.QuadPart);
+		finish = __rdtsc();
+		results_inv_p3[i] = (finish - start);
 
 		//inv_p4
 		for (int j = 0; j < 5; j++) {
 			state[j][0] = _mm256_setzero_si256();
 			state[j][1] = _mm256_setzero_si256();
 		}
-		QueryPerformanceCounter(&start);
+		start = __rdtsc();
 		for (int n = 0; n < iterations_per_iterations; n++) {
 			p4_inv(state);
 		}
-		QueryPerformanceCounter(&finish);
-		results_inv_p4[i] = (double)(finish.QuadPart - start.QuadPart);
+		finish = __rdtsc();
+		results_inv_p4[i] = (finish - start);
 	}
 
 	//Calculate results
-	qsort(results_p1, iterations, sizeof(double), cmpfunc);
-	qsort(results_p2, iterations, sizeof(double), cmpfunc);
-	qsort(results_p3, iterations, sizeof(double), cmpfunc);
-	qsort(results_p4, iterations, sizeof(double), cmpfunc);
-	qsort(results_inv_p1, iterations, sizeof(double), cmpfunc);
-	qsort(results_inv_p2, iterations, sizeof(double), cmpfunc);
-	qsort(results_inv_p3, iterations, sizeof(double), cmpfunc);
-	qsort(results_inv_p4, iterations, sizeof(double), cmpfunc);
-	double medianSpeed_p1 = results_p1[iterations / 2] / iterations_per_iterations;
-	double medianSpeed_p2 = results_p2[iterations / 2] / iterations_per_iterations;
-	double medianSpeed_p3 = results_p3[iterations / 2] / iterations_per_iterations;
-	double medianSpeed_p4 = results_p4[iterations / 2] / iterations_per_iterations;
-	double medianSpeed_inv_p1 = results_inv_p1[iterations / 2] / iterations_per_iterations;
-	double medianSpeed_inv_p2 = results_inv_p2[iterations / 2] / iterations_per_iterations;
-	double medianSpeed_inv_p3 = results_inv_p3[iterations / 2] / iterations_per_iterations;
-	double medianSpeed_inv_p4 = results_inv_p4[iterations / 2] / iterations_per_iterations;
+	qsort(results_p1, iterations, sizeof(u64), cmpfunc);
+	qsort(results_p2, iterations, sizeof(u64), cmpfunc);
+	qsort(results_p3, iterations, sizeof(u64), cmpfunc);
+	qsort(results_p4, iterations, sizeof(u64), cmpfunc);
+	qsort(results_inv_p1, iterations, sizeof(u64), cmpfunc);
+	qsort(results_inv_p2, iterations, sizeof(u64), cmpfunc);
+	qsort(results_inv_p3, iterations, sizeof(u64), cmpfunc);
+	qsort(results_inv_p4, iterations, sizeof(u64), cmpfunc);
+	double medianSpeed_p1 = (double) results_p1[iterations / 2] / (double) iterations_per_iterations;
+	double medianSpeed_p2 = (double) results_p2[iterations / 2] / (double) iterations_per_iterations;
+	double medianSpeed_p3 = (double) results_p3[iterations / 2] / (double) iterations_per_iterations;
+	double medianSpeed_p4 = (double) results_p4[iterations / 2] / (double) iterations_per_iterations;
+	double medianSpeed_inv_p1 = (double) results_inv_p1[iterations / 2] / (double) iterations_per_iterations;
+	double medianSpeed_inv_p2 = (double) results_inv_p2[iterations / 2] / (double) iterations_per_iterations;
+	double medianSpeed_inv_p3 = (double) results_inv_p3[iterations / 2] / (double) iterations_per_iterations;
+	double medianSpeed_inv_p4 = (double) results_inv_p4[iterations / 2] / (double) iterations_per_iterations;
 
 	//Output results:
 	printf("Iterations: %i \n\n", iterations);
@@ -201,5 +206,5 @@ void main() {
 
 int cmpfunc(const void * a, const void * b)
 {
-	return (int)(*(double*)a - *(double*)b);
+	return (int)(*(u64*)a - *(u64*)b);
 }

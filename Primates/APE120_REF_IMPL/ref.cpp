@@ -34,13 +34,13 @@ int main()
 		QueryPerformanceFrequency(&start);
 		cpu_frequency = (double)(start.QuadPart) / 1000.0; //Frequency: Ticks per milisecond on the system.
 
-		int iterations_b = 200'000;
-		int iterations_kb = 20'000;
-		int iterations_mb = 20;
+		int iterations_b = 20'000;
+		int iterations_kb = 2'000;
+		int iterations_mb = 40;
 
 		int b_test_size = 40;
 		int kb_test_size = 4000;
-		int mb_test_size = 4'000'000;
+		int mb_test_size = 2'000'000;
 
 		//Data for storing benchmark results for
 		//byte-loop
@@ -57,6 +57,9 @@ int main()
 		double fastestEncryption_mb = DBL_MAX;
 		double slowestEncryption_mb = DBL_MIN;
 		double averageSpeed_mb = 0;
+
+		printf("Press to start...\n");
+		getchar();
 
 		//b loop
 		for (int i = 0; i < iterations_b; i++) {

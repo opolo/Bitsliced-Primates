@@ -1,3 +1,5 @@
+#ifndef Debug
+
 #include "Parameters.h"
 
 void print_state_as_hex(YMM(*state)[2]);
@@ -11,3 +13,5 @@ void print_YMMs(__m256i *YMMs);
 void print_state_as_binary(__m256i *states, int state_no);
 void byte_to_binary(unsigned char *binarystr, unsigned char byte);
 */
+
+#endif // !Debug
