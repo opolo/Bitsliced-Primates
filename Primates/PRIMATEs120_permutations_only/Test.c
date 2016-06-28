@@ -29,6 +29,8 @@ static unsigned long long cpucycles(void)
 
 void main() {
 	
+	printf("PRIMATEs permutation only V1.00 \n");
+
 	//Run only on one core
 	SetThreadAffinityMask(GetCurrentThread(), 0x00000008); //Run on fourth core
 

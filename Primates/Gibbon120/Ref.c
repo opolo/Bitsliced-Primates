@@ -53,6 +53,8 @@ static unsigned long long cpucycles(void)
 
 void main() {
 
+	printf("GIBBON-BS V1.00 \n");
+
 	//data
 	unsigned char *msg = calloc(MsgLength + 40, sizeof(u8));
 	unsigned char *decrypted_msg = calloc(MsgLength + 40, sizeof(u8)); //8mb (8421376 bytes)

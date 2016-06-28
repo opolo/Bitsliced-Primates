@@ -54,6 +54,9 @@ static unsigned long long cpucycles(void)
 
 void main() {
 
+	//Implementation version
+	printf("APE-BS V1.00 \n");
+
 	//data
 	unsigned char *msg = calloc(MsgLength + 40, sizeof(u8));
 	unsigned char *decrypted_msg = calloc(MsgLength + 40, sizeof(u8)); //8mb (8421376 bytes)
