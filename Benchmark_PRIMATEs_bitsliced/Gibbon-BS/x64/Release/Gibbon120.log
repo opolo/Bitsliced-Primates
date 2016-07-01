@@ -1,7 +1,0 @@
-﻿  Ref.c
-Ref.c(328): warning C4244: 'return': conversion from 'const u64' to 'int', possible loss of data
-  Generating code
-  All 21 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
-  Finished generating code
-  Gibbon120.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\Release\Gibbon120.exe
-  Gibbon120.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\Release\Gibbon120.pdb (Full PDB)
