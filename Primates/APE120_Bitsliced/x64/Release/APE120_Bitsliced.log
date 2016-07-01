@@ -1,9 +1,0 @@
-﻿  Debug.c
-  Encrypt.c
-  Primate.c
-  Ref.c
-Ref.c(327): warning C4244: 'return': conversion from 'const u64' to 'int', possible loss of data
-  Generating code
-  All 22 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
-  Finished generating code
-  APE120_Bitsliced.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\Release\APE120.exe

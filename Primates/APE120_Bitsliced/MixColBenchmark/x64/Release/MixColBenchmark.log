@@ -1,8 +1,0 @@
-﻿  Test.c
-  Generating code
-  1 of 17 functions ( 5.9%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    0 functions had inline decision re-evaluated but remain unchanged
-  Finished generating code
-  MixColBenchmark.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\Release\MixColBenchmark.exe
-  MixColBenchmark.vcxproj -> C:\Hobby\Thesis\Primates\APE120_Bitsliced\x64\Release\MixColBenchmark.pdb (Full PDB)
