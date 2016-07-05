@@ -330,7 +330,7 @@ void verboseEncryption() {
 		printf("Tag did not match! \n");
 
 	printf("Key: \n");
-	for (int i = 0; i < size_key_bytes; i++) {
+	for (int i = 0; i < KeySize; i++) {
 		if ((i + 1) % 8 == 1 && i != 0)
 			printf("\t");
 		printf("%02x ", key[i]);
@@ -338,7 +338,7 @@ void verboseEncryption() {
 	printf("\n\n");
 
 	printf("Nonce: \n");
-	for (int i = 0; i < size_nonce_bytes; i++) {
+	for (int i = 0; i < NonceSize; i++) {
 		if ((i + 1) % 8 == 1 && i != 0)
 			printf("\t");
 		printf("%02x ", nonce[i]);

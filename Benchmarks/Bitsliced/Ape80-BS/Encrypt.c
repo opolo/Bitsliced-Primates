@@ -20,7 +20,7 @@ void crypto_aead_encrypt(
 	YMM key[5][2];
 	_mm256_zeroall(); //Makes sure all the just declared regs are 0.
 
-	//XOR key to empty state... It will only be stored in the capacity
+					  //XOR key to empty state... It will only be stored in the capacity
 	create_key_YMM(k, key);
 	for (int i = 0; i < 5; i++) {
 		state[i][0] = key[i][0];
@@ -36,16 +36,16 @@ void crypto_aead_encrypt(
 
 	p1(state);
 
-	//Handle nonce (upto 40 byte in my implementation)
+	//Handle nonce (40 byte in my implementation)
 	{
-		u64 nonce_u64[5] = { 0 };
+		u64 data_u64[5] = { 0 };
 		u64 progress = 0;
-		load_data_into_u64(nonce, 30, nonce_u64, &progress);
-		state[0][0] = XOR(state[0][0], _mm256_setr_epi64x(nonce_u64[0], 0, 0, 0));
-		state[1][0] = XOR(state[1][0], _mm256_setr_epi64x(nonce_u64[1], 0, 0, 0));
-		state[2][0] = XOR(state[2][0], _mm256_setr_epi64x(nonce_u64[2], 0, 0, 0));
-		state[3][0] = XOR(state[3][0], _mm256_setr_epi64x(nonce_u64[3], 0, 0, 0));
-		state[4][0] = XOR(state[4][0], _mm256_setr_epi64x(nonce_u64[4], 0, 0, 0));
+		load_data_into_u64(nonce, 30, data_u64, &progress);
+		state[0][0] = XOR(state[0][0], _mm256_setr_epi64x(data_u64[0], 0, 0, 0));
+		state[1][0] = XOR(state[1][0], _mm256_setr_epi64x(data_u64[1], 0, 0, 0));
+		state[2][0] = XOR(state[2][0], _mm256_setr_epi64x(data_u64[2], 0, 0, 0));
+		state[3][0] = XOR(state[3][0], _mm256_setr_epi64x(data_u64[3], 0, 0, 0));
+		state[4][0] = XOR(state[4][0], _mm256_setr_epi64x(data_u64[4], 0, 0, 0));
 		p1(state);
 
 	}
@@ -72,6 +72,7 @@ void crypto_aead_encrypt(
 			p1(state);
 		}
 	}
+
 
 	//V <= V XOR (0^(b-1) || 1)
 	state[4][1] = _mm256_xor_si256(state[4][1], _mm256_setr_epi64x(0b1111111100000000000000000000000000000000000000000000000000000000, 0, 0, 0));
@@ -111,38 +112,38 @@ void crypto_aead_encrypt(
 	}
 
 
-	//Create tag (its size will be 160*8 = qqq bits = 160 bytes.
+	//Create tag (its size will be 240*8 = 1920 bits = 240 bytes.
 	//XOR key to state
 	for (int i = 0; i < 5; i++) {
 		state[i][0] = XOR(state[i][0], key[i][0]);
 		state[i][1] = XOR(state[i][1], key[i][1]);
 	}
-
+	
 	//Extract tag
 	tag[0] = _mm256_extract_epi64(state[0][0], 1);
 	tag[1] = _mm256_extract_epi64(state[0][0], 2);
 	tag[2] = _mm256_extract_epi64(state[0][0], 3);
 	tag[3] = _mm256_extract_epi64(state[0][1], 0);
-	
+
 	tag[4] = _mm256_extract_epi64(state[1][0], 1);
 	tag[5] = _mm256_extract_epi64(state[1][0], 2);
 	tag[6] = _mm256_extract_epi64(state[1][0], 3);
 	tag[7] = _mm256_extract_epi64(state[1][1], 0);
-	
+
 	tag[8] = _mm256_extract_epi64(state[2][0], 1);
 	tag[9] = _mm256_extract_epi64(state[2][0], 2);
 	tag[10] = _mm256_extract_epi64(state[2][0], 3);
 	tag[11] = _mm256_extract_epi64(state[2][1], 0);
-	
+
 	tag[12] = _mm256_extract_epi64(state[3][0], 1);
 	tag[13] = _mm256_extract_epi64(state[3][0], 2);
 	tag[14] = _mm256_extract_epi64(state[3][0], 3);
 	tag[15] = _mm256_extract_epi64(state[3][1], 0);
-	
+
 	tag[16] = _mm256_extract_epi64(state[4][0], 1);
 	tag[17] = _mm256_extract_epi64(state[4][0], 2);
 	tag[18] = _mm256_extract_epi64(state[4][0], 3);
-	tag[19] = _mm256_extract_epi64(state[4][1], 0);	
+	tag[19] = _mm256_extract_epi64(state[4][1], 0);
 }
 
 int crypto_aead_decrypt(
@@ -152,6 +153,18 @@ int crypto_aead_decrypt(
 	const u8 *nonce,
 	const u8 *k,
 	u64 *tag) {
+
+	u64 paddedClen = 0;
+	//was message fractional?
+	if (clen % 40 != 0) {
+		//Yes.
+		int remaining = clen % 40;
+		paddedClen = clen + (40 - remaining);
+	}
+	else {
+		//No.
+		paddedClen = clen;
+	}
 
 	YMM state_IV[5][2];
 	YMM state_V[5][2];
@@ -212,126 +225,134 @@ int crypto_aead_decrypt(
 		}
 	}
 
-	//V <= p1^-1(C[w] || K XOR T)
-	//M[w] <= v_r XOR C[w-1]
-	//V <= V XOR M[w]10* || 0^c
-	{
+	if (clen) {
 		//V <= p1^-1(C[w] || K XOR T)
-		u64 progress = clen >= 40 ? clen - 40 : 0;
-		u64 lastMLocation = progress;
-		u64 cipherblock[5] = { 0 };
-		load_data_into_u64(c, clen, cipherblock, &progress);
-
-		for (int i = 0; i < 5; i++) {
-			state_V[i][0] = XOR3(_mm256_setr_epi64x(cipherblock[i], 0, 0, 0),
-				key[i][0],
-				_mm256_setr_epi64x(0, tag[i * 4], tag[(i * 4) + 1], tag[(i * 4) + 2]));
-
-			state_V[i][1] = XOR(key[i][1],
-				_mm256_setr_epi64x(tag[(i * 4) + 3], 0, 0, 0));
-		}
-
-		p1_inv(state_V);
-
 		//M[w] <= v_r XOR C[w-1]
-		YMM plaintext_YMM[5];
-		for (int i = 0; i < 5; i++) {
-			//If progress is not lastMLocation, it means that we should not use C[0] here.
-			if (lastMLocation == 0) {
-				//Its 0. Use IV_r
-				plaintext_YMM[i] = XOR(state_V[i][0], state_IV[i][0]);
+		//V <= V XOR M[w]10* || 0^c
+		{
+
+			//V <= p1^-1(C[w] || K XOR T)
+			u64 progress = paddedClen - 40;
+
+			u64 lastMLocation = progress;
+			u64 cipherblock[5] = { 0 };
+			load_data_into_u64(c, paddedClen, cipherblock, &progress);
+
+			for (int i = 0; i < 5; i++) {
+				state_V[i][0] = XOR3(_mm256_setr_epi64x(cipherblock[i], 0, 0, 0),
+					key[i][0],
+					_mm256_setr_epi64x(0, tag[i * 4], tag[(i * 4) + 1], tag[(i * 4) + 2]));
+
+				state_V[i][1] = XOR(key[i][1],
+					_mm256_setr_epi64x(tag[(i * 4) + 3], 0, 0, 0));
 			}
-			else {
-				//Its not zero, use secondlast cipherblock
-				lastMLocation -= 40;
-				load_data_into_u64(c, clen, cipherblock, &lastMLocation);
-				plaintext_YMM[i] = XOR(state_V[i][0], _mm256_setr_epi64x(cipherblock[i], 0, 0, 0));
+			p1_inv(state_V);
+
+			//M[w] <= v_r XOR C[w-1]
+			YMM plaintext_YMM[5];
+			for (int i = 0; i < 5; i++) {
+				//If progress is not lastMLocation, it means that we should not use C[0] here.
+				if (lastMLocation == 0) {
+					//Its 0. Use IV_r
+					plaintext_YMM[i] = XOR(state_V[i][0], state_IV[i][0]);
+				}
+				else {
+					//Its not zero, use secondlast cipherblock
+					lastMLocation -= 40;
+					load_data_into_u64(c, paddedClen, cipherblock, &lastMLocation);
+					plaintext_YMM[i] = XOR(state_V[i][0], _mm256_setr_epi64x(cipherblock[i], 0, 0, 0));
+				}
+
 			}
 
+			u64 m0 = _mm256_extract_epi64(plaintext_YMM[0], 0);
+			u64 m1 = _mm256_extract_epi64(plaintext_YMM[1], 0);
+			u64 m2 = _mm256_extract_epi64(plaintext_YMM[2], 0);
+			u64 m3 = _mm256_extract_epi64(plaintext_YMM[3], 0);
+			u64 m4 = _mm256_extract_epi64(plaintext_YMM[4], 0);
+			memcpy(&m[progress - 40], &m0, sizeof(u64));
+			memcpy(&m[progress - 32], &m1, sizeof(u64));
+			memcpy(&m[progress - 24], &m2, sizeof(u64));
+			memcpy(&m[progress - 16], &m3, sizeof(u64));
+			memcpy(&m[progress - 8], &m4, sizeof(u64));
+
+			//V <= V XOR M[w]10* || 0^c
+			int isFractional = clen % 40;
+			for (int i = 0; i < 5; i++) {
+				if (isFractional) {
+					state_V[i][0] = XOR(_mm256_setr_epi64x(_mm256_extract_epi64(plaintext_YMM[i], 0), 0, 0, 0), state_V[i][0]);
+				}
+				else {
+					state_V[i][0] = XOR(_mm256_setr_epi64x(_mm256_extract_epi64(plaintext_YMM[i], 0), 0xFF, 0, 0), state_V[i][0]);
+				}
+			}
 		}
 
-		u64 m0 = _mm256_extract_epi64(plaintext_YMM[0], 0);
-		u64 m1 = _mm256_extract_epi64(plaintext_YMM[1], 0);
-		u64 m2 = _mm256_extract_epi64(plaintext_YMM[2], 0);
-		u64 m3 = _mm256_extract_epi64(plaintext_YMM[3], 0);
-		u64 m4 = _mm256_extract_epi64(plaintext_YMM[4], 0);
-		memcpy(&m[progress - 40], &m0, sizeof(u64));
-		memcpy(&m[progress - 32], &m1, sizeof(u64));
-		memcpy(&m[progress - 24], &m2, sizeof(u64));
-		memcpy(&m[progress - 16], &m3, sizeof(u64));
-		memcpy(&m[progress - 8], &m4, sizeof(u64));
 
-		//V <= V XOR M[w]10* || 0^c
-		int isFractional = clen % 40;
-		for (int i = 0; i < 5; i++) {
-			if (isFractional) {
-				state_V[i][0] = XOR(_mm256_setr_epi64x(_mm256_extract_epi64(plaintext_YMM[i], 0), 0, 0, 0), state_V[i][0]);
+		for (i64 i = paddedClen - 80; i >= 0; i -= 40) {
+			i64 progress = i;
+			u64 data_u64[5] = { 0 };
+			YMM plaintext_YMM[5];
+
+			p1_inv(state_V);
+
+			//Get next 40 bytes of data, unless we are at "the last cipherblock", then we need to use C[0] (which is the rate of state_IV) at this point. 
+			if (i == 0) {
+				for (int j = 0; j < 5; j++) {
+					data_u64[j] = _mm256_extract_epi64(state_IV[j][0], 0);
+				}
+				progress += 40;
 			}
 			else {
-				state_V[i][0] = XOR(_mm256_setr_epi64x(_mm256_extract_epi64(plaintext_YMM[i], 0), 0xFF, 0, 0), state_V[i][0]);
+				progress -= 40;
+				load_data_into_u64(c, paddedClen, data_u64, &progress); //will increment progress with 40
+				progress += 40;
 			}
+
+			for (int i = 0; i < 5; i++) {
+				//M[i] <= C[i-1] XOR V_r
+				plaintext_YMM[i] = XOR(state_V[i][0], _mm256_setr_epi64x(data_u64[i], 0, 0, 0));
+
+				//V <= C[i-1] || VC
+				_mm256_insert_epi64(state_V[i][0], data_u64[i], 0);
+			}
+
+
+			//Extract ciphertext
+			u64 m0 = _mm256_extract_epi64(plaintext_YMM[0], 0);
+			u64 m1 = _mm256_extract_epi64(plaintext_YMM[1], 0);
+			u64 m2 = _mm256_extract_epi64(plaintext_YMM[2], 0);
+			u64 m3 = _mm256_extract_epi64(plaintext_YMM[3], 0);
+			u64 m4 = _mm256_extract_epi64(plaintext_YMM[4], 0);
+			memcpy(&m[progress - 40], &m0, sizeof(u64));
+			memcpy(&m[progress - 32], &m1, sizeof(u64));
+			memcpy(&m[progress - 24], &m2, sizeof(u64));
+			memcpy(&m[progress - 16], &m3, sizeof(u64));
+			memcpy(&m[progress - 8], &m4, sizeof(u64));
 		}
 	}
-
-
-	for (i64 i = clen - 80; i >= 0; i -= 40) {
-		i64 progress = i;
-		u64 data_u64[5] = { 0 };
-		YMM plaintext_YMM[5];
-
-		p1_inv(state_V);
-
-		//Get next 40 bytes of data, unless we are at "the last cipherblock", then we need to use C[0] (which is the rate of state_IV) at this point. 
-		if (i == 0) {
-			for (int j = 0; j < 5; j++) {
-				data_u64[j] = _mm256_extract_epi64(state_IV[j][0], 0);
-			}
-			progress += 40;
-		}
-		else {
-			progress -= 40;
-			load_data_into_u64(c, clen, data_u64, &progress); //will increment progress with 40
-			progress += 40;
-		}
-
+	else {
+		//No msg given... maybe only AD (or no AD), but we still need to verify tag.
 		for (int i = 0; i < 5; i++) {
-			//M[i] <= C[i-1] XOR V_r
-			plaintext_YMM[i] = XOR(state_V[i][0], _mm256_setr_epi64x(data_u64[i], 0, 0, 0));
+			state_V[i][0] = XOR(key[i][0], _mm256_setr_epi64x(0, tag[i * 4], tag[(i * 4) + 1], tag[(i * 4) + 2]));
 
-			//V <= C[i-1] || VC
-			_mm256_insert_epi64(state_V[i][0], data_u64[i], 0);
+			state_V[i][1] = XOR(key[i][1], _mm256_setr_epi64x(tag[(i * 4) + 3], 0, 0, 0));
 		}
-
-
-		//Extract ciphertext
-		u64 m0 = _mm256_extract_epi64(plaintext_YMM[0], 0);
-		u64 m1 = _mm256_extract_epi64(plaintext_YMM[1], 0);
-		u64 m2 = _mm256_extract_epi64(plaintext_YMM[2], 0);
-		u64 m3 = _mm256_extract_epi64(plaintext_YMM[3], 0);
-		u64 m4 = _mm256_extract_epi64(plaintext_YMM[4], 0);
-		memcpy(&m[progress - 40], &m0, sizeof(u64));
-		memcpy(&m[progress - 32], &m1, sizeof(u64));
-		memcpy(&m[progress - 24], &m2, sizeof(u64));
-		memcpy(&m[progress - 16], &m3, sizeof(u64));
-		memcpy(&m[progress - 8], &m4, sizeof(u64));
 	}
 
 	//Check "tag", IV_c == V_c XOR 0^c-1 || 1
 	state_V[4][1] = _mm256_xor_si256(state_V[4][1], _mm256_setr_epi64x(0b1111111100000000000000000000000000000000000000000000000000000000, 0, 0, 0));
-
 	for (int i = 0; i < 5; i++) {
 		YMM isEqualSec0 = _mm256_cmpeq_epi64(state_IV[i][0], state_V[i][0]);
 		YMM isEqualSec1 = _mm256_cmpeq_epi64(state_IV[i][1], state_V[i][1]);
 
 		//We only compare capacities - not rates, so clean rates. 
-		//Also ignore last 3 u64 of second section. The inv_p1 sbox is also applied to this section and turns the 0's into 1's here. Normally shift-rows clear it, but not in the inverse operation 
+		//Also ignore last u64 of second section. The inv_p1 sbox is also applied to this section and turns the 0's into 1's here. Normally shift-rows clear it, but not in the inverse operation 
 		//It is cheaper to just clean it here, than to do it everytime in the inverse operation...
 		_mm256_insert_epi64(isEqualSec0, 0, 0);
-
 		_mm256_insert_epi64(isEqualSec1, 0, 1);
 		_mm256_insert_epi64(isEqualSec1, 0, 2);
 		_mm256_insert_epi64(isEqualSec1, 0, 3);
-
 
 		if (_mm256_extract_epi64(isEqualSec0, 1) == 0 || _mm256_extract_epi64(isEqualSec0, 2) == 0 || _mm256_extract_epi64(isEqualSec0, 3) == 0 ||
 			_mm256_extract_epi64(isEqualSec1, 0) == 0) {
@@ -450,4 +471,3 @@ YMM expand_bits_to_bytes(int x)
 	// this is the extra step: compare each byte == 0 to produce 0 or -1
 	return _mm256_cmpeq_epi8(isolated_inverted, _mm256_setzero_si256());
 }
-
