@@ -19,9 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{0797EBEB-D2A6-4918-BC3B-D4EF0DFD8EB0}</ProjectGuid>
+    <ProjectGuid>{4F267354-DDA4-4238-AD7C-8C162BEAFC0C}</ProjectGuid>
     <RootNamespace>PermutationRef</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <ProjectName>Permutation80-Ref</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -110,6 +111,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="api.h" />
+    <ClInclude Include="parameters.h" />
+    <ClInclude Include="primate.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="primate.cpp" />
+    <ClCompile Include="ref.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

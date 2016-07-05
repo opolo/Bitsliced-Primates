@@ -2,15 +2,15 @@ void Bytes2Element(unsigned char *inE, const unsigned char *in, unsigned long lo
 void Element2Bytes(unsigned char *in, unsigned char *inE, unsigned long long start, int numBytes);
 void InitializeState(unsigned char *state, unsigned char *key, unsigned char *nonce);
 
-void p_1(unsigned char *state);
-void p_2(unsigned char *state);
-void p_3(unsigned char *state);
-void p_4(unsigned char *state);
+void p_1_80bit(unsigned char *state);
+void p_2_80bit(unsigned char *state);
+void p_3_80bit(unsigned char *state);
+void p_4_80bit(unsigned char *state);
 
-void p_1_inv(unsigned char *state);
-void p_2_inv(unsigned char *state);
-void p_3_inv(unsigned char *state);
-void p_4_inv(unsigned char *state);
+void p_1_inv_80bit(unsigned char *state);
+void p_2_inv_80bit(unsigned char *state);
+void p_3_inv_80bit(unsigned char *state);
+void p_4_inv_80bit(unsigned char *state);
 
 void GenerateRoundConstants();
 

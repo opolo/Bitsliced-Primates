@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{C989F9CA-9A86-4169-A91D-E885AB8711EF}</ProjectGuid>
+    <ProjectGuid>{5246E250-1217-4B0F-8D29-9153153A2A77}</ProjectGuid>
     <RootNamespace>Hanuman120</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
@@ -110,6 +110,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="api.h" />
+    <ClInclude Include="crypto_aead.h" />
+    <ClInclude Include="parameters.h" />
+    <ClInclude Include="primate.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="encrypt.cpp" />
+    <ClCompile Include="primate.cpp" />
+    <ClCompile Include="ref.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

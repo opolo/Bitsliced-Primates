@@ -388,26 +388,26 @@ void test_primates() {
 	}
 
 	//use test vectors
-	p1_80bit(YMM_p1_input);
-	p1_inv_80bit(YMM_p1_input);
+	p1_80bit(YMM_p1_input_80bit);
+	p1_inv_80bit(YMM_p1_input_80bit);
 
 	//test if vectors are zero again... Dont test last 192 bits of section 2, as they are not part of the state (and sub elements turn the 0s there to 1s...)
-	if (_mm256_extract_epi64(YMM_p1_input[0][0], 0) != 0 || _mm256_extract_epi64(YMM_p1_input[0][0], 1) != 0 ||
-		_mm256_extract_epi64(YMM_p1_input[0][0], 2) != 0 || _mm256_extract_epi64(YMM_p1_input[0][0], 3) != 0 ||
-		_mm256_extract_epi64(YMM_p1_input[1][0], 0) != 0 || _mm256_extract_epi64(YMM_p1_input[1][0], 1) != 0 ||
-		_mm256_extract_epi64(YMM_p1_input[1][0], 2) != 0 || _mm256_extract_epi64(YMM_p1_input[1][0], 3) != 0 ||
-		_mm256_extract_epi64(YMM_p1_input[2][0], 0) != 0 || _mm256_extract_epi64(YMM_p1_input[2][0], 1) != 0 ||
-		_mm256_extract_epi64(YMM_p1_input[2][0], 2) != 0 || _mm256_extract_epi64(YMM_p1_input[2][0], 3) != 0 ||
-		_mm256_extract_epi64(YMM_p1_input[3][0], 0) != 0 || _mm256_extract_epi64(YMM_p1_input[3][0], 1) != 0 ||
-		_mm256_extract_epi64(YMM_p1_input[3][0], 2) != 0 || _mm256_extract_epi64(YMM_p1_input[3][0], 3) != 0 ||
-		_mm256_extract_epi64(YMM_p1_input[4][0], 0) != 0 || _mm256_extract_epi64(YMM_p1_input[4][0], 1) != 0 ||
-		_mm256_extract_epi64(YMM_p1_input[4][0], 2) != 0 || _mm256_extract_epi64(YMM_p1_input[4][0], 3) != 0 ||
+	if (_mm256_extract_epi64(YMM_p1_input_80bit[0][0], 0) != 0 || _mm256_extract_epi64(YMM_p1_input_80bit[0][0], 1) != 0 ||
+		_mm256_extract_epi64(YMM_p1_input_80bit[0][0], 2) != 0 || _mm256_extract_epi64(YMM_p1_input_80bit[0][0], 3) != 0 ||
+		_mm256_extract_epi64(YMM_p1_input_80bit[1][0], 0) != 0 || _mm256_extract_epi64(YMM_p1_input_80bit[1][0], 1) != 0 ||
+		_mm256_extract_epi64(YMM_p1_input_80bit[1][0], 2) != 0 || _mm256_extract_epi64(YMM_p1_input_80bit[1][0], 3) != 0 ||
+		_mm256_extract_epi64(YMM_p1_input_80bit[2][0], 0) != 0 || _mm256_extract_epi64(YMM_p1_input_80bit[2][0], 1) != 0 ||
+		_mm256_extract_epi64(YMM_p1_input_80bit[2][0], 2) != 0 || _mm256_extract_epi64(YMM_p1_input_80bit[2][0], 3) != 0 ||
+		_mm256_extract_epi64(YMM_p1_input_80bit[3][0], 0) != 0 || _mm256_extract_epi64(YMM_p1_input_80bit[3][0], 1) != 0 ||
+		_mm256_extract_epi64(YMM_p1_input_80bit[3][0], 2) != 0 || _mm256_extract_epi64(YMM_p1_input_80bit[3][0], 3) != 0 ||
+		_mm256_extract_epi64(YMM_p1_input_80bit[4][0], 0) != 0 || _mm256_extract_epi64(YMM_p1_input_80bit[4][0], 1) != 0 ||
+		_mm256_extract_epi64(YMM_p1_input_80bit[4][0], 2) != 0 || _mm256_extract_epi64(YMM_p1_input_80bit[4][0], 3) != 0 ||
 
-		_mm256_extract_epi64(YMM_p1_input[0][1], 0) != 0 || 
-		_mm256_extract_epi64(YMM_p1_input[1][1], 0) != 0 || 
-		_mm256_extract_epi64(YMM_p1_input[2][1], 0) != 0 || 
-		_mm256_extract_epi64(YMM_p1_input[3][1], 0) != 0 || 
-		_mm256_extract_epi64(YMM_p1_input[4][1], 0) != 0) {
+		_mm256_extract_epi64(YMM_p1_input_80bit[0][1], 0) != 0 || 
+		_mm256_extract_epi64(YMM_p1_input_80bit[1][1], 0) != 0 || 
+		_mm256_extract_epi64(YMM_p1_input_80bit[2][1], 0) != 0 || 
+		_mm256_extract_epi64(YMM_p1_input_80bit[3][1], 0) != 0 || 
+		_mm256_extract_epi64(YMM_p1_input_80bit[4][1], 0) != 0) {
 		printf("P1 inv not working \n");
 	}
 

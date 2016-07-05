@@ -7,10 +7,12 @@
 #include <Windows.h>
 #include <float.h>
 #include "primate.h"
+#include "primate80.h"
 #include "parameters.h"
 
 typedef unsigned long long u64;
 int cmpfunc(const void * a, const void * b);
+void bench();
 
 #if (_MSC_VER == 1900)
 static unsigned long long cpucycles(void)
@@ -39,6 +41,15 @@ int main()
 	//Run only on one core
 	SetThreadAffinityMask(GetCurrentThread(), 0x00000008); //Run on fourth core
 
+	bench();
+
+	printf("\n Done.");
+	getchar();
+}
+
+void bench() {
+	
+	printf("Benchmarking 120bit reference permutations. \n");
 	u64 start;
 	u64 cpu_frequency;
 
@@ -51,15 +62,15 @@ int main()
 	int iterations = 5000;
 	int iterations_per_iterations = 10;
 
-	u64 *results_p1 = (u64*) calloc(iterations, sizeof(u64));
-	u64 *results_p2 = (u64*) calloc(iterations, sizeof(u64));
-	u64 *results_p3 = (u64*) calloc(iterations, sizeof(u64));
-	u64 *results_p4 = (u64*) calloc(iterations, sizeof(u64));
+	u64 *results_p1 = (u64*)calloc(iterations, sizeof(u64));
+	u64 *results_p2 = (u64*)calloc(iterations, sizeof(u64));
+	u64 *results_p3 = (u64*)calloc(iterations, sizeof(u64));
+	u64 *results_p4 = (u64*)calloc(iterations, sizeof(u64));
 
-	u64 *results_inv_p1 = (u64*) calloc(iterations, sizeof(u64));
-	u64 *results_inv_p2 = (u64*) calloc(iterations, sizeof(u64));
-	u64 *results_inv_p3 = (u64*) calloc(iterations, sizeof(u64));
-	u64 *results_inv_p4 = (u64*) calloc(iterations, sizeof(u64));
+	u64 *results_inv_p1 = (u64*)calloc(iterations, sizeof(u64));
+	u64 *results_inv_p2 = (u64*)calloc(iterations, sizeof(u64));
+	u64 *results_inv_p3 = (u64*)calloc(iterations, sizeof(u64));
+	u64 *results_inv_p4 = (u64*)calloc(iterations, sizeof(u64));
 
 	printf("Press to start...\n");
 	getchar();
@@ -198,9 +209,6 @@ int main()
 	printf("Median speed: %f \n", medianSpeed_inv_p4);
 	printf("Median cycles per byte: %f \n", 1 / (5 / medianSpeed_inv_p4));
 	printf("\n");
-
-
-	getchar();
 }
 
 int cmpfunc(const void * a, const void * b)

@@ -35,6 +35,8 @@ void main() {
 
 	//Run only on one core
 	SetThreadAffinityMask(GetCurrentThread(), 0x00000008); //Run on fourth core
+	Initialize();
+	test_primates();
 
 	benchmark80bit();
 	benchmark120bit();

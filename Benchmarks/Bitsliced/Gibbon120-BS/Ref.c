@@ -325,5 +325,5 @@ static int bench_cmp(const void *x, const void *y)
 {
 	const u64 *ix = (const u64 *)x;
 	const u64 *iy = (const u64 *)y;
-	return *ix - *iy;
+	return (int) *ix - *iy;
 }
