@@ -157,7 +157,7 @@ int crypto_aead_decrypt(
 		for (int i = 0; i < 5; i++) {
 			dec_m[i] = XOR(_mm256_setr_epi64x(data_u64[i], _mm256_extract_epi64(state[i][0], 1), _mm256_extract_epi64(state[i][0], 2), _mm256_extract_epi64(state[i][0], 3)), state[i][0]);
 			if (progress < clen) {
-				_custom_mm256_insert_epi64(state[i][0], data_u64[i], 0);
+				__mm256_insert_epi64(state[i][0], data_u64[i], 0);
 			}
 		}
 
@@ -202,7 +202,7 @@ int crypto_aead_decrypt(
 						t >>= 8; //Make space for 0x01 byte
 						t |= 0b0000000100000000000000000000000000000000000000000000000000000000;
 						t >>= 8 * (padding_bytes - 1); //Shift remaining back.
-						_custom_mm256_insert_epi64(dec_m[i], t, 0);
+						__mm256_insert_epi64(dec_m[i], t, 0);
 					}
 				}
 				clen_pad_progress += 8;
@@ -217,7 +217,7 @@ int crypto_aead_decrypt(
 	//state[0][0].m256i_u64[1] and 7 first bytes of state[1][0].m256i_u64[1] contains the tag
 	state[0][0] = XOR(key[0], state[0][0]);
 	state[1][0] = XOR(key[1], state[1][0]);
-	_custom_mm256_insert_epi8(state[1][0], 0x00, 15); //We only compare 120 bits, not 128.
+	__mm256_insert_epi8(state[1][0], 0x00, 15); //We only compare 120 bits, not 128.
 
 
 
