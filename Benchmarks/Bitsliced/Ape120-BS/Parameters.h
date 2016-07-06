@@ -12,12 +12,17 @@ typedef long long i64;
 #if (_MSC_VER)
 #define _mm256_extract_epi64(a, b) a.m256i_u64[b]
 #define _mm256_extract_epi8(a, b) a.m256i_u8[b]
-#define _mm256_insert_epi64(a, b, c) a.m256i_u64[c] = b
+#define __mm256_insert_epi64(a, value, index) a.m256i_u64[index] = value
+#define __mm256_insert_epi8(a, value, index) a.m256i_u8[index] = value
+#else
+#define __mm256_insert_epi64(a, value, index) a = _mm256_insert_epi64(a, value, index)
+#define __mm256_insert_epi8(a, value, index) a = _mm256_insert_epi8(a, value, index)
 #endif
 
 //Bit-wise operations on AVX registers
 #define XOR(a, b) _mm256_xor_si256(a, b)
 #define NEG(a) _mm256_xor_si256(m256iAllOne, a)
+#define ANDNOT(a, b) _mm256_andnot_si256(a, b)
 #define OR(a, b) _mm256_or_si256(a, b)
 #define XOR3(a, b, c) _mm256_xor_si256(a, _mm256_xor_si256(b, c))
 #define XOR4(a, b, c, d) _mm256_xor_si256(a, _mm256_xor_si256(b, _mm256_xor_si256(c, d)))
@@ -40,8 +45,8 @@ typedef long long i64;
 #define p1_rounds 12
 
 #define Debug 1
-#define Verbose 0
-#define Benchmark 0
+#define Verbose 1
+#define Benchmark 1
 #define DisablePrimates 0
 
 #endif // !Parameters

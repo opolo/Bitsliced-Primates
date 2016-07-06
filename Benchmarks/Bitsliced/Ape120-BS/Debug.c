@@ -1,11 +1,13 @@
 #include "Debug.h"
 
+//Prints the 5x2 YMM registers given with a provided label above.
 void print_state_as_hex_with_label(u8 *label, YMM(*state)[2]) {
 	printf("\n");
 	printf("%s", label);
 	print_state_as_hex(state);
 }
 
+//Prints the 5x2 YMM registers given as input to the function.
 void print_state_as_hex(YMM(*state)[2]) {
 
 	//Print u64 index for help
@@ -35,6 +37,7 @@ void print_state_as_hex(YMM(*state)[2]) {
 	printf("\t");
 	printf("\n");
 
+	//_mm256_extract_epi8 requires a constant as its second parameters, so did some loop unrolling here.
 	for (int reg_no = 0; reg_no < 5; reg_no++) {
 		//Print first reg section 
 		printf("%02x ", _mm256_extract_epi8(state[reg_no][0], 0));
@@ -75,6 +78,7 @@ void print_state_as_hex(YMM(*state)[2]) {
 
 		printf("\t");
 
+		//Print second reg section
 		printf("%02x ", _mm256_extract_epi8(state[reg_no][1], 0));
 		printf("%02x ", _mm256_extract_epi8(state[reg_no][1], 1));
 		printf("%02x ", _mm256_extract_epi8(state[reg_no][1], 2));

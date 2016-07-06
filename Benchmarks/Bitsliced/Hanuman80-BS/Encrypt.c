@@ -3,8 +3,9 @@
 #include <stdio.h>
 #include <string.h>
 
-//HANUMAN
+//HANUMAN80-BS
 
+//Signatures
 void init_bitslice_state(YMM *key, const u8 *n, const u8 *k, YMM(*state)[2]);
 int load_data_into_u64(const u8 *m, u64 mlen, u64 rates[5], u64 *progress);
 YMM expand_bits_to_bytes(int x);
@@ -13,7 +14,7 @@ void initialize_common(YMM(*state)[2], const u8 *k, const u8 *nonce, YMM key[5],
 	//V = p1(0^r || K || N)
 	init_bitslice_state(key, nonce, k, state);
 
-	//Add a different constant to each capacity (identically to how primate permutations adds constants) to avoid ECB'esque problems... Constants chosen: 01, 02, 05, 0a, 15, 0b, 17, 0e, 
+	//Add a different constant to each capacity (identically to how the PRIMATEs permutation adds constants) to avoid ECB'esque problems... Constants chosen: 01, 02, 05, 0a, 15, 0b, 17, 0e, 
 	state[0][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b0000000000000000000000000000000000000000000000001010111000000000), state[0][0]);
 	state[1][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b0000000000000000000000000000000000000000000000000101011100000000), state[1][0]);
 	state[2][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b0000000000000000000000000000000000000000000000000010101100000000), state[2][0]);
@@ -70,7 +71,7 @@ void crypto_aead_encrypt(
 	YMM state[5][2];
 	YMM key[5];
 
-	//common start-steps between encrypt and decrypt
+	//common steps between encrypt and decrypt
 	initialize_common(state, k, nonce, key, adlen, ad);
 
 	u64 progress = 0;
@@ -79,7 +80,6 @@ void crypto_aead_encrypt(
 
 		//Get next 40 bytes of data
 		int shouldPadCapacity = load_data_into_u64(m, mlen, data_u64, &progress);
-
 		if (shouldPadCapacity) {
 			for (int i = 0; i < 5; i++) {
 				state[i][0] = XOR(state[i][0], _mm256_setr_epi64x(0, 0xFF, 0, 0));
@@ -106,18 +106,13 @@ void crypto_aead_encrypt(
 		p1(state);
 	}
 
-	//Calculate tag (Actually the last 3 XORs are not needed, as we only need 120 bit for the tag... They could be removed, depending on which bits is used for the tag.
+	//XOR key to (the relevant parts of the) state for the tag.
 	for (int i = 0; i < 5; i++) {
 		state[0][0] = XOR(state[0][0], key[0]);
 		state[1][0] = XOR(state[1][0], key[1]);
-		state[2][0] = XOR(state[2][0], key[2]);
-		state[3][0] = XOR(state[3][0], key[3]);
-		state[4][0] = XOR(state[4][0], key[4]);
 	}
 
-
-
-	//Extract 80bit tag that is not part of rate..., And to where key was just XORed 
+	//Extract 80bit tag where key was just XORed 
 	u64 t0 = _mm256_extract_epi64(state[0][0], 1);
 	u64 t1 = _mm256_extract_epi64(state[1][0], 1);
 	memcpy(&tag[0], &t0, sizeof(u64));
@@ -146,7 +141,6 @@ int crypto_aead_decrypt(
 
 		//Get next 40 bytes of data
 		int shouldPadCapacity = load_data_into_u64(c, clen, data_u64, &progress);
-
 		if (shouldPadCapacity) {
 			for (int i = 0; i < 5; i++) {
 				state[i][0] = XOR(state[i][0], _mm256_setr_epi64x(0, 0xFF, 0, 0));
@@ -173,20 +167,19 @@ int crypto_aead_decrypt(
 		memcpy(&m[progress - 16], &m3, sizeof(u64));
 		memcpy(&m[progress - 8], &m4, sizeof(u64));
 
-		//If we are done decrypting, we XOR the last decrypted message with potential padding to the state to prepare for creating the tag.
+		//If we are done decrypting, we XOR the last decrypted message with potential padding to the state in order to be able to create the tag.
 		if (progress > clen) {
 			int clen_last_blocksize = clen % 40;
 			int clen_pad_progress = 0;
 
 			for (int i = 0; i < 5; i++) {
 
-				//Do we need to pad this ymm?
+				//Do we need to pad this YMM?
 				if (clen_last_blocksize >= clen_pad_progress + 8) {
 					//No, there are 8 plaintext bytes in it. 
 				}
 				else {
-					//There are a need to pad it.
-
+					//There is a need to pad it.
 					//Are any of the bytes in it from the plaintext?
 					if (clen_last_blocksize < clen_pad_progress) {
 						//No.
@@ -200,7 +193,7 @@ int crypto_aead_decrypt(
 						u64 t = _mm256_extract_epi64(dec_m[i], 0);
 						t <<= 8 * padding_bytes;
 						t >>= 8; //Make space for 0x01 byte
-						t |= 0b0000000100000000000000000000000000000000000000000000000000000000;
+						t |= 0b1111111100000000000000000000000000000000000000000000000000000000;
 						t >>= 8 * (padding_bytes - 1); //Shift remaining back.
 						__mm256_insert_epi64(dec_m[i], t, 0);
 					}
@@ -224,9 +217,7 @@ int crypto_aead_decrypt(
 	__mm256_insert_epi8(state[1][0], 0x00, 11);
 	__mm256_insert_epi8(state[1][0], 0x00, 10);
 
-
-
-													  //Load received parametered tag into registers
+	//Load received parametered tag into registers
 	YMM old_tag_0 = _mm256_setr_epi8(
 		0, 0, 0, 0, 0, 0, 0, 0,
 		tag[0], tag[1], tag[2], tag[3], tag[4], tag[5], tag[6], tag[7],
@@ -246,9 +237,6 @@ int crypto_aead_decrypt(
 	}
 	memset(m, 0, clen);
 	return 1;
-
-
-
 }
 
 /*
@@ -290,7 +278,7 @@ int load_data_into_u64(const u8 *m, u64 mlen, u64 rates[5], u64 *progress) {
 				i64 available_bytes = mlen - *progress;
 
 				//Load remaining bytes into zeroed array (this is needed since we use XOR
-				rates[i] = 0x01; //Pad with 1 after the data.
+				rates[i] = 0xFF; //Pad with 1 after the data (we need to pad with 0xFF and not just 1, so that the padding is applied to each state to have a proper separation).
 				for (int j = 0; j < available_bytes; j++) {
 					rates[i] <<= 8;
 					rates[i] |= m[*progress + (available_bytes - 1 - j)];
@@ -301,9 +289,6 @@ int load_data_into_u64(const u8 *m, u64 mlen, u64 rates[5], u64 *progress) {
 	}
 	return 0;
 }
-
-static const __m256i ymm_all_zero = { 0, 0, 0, 0 };
-static const __m256i ymm_all_one = { 0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF };
 
 void init_bitslice_state(YMM *key, const u8 *n, const u8 *k, YMM(*state)[2]) {
 
@@ -340,7 +325,6 @@ void init_bitslice_state(YMM *key, const u8 *n, const u8 *k, YMM(*state)[2]) {
 	state[2][1] = expand_bits_to_bytes(nonce_bits[2]);
 	state[3][1] = expand_bits_to_bytes(nonce_bits[3]);
 	state[4][1] = expand_bits_to_bytes(nonce_bits[4]);
-
 }
 
 YMM expand_bits_to_bytes(int x)
@@ -356,6 +340,6 @@ YMM expand_bits_to_bytes(int x)
 	__m256i andmask = _mm256_set1_epi64x(0x8040201008040201);  // every 8 bits -> 8 bytes, pattern repeats.
 	__m256i isolated_inverted = _mm256_andnot_si256(shuf, andmask);
 
-	// this is the extra step: compare each byte == 0 to produce 0 or -1
+	//compare each byte == 0 to produce 0 or -1
 	return _mm256_cmpeq_epi8(isolated_inverted, _mm256_setzero_si256());
 }

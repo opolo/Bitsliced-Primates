@@ -12,7 +12,11 @@ typedef long long i64;
 #if (_MSC_VER)
 #define _mm256_extract_epi64(a, b) a.m256i_u64[b]
 #define _mm256_extract_epi8(a, b) a.m256i_u8[b]
-#define _mm256_insert_epi64(a, b, c) a.m256i_u64[c] = b
+#define __mm256_insert_epi64(a, value, index) a.m256i_u64[index] = value
+#define __mm256_insert_epi8(a, value, index) a.m256i_u8[index] = value
+#else
+#define __mm256_insert_epi64(a, value, index) a = _mm256_insert_epi64(a, value, index)
+#define __mm256_insert_epi8(a, value, index) a = _mm256_insert_epi8(a, value, index)
 #endif
 
 //Bit-wise operations on AVX registers
@@ -41,7 +45,7 @@ typedef long long i64;
 
 #define Debug 1
 #define Verbose 0
-#define Benchmark 0
+#define Benchmark 1
 #define DisablePrimates 0
 
 #endif // !Parameters

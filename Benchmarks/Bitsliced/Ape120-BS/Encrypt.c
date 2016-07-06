@@ -323,7 +323,7 @@ int crypto_aead_decrypt(
 				plaintext_YMM[i] = XOR(state_V[i][0], _mm256_setr_epi64x(data_u64[i], 0, 0, 0));
 
 				//V <= C[i-1] || VC
-				_mm256_insert_epi64(state_V[i][0], data_u64[i], 0);
+				__mm256_insert_epi64(state_V[i][0], data_u64[i], 0);
 			}
 
 
@@ -358,8 +358,8 @@ int crypto_aead_decrypt(
 		//We only compare capacities - not rates, so clean rates. 
 		//Also ignore last u64 of second section. The inv_p1 sbox is also applied to this section and turns the 0's into 1's here. Normally shift-rows clear it, but not in the inverse operation 
 		//It is cheaper to just clean it here, than to do it everytime in the inverse operation...
-		_mm256_insert_epi64(isEqualSec0, 0, 0);
-		_mm256_insert_epi64(isEqualSec1, 0, 3);
+		__mm256_insert_epi64(isEqualSec0, 0, 0);
+		__mm256_insert_epi64(isEqualSec1, 0, 3);
 
 
 		if (_mm256_extract_epi64(isEqualSec0, 1) == 0 || _mm256_extract_epi64(isEqualSec0, 2) == 0 || _mm256_extract_epi64(isEqualSec0, 3) == 0 ||
