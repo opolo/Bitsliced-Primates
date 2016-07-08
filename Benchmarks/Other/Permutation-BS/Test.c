@@ -14,7 +14,7 @@ static unsigned long long cpucycles(void)
 {
 	return __rdtsc();
 }
-#elif defined(__x86_64__)
+#else
 static unsigned long long cpucycles(void)
 {
 	unsigned long long result;
@@ -22,7 +22,7 @@ static unsigned long long cpucycles(void)
 	(
 		".byte 15;.byte 49\n"
 		"shlq $32,%%rdx\n"
-		"orq %%rdx,%%rax"
+		"orq %%rdx,%%rax",
 		: "=a" (result) ::  "%rdx"
 	);
 	return result;

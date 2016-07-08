@@ -7,14 +7,16 @@
 void T2(__m256i (*state)[2], __m256i (*new_state)[2]);
 
 void sbox(__m256i (*state)[2]);
-void shiftrows(__m256i (*state)[2]);
 void mixcolumns(__m256i (*state)[2]);
 
 void sbox_inv(__m256i (*state)[2]);
-void shiftrows_inv(__m256i (*state)[2]);
 void mixcolumns_inv(__m256i (*state)[2]);
 
 static __m256i m256iAllOne;
+static YMM invShuffleControlMaskFirstReg;
+static YMM invShuffleControlMaskSecondReg;
+static YMM shuffleControlMaskFirstReg;
+static YMM shuffleControlMaskSecondReg;
 
 static YMM p1_constants_bit0[12];
 static YMM p1_constants_bit1[12];
@@ -26,15 +28,30 @@ static YMM p1_constants_bit4[12];
 void Initialize() {
 	m256iAllOne = _mm256_set1_epi64x(0xFFFFFFFFFFFFFFFF);
 
+	invShuffleControlMaskFirstReg = _mm256_setr_epi8(
+		0, 1, 2, 3, 4, 5, 6, 7, //0
+		15, 8, 9, 10, 11, 12, 13, 14, //1 
+		22, 23, 16, 17, 18, 19, 20, 21, //2
+		29, 30, 31, 24, 25, 26, 27, 28); //3
+	invShuffleControlMaskSecondReg = _mm256_setr_epi8(
+		4, 5, 6, 7, 0, 1, 2, 3, //4
+		11, 12, 13, 14, 15, 8, 9, 10, //5
+		17, 18, 19, 20, 21, 22, 23, 16, //7
+		255, 255, 255, 255, 255, 255, 255, 255); //Setting it to 0xFF makes shuffle zero the bits
+	shuffleControlMaskFirstReg = _mm256_setr_epi8(
+		0, 1, 2, 3, 4, 5, 6, 7, //0
+		9, 10, 11, 12, 13, 14, 15, 8, //1 
+		18, 19, 20, 21, 22, 23, 16, 17, //2
+		27, 28, 29, 30, 31, 24, 25, 26); //3
+	shuffleControlMaskSecondReg = _mm256_setr_epi8(
+		4, 5, 6, 7, 0, 1, 2, 3, //4
+		13, 14, 15, 8, 9, 10, 11, 12, //5
+		23, 16, 17, 18, 19, 20, 21, 22, //7
+		255, 255, 255, 255, 255, 255, 255, 255); //Setting it to 0xFF makes shuffle zero the bits
+
 	/*
 	Round constants for p_1:
 	01, 02, 05, 0a, 15, 0b, 17, 0e, 1d, 1b, 16, 0c
-
-	Round constants for p_2:
-	18, 11, 03, 07, 0f, 1f
-
-	Round constants for p_3:
-	1e, 1c, 19, 13, 06, 0d
 	*/
 
 	//Set the bits to 1111'1111 in the column two, second row byte, if the roundconstant has a onebit on this indice
@@ -110,7 +127,6 @@ void test_primates() {
 	//Prepare test vectors
 	YMM YMM_p1_input[5][2];
 
-
 	for (int i = 0; i < 5; i++) {
 		YMM_p1_input[i][0] = _mm256_setzero_si256();
 		YMM_p1_input[i][1] = _mm256_setzero_si256();
@@ -132,7 +148,6 @@ void test_primates() {
 	YMM_p1_output_expected[2][1] = _mm256_setr_epi64x(71776119061217535ULL, 1099511562495ULL, 18374966859414961920ULL, 0ULL);
 	YMM_p1_output_expected[3][1] = _mm256_setr_epi64x(18374966855136771840ULL, 18374967950370078720ULL, 1095216660735ULL, 0ULL);
 	YMM_p1_output_expected[4][1] = _mm256_setr_epi64x(18446744069414584575ULL, 18446463698227757055ULL, 18374967950353367295ULL, 0ULL);
-
 
 	//Test if results matched
 	//They get set to all 1 if equal. Else 0.
@@ -212,19 +227,17 @@ void test_primates() {
 	}
 }
 
-
-
 void p1(YMM(*state)[2]) {
-	if (DisablePrimates) {
-		return;
-	}
 	for (int round = 0; round < p1_rounds; round++) {
 
 		//Sub Bytes
 		sbox(state);
 
 		//Shift Rows
-		shiftrows(state);
+		for (int reg = 0; reg < 5; reg++) {
+			state[reg][0] = _mm256_shuffle_epi8(state[reg][0], shuffleControlMaskFirstReg);
+			state[reg][1] = _mm256_shuffle_epi8(state[reg][1], shuffleControlMaskSecondReg);
+		}
 
 		//Mix Columns
 		mixcolumns(state);
@@ -238,11 +251,7 @@ void p1(YMM(*state)[2]) {
 	}
 }
 
-
 void p1_inv(YMM(*state)[2]) {
-	if (DisablePrimates) {
-		return;
-	}
 	for (int round = 0; round < p1_rounds; round++) {
 
 		//Constant Addition
@@ -256,13 +265,15 @@ void p1_inv(YMM(*state)[2]) {
 		mixcolumns_inv(state);
 
 		//Shift Rows
-		shiftrows_inv(state);
+		for (int reg = 0; reg < 5; reg++) {
+			state[reg][0] = _mm256_shuffle_epi8(state[reg][0], invShuffleControlMaskFirstReg);
+			state[reg][1] = _mm256_shuffle_epi8(state[reg][1], invShuffleControlMaskSecondReg);
+		}
 
 		//Sub Bytes
 		sbox_inv(state);
 	}
 }
-
 
 void sbox_inv(__m256i (*x)[2]) {
 	//YMM 0 = LSB
@@ -274,7 +285,6 @@ void sbox_inv(__m256i (*x)[2]) {
 		//Helper variables
 		__m256i t[30];
 		__m256i y[5];
-
 
 		t[0] = AND(x[0][i], x[1][i]); //x0x1
 		t[1] = AND(x[0][i], x[2][i]); //x0x2
@@ -321,26 +331,6 @@ void sbox_inv(__m256i (*x)[2]) {
 		x[4][i] = y[4];
 	}
 }
-
-
-void shiftrows_inv(__m256i (*state)[2]) {
-	__m256i shuffleControlMaskFirstReg = _mm256_setr_epi8(
-		0, 1, 2, 3, 4, 5, 6, 7, //0
-		15, 8, 9, 10, 11, 12, 13, 14, //1 
-		22, 23, 16, 17, 18, 19, 20, 21, //2
-		29, 30, 31, 24, 25, 26, 27, 28); //3
-	__m256i shuffleControlMaskSecondReg = _mm256_setr_epi8(
-		4, 5, 6, 7, 0, 1, 2, 3, //4
-		11, 12, 13, 14, 15, 8, 9, 10, //5
-		17, 18, 19, 20, 21, 22, 23, 16, //7
-		255, 255, 255, 255, 255, 255, 255, 255); //Setting it to 0xFF makes shuffle zero the bits
-	for (int reg = 0; reg < 5; reg++) {
-
-		state[reg][0] = _mm256_shuffle_epi8(state[reg][0], shuffleControlMaskFirstReg);
-		state[reg][1] = _mm256_shuffle_epi8(state[reg][1], shuffleControlMaskSecondReg);
-	}
-}
-
 
 void mixcolumns_inv(__m256i (*state)[2]) {
 	/*
@@ -607,25 +597,6 @@ void sbox(__m256i (*x)[2]) {
 		x[1][i] = y[1];
 		x[2][i] = y[2];
 		x[3][i] = y[3];
-
-	}
-}
-
-void shiftrows(__m256i (*state)[2]) {
-	__m256i shuffleControlMaskFirstReg = _mm256_setr_epi8(
-		0, 1, 2, 3, 4, 5, 6, 7, //0
-		9, 10, 11, 12, 13, 14, 15, 8, //1 
-		18, 19, 20, 21, 22, 23, 16, 17, //2
-		27, 28, 29, 30, 31, 24, 25, 26); //3
-	__m256i shuffleControlMaskSecondReg = _mm256_setr_epi8(
-		4, 5, 6, 7, 0, 1, 2, 3, //4
-		13, 14, 15, 8, 9, 10, 11, 12, //5
-		23, 16, 17, 18, 19, 20, 21, 22, //7
-		255, 255, 255, 255, 255, 255, 255, 255); //Setting it to 0xFF makes shuffle zero the bits
-	for (int reg = 0; reg < 5; reg++) {
-
-		state[reg][0] = _mm256_shuffle_epi8(state[reg][0], shuffleControlMaskFirstReg);
-		state[reg][1] = _mm256_shuffle_epi8(state[reg][1], shuffleControlMaskSecondReg);
 	}
 }
 

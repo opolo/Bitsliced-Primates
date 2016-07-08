@@ -45,8 +45,7 @@ typedef long long i64;
 #define p1_rounds 12
 
 #define Debug 1
-#define Verbose 1
+#define Verbose 0
 #define Benchmark 1
-#define DisablePrimates 0
 
 #endif // !Parameters

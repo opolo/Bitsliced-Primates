@@ -48,6 +48,5 @@ typedef long long i64;
 #define Debug 1
 #define Verbose 0
 #define Benchmark 1
-#define DisablePrimates 0
 
 #endif // !Parameters

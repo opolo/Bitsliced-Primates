@@ -17,7 +17,7 @@ static unsigned long long cpucycles(void)
 {
 	return __rdtsc();
 }
-#elif defined(__x86_64__)
+#else
 static unsigned long long cpucycles(void)
 {
 	unsigned long long result;
@@ -72,7 +72,7 @@ void testScheme() {
 	memset(msg, 0, 400 * sizeof(u8));
 	memset(decrypted_msg, 0, 400 * sizeof(u8));
 	memset(c, 0, 400 * sizeof(u8));
-	memset(tag, 0, 30 * sizeof(u64));
+	memset(tag, 0, TagSize * sizeof(u8));
 
 	printf("\n");
 
@@ -86,7 +86,7 @@ void testScheme() {
 	memset(msg, 0, 400 * sizeof(u8));
 	memset(decrypted_msg, 0, 400 * sizeof(u8));
 	memset(c, 0, 400 * sizeof(u8));
-	memset(tag, 0, 30 * sizeof(u64));
+	memset(tag, 0, TagSize * sizeof(u8));
 
 	printf("\n");
 
@@ -100,7 +100,7 @@ void testScheme() {
 	memset(msg, 0, 400 * sizeof(u8));
 	memset(decrypted_msg, 0, 400 * sizeof(u8));
 	memset(c, 0, 400 * sizeof(u8));
-	memset(tag, 0, 30 * sizeof(u64));
+	memset(tag, 0, TagSize * sizeof(u8));
 
 	printf("\n");
 
@@ -114,7 +114,7 @@ void testScheme() {
 	memset(msg, 0, 400 * sizeof(u8));
 	memset(decrypted_msg, 0, 400 * sizeof(u8));
 	memset(c, 0, 400 * sizeof(u8));
-	memset(tag, 0, 30 * sizeof(u64));
+	memset(tag, 0, TagSize * sizeof(u8));
 
 	printf("\n");
 
@@ -128,7 +128,7 @@ void testScheme() {
 	memset(msg, 0, 400 * sizeof(u8));
 	memset(decrypted_msg, 0, 400 * sizeof(u8));
 	memset(c, 0, 400 * sizeof(u8));
-	memset(tag, 0, 30 * sizeof(u64));
+	memset(tag, 0, TagSize * sizeof(u8));
 
 	printf("\n");
 }
@@ -370,10 +370,10 @@ void verboseEncryption() {
 	printf("\n\n");
 }
 
-void main() {
+int main() {
 
 	//Implementation version
-	printf("APE120-BS V1.01 \n");
+	printf("GIBBON120-BS V1.01 \n");
 
 	//Needed before the PRIMATEs permutation is used.
 	Initialize();
@@ -394,6 +394,8 @@ void main() {
 
 	printf("Push return to quit... \n");
 	getchar();
+
+	return 0;
 }
 
 static int bench_cmp(const void *x, const void *y)

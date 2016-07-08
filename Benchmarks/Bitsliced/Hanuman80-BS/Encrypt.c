@@ -106,18 +106,61 @@ void crypto_aead_encrypt(
 		p1(state);
 	}
 
-	//XOR key to (the relevant parts of the) state for the tag.
+	//**Calculate tag**
+	//Create single state by XORing all state together. It will be stored kept in the highest bit of each byte, since there is an intrinsic to easily extract the highest bits of each byte.
+	YMM XORedStates[5][2];
 	for (int i = 0; i < 5; i++) {
-		state[0][0] = XOR(state[0][0], key[0]);
-		state[1][0] = XOR(state[1][0], key[1]);
+		//Two states XORed together
+		XORedStates[i][0] = _mm256_xor_si256(state[i][0], _mm256_slli_epi64(state[i][0], 1));
+		XORedStates[i][1] = _mm256_xor_si256(state[i][1], _mm256_slli_epi64(state[i][1], 1));
+
+		//Three
+		XORedStates[i][0] = _mm256_xor_si256(XORedStates[i][0], _mm256_slli_epi64(state[i][0], 2));
+		XORedStates[i][1] = _mm256_xor_si256(XORedStates[i][1], _mm256_slli_epi64(state[i][1], 2));
+
+		//Four
+		XORedStates[i][0] = _mm256_xor_si256(XORedStates[i][0], _mm256_slli_epi64(state[i][0], 3));
+		XORedStates[i][1] = _mm256_xor_si256(XORedStates[i][1], _mm256_slli_epi64(state[i][1], 3));
+
+		//Five
+		XORedStates[i][0] = _mm256_xor_si256(XORedStates[i][0], _mm256_slli_epi64(state[i][0], 4));
+		XORedStates[i][1] = _mm256_xor_si256(XORedStates[i][1], _mm256_slli_epi64(state[i][1], 4));
+
+		//Six
+		XORedStates[i][0] = _mm256_xor_si256(XORedStates[i][0], _mm256_slli_epi64(state[i][0], 5));
+		XORedStates[i][1] = _mm256_xor_si256(XORedStates[i][1], _mm256_slli_epi64(state[i][1], 5));
+
+		//Seven
+		XORedStates[i][0] = _mm256_xor_si256(XORedStates[i][0], _mm256_slli_epi64(state[i][0], 6));
+		XORedStates[i][1] = _mm256_xor_si256(XORedStates[i][1], _mm256_slli_epi64(state[i][1], 6));
+
+		//Eight
+		XORedStates[i][0] = _mm256_xor_si256(XORedStates[i][0], _mm256_slli_epi64(state[i][0], 7));
+		XORedStates[i][1] = _mm256_xor_si256(XORedStates[i][1], _mm256_slli_epi64(state[i][1], 7));
+
+		//XOR key to state
+		XORedStates[i][0] = XOR(key[i], XORedStates[i][0]);
 	}
 
-	//Extract 80bit tag where key was just XORed 
-	u64 t0 = _mm256_extract_epi64(state[0][0], 1);
-	u64 t1 = _mm256_extract_epi64(state[1][0], 1);
-	memcpy(&tag[0], &t0, sizeof(u64));
-	memcpy(&tag[8], &t1, sizeof(u8) * 2);
+	//Extract tag-bits
+	int tag_bits[5];
+	tag_bits[0] = _mm256_movemask_epi8(XORedStates[0][0]);
+	tag_bits[1] = _mm256_movemask_epi8(XORedStates[1][0]);
+	tag_bits[2] = _mm256_movemask_epi8(XORedStates[2][0]);
+	tag_bits[3] = _mm256_movemask_epi8(XORedStates[3][0]);
+	tag_bits[4] = _mm256_movemask_epi8(XORedStates[4][0]);
 
+	//Tag is in the bits 8-23 in each of the 5 ints. 
+	tag[0] = (tag_bits[0] >> 8) ^ 0xFF;
+	tag[1] = (tag_bits[0] >> 16) ^ 0xFF;
+	tag[2] = (tag_bits[1] >> 8) ^ 0xFF;
+	tag[3] = (tag_bits[1] >> 16) ^ 0xFF;
+	tag[4] = (tag_bits[2] >> 8) ^ 0xFF;
+	tag[5] = (tag_bits[2] >> 16) ^ 0xFF;
+	tag[6] = (tag_bits[3] >> 8) ^ 0xFF;
+	tag[7] = (tag_bits[3] >> 16) ^ 0xFF;
+	tag[8] = (tag_bits[4] >> 8) ^ 0xFF;
+	tag[9] = (tag_bits[4] >> 16) ^ 0xFF;
 }
 
 int crypto_aead_decrypt(
@@ -202,41 +245,73 @@ int crypto_aead_decrypt(
 				state[i][0] = XOR(state[i][0], dec_m[i]);
 			}
 		}
-
 		p1(state);
 	}
 
-	//XOR key to tag-part of state again. 
-	//state[0][0].m256i_u64[1] and 7 first bytes of state[1][0].m256i_u64[1] contains the tag
-	state[0][0] = XOR(key[0], state[0][0]);
-	state[1][0] = XOR(key[1], state[1][0]);
-	__mm256_insert_epi8(state[1][0], 0x00, 15); //We only compare 80 bits, not 128.
-	__mm256_insert_epi8(state[1][0], 0x00, 14);
-	__mm256_insert_epi8(state[1][0], 0x00, 13);
-	__mm256_insert_epi8(state[1][0], 0x00, 12);
-	__mm256_insert_epi8(state[1][0], 0x00, 11);
-	__mm256_insert_epi8(state[1][0], 0x00, 10);
+	//**Calculate tag**
+	//Create single state by XORing all state together. It will be stored kept in the highest bit of each byte, since there is an intrinsic to easily extract the highest bits of each byte.
+	YMM XORedStates[5][2];
+	for (int i = 0; i < 5; i++) {
+		//Two states XORed together
+		XORedStates[i][0] = _mm256_xor_si256(state[i][0], _mm256_slli_epi64(state[i][0], 1));
+		XORedStates[i][1] = _mm256_xor_si256(state[i][1], _mm256_slli_epi64(state[i][1], 1));
 
-	//Load received parametered tag into registers
-	YMM old_tag_0 = _mm256_setr_epi8(
-		0, 0, 0, 0, 0, 0, 0, 0,
-		tag[0], tag[1], tag[2], tag[3], tag[4], tag[5], tag[6], tag[7],
-		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0);
-	YMM old_tag_1 = _mm256_setr_epi8(
-		0, 0, 0, 0, 0, 0, 0, 0,
-		tag[8], tag[9], 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0);
+		//Three
+		XORedStates[i][0] = _mm256_xor_si256(XORedStates[i][0], _mm256_slli_epi64(state[i][0], 2));
+		XORedStates[i][1] = _mm256_xor_si256(XORedStates[i][1], _mm256_slli_epi64(state[i][1], 2));
 
-	YMM isEqual0 = _mm256_cmpeq_epi64(state[0][0], old_tag_0);
-	YMM isEqual1 = _mm256_cmpeq_epi64(state[1][0], old_tag_1);
+		//Four
+		XORedStates[i][0] = _mm256_xor_si256(XORedStates[i][0], _mm256_slli_epi64(state[i][0], 3));
+		XORedStates[i][1] = _mm256_xor_si256(XORedStates[i][1], _mm256_slli_epi64(state[i][1], 3));
 
-	if (_mm256_extract_epi64(isEqual0, 1) && _mm256_extract_epi64(isEqual1, 1)) {
-		return 0;
+		//Five
+		XORedStates[i][0] = _mm256_xor_si256(XORedStates[i][0], _mm256_slli_epi64(state[i][0], 4));
+		XORedStates[i][1] = _mm256_xor_si256(XORedStates[i][1], _mm256_slli_epi64(state[i][1], 4));
+
+		//Six
+		XORedStates[i][0] = _mm256_xor_si256(XORedStates[i][0], _mm256_slli_epi64(state[i][0], 5));
+		XORedStates[i][1] = _mm256_xor_si256(XORedStates[i][1], _mm256_slli_epi64(state[i][1], 5));
+
+		//Seven
+		XORedStates[i][0] = _mm256_xor_si256(XORedStates[i][0], _mm256_slli_epi64(state[i][0], 6));
+		XORedStates[i][1] = _mm256_xor_si256(XORedStates[i][1], _mm256_slli_epi64(state[i][1], 6));
+
+		//Eight
+		XORedStates[i][0] = _mm256_xor_si256(XORedStates[i][0], _mm256_slli_epi64(state[i][0], 7));
+		XORedStates[i][1] = _mm256_xor_si256(XORedStates[i][1], _mm256_slli_epi64(state[i][1], 7));
+
+		//XOR key to state
+		XORedStates[i][0] = XOR(key[i], XORedStates[i][0]);
 	}
-	memset(m, 0, clen);
-	return 1;
+
+	//Extract tag-bits
+	int tag_bits[5];
+	tag_bits[0] = _mm256_movemask_epi8(XORedStates[0][0]);
+	tag_bits[1] = _mm256_movemask_epi8(XORedStates[1][0]);
+	tag_bits[2] = _mm256_movemask_epi8(XORedStates[2][0]);
+	tag_bits[3] = _mm256_movemask_epi8(XORedStates[3][0]);
+	tag_bits[4] = _mm256_movemask_epi8(XORedStates[4][0]);
+
+	//Tag is in the bits 8-23 in each of the 5 ints. 
+	u8 actual_tag[10];
+	actual_tag[0] = (tag_bits[0] >> 8) ^ 0xFF;
+	actual_tag[1] = (tag_bits[0] >> 16) ^ 0xFF;
+	actual_tag[2] = (tag_bits[1] >> 8) ^ 0xFF;
+	actual_tag[3] = (tag_bits[1] >> 16) ^ 0xFF;
+	actual_tag[4] = (tag_bits[2] >> 8) ^ 0xFF;
+	actual_tag[5] = (tag_bits[2] >> 16) ^ 0xFF;
+	actual_tag[6] = (tag_bits[3] >> 8) ^ 0xFF;
+	actual_tag[7] = (tag_bits[3] >> 16) ^ 0xFF;
+	actual_tag[8] = (tag_bits[4] >> 8) ^ 0xFF;
+	actual_tag[9] = (tag_bits[4] >> 16) ^ 0xFF;
+
+	for (int i = 0; i < 10; i++) {
+		if (actual_tag[i] != tag[i]) {
+			memset(m, 0, clen);
+			return 1;
+		}
+	}
+	return 0;
 }
 
 /*

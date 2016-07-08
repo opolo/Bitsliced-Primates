@@ -15,11 +15,9 @@ void crypto_aead_encrypt(
 	const u8 *k,
 	u64 *tag) {
 
-
 	YMM state[5][2];
 	YMM key[5][2];
-	_mm256_zeroall(); //Makes sure all the just declared regs are 0.
-
+	
 	//XOR key to empty state... It will only be stored in the capacity
 	create_key_YMM(k, key);
 	for (int i = 0; i < 5; i++) {
@@ -33,7 +31,6 @@ void crypto_aead_encrypt(
 	state[2][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b0000000000000000000000000000000000000000000000000010101100000000), state[2][0]);
 	state[3][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b0000000000000000000000000000000000000000000000000001010100000000), state[3][0]);
 	state[4][0] = XOR(_mm256_set_epi64x(0, 0, 0, 0b0000000000000000000000000000000000000000000000000000101000000000), state[4][0]);
-
 	p1(state);
 
 	//Handle nonce (40 byte in my implementation)
@@ -47,7 +44,6 @@ void crypto_aead_encrypt(
 		state[3][0] = XOR(state[3][0], _mm256_setr_epi64x(data_u64[3], 0, 0, 0));
 		state[4][0] = XOR(state[4][0], _mm256_setr_epi64x(data_u64[4], 0, 0, 0));
 		p1(state);
-
 	}
 
 	//Handle potential AD.
@@ -55,7 +51,6 @@ void crypto_aead_encrypt(
 		u64 progress = 0;
 		u64 ad_u64[5] = { 0 };
 		while (progress < adlen) {
-
 			//Get next 40 bytes of data
 			int shouldPadCapacity = load_data_into_u64(ad, adlen, ad_u64, &progress);
 			if (shouldPadCapacity) {
@@ -63,16 +58,13 @@ void crypto_aead_encrypt(
 					state[i][0] = XOR(state[i][0], _mm256_setr_epi64x(0, 0xFF, 0, 0));
 				}
 			}
-
 			//Load it into registers and create and do p1
 			for (int i = 0; i < 5; i++) {
 				state[i][0] = XOR(_mm256_setr_epi64x(ad_u64[i], 0, 0, 0), state[i][0]);
 			}
-
 			p1(state);
 		}
 	}
-
 
 	//V <= V XOR (0^(b-1) || 1)
 	state[4][1] = _mm256_xor_si256(state[4][1], _mm256_setr_epi64x(0, 0, 0b1111111100000000000000000000000000000000000000000000000000000000, 0));
@@ -110,7 +102,6 @@ void crypto_aead_encrypt(
 			memcpy(&c[progress - 8], &c4, sizeof(u64));
 		}
 	}
-
 
 	//Create tag (its size will be 240*8 = 1920 bits = 240 bytes.
 	//XOR key to state
@@ -165,6 +156,10 @@ int crypto_aead_decrypt(
 	u64 *tag) {
 
 	u64 paddedClen = 0;
+	YMM state_IV[5][2];
+	YMM state_V[5][2];
+	YMM key[5][2];
+	
 	//was message fractional?
 	if (clen % 40 != 0) {
 		//Yes.
@@ -175,11 +170,6 @@ int crypto_aead_decrypt(
 		//No.
 		paddedClen = clen;
 	}
-
-	YMM state_IV[5][2];
-	YMM state_V[5][2];
-	YMM key[5][2];
-	_mm256_zeroall(); //Makes sure all the just declared regs are 0.
 
 	//XOR key to empty state
 	create_key_YMM(k, key);
@@ -215,23 +205,18 @@ int crypto_aead_decrypt(
 		u64 progress = 0;
 		u64 ad_u64[5] = { 0 };
 		while (progress < adlen) {
-
 			//Get next 40 bytes of data
 			int shouldPadCapacity = load_data_into_u64(ad, adlen, ad_u64, &progress);
-
 			if (shouldPadCapacity) {
 				for (int i = 0; i < 5; i++) {
 					state_IV[i][0] = XOR(state_IV[i][0], _mm256_setr_epi64x(0, 0xFF, 0, 0));
 				}
 			}
-
 			//Load it into registers and create and do p1
 			for (int i = 0; i < 5; i++) {
 				state_IV[i][0] = XOR(_mm256_setr_epi64x(ad_u64[i], 0, 0, 0), state_IV[i][0]);
 			}
-
 			p1(state_IV);
-
 		}
 	}
 
@@ -240,14 +225,11 @@ int crypto_aead_decrypt(
 		//M[w] <= v_r XOR C[w-1]
 		//V <= V XOR M[w]10* || 0^c
 		{
-
 			//V <= p1^-1(C[w] || K XOR T)
 			u64 progress = paddedClen - 40;
-
 			u64 lastMLocation = progress;
 			u64 cipherblock[5] = { 0 };
 			load_data_into_u64(c, paddedClen, cipherblock, &progress);
-
 			for (int i = 0; i < 5; i++) {
 				state_V[i][0] = XOR3(_mm256_setr_epi64x(cipherblock[i], 0, 0, 0),
 					key[i][0],
@@ -271,7 +253,6 @@ int crypto_aead_decrypt(
 					load_data_into_u64(c, paddedClen, cipherblock, &lastMLocation);
 					plaintext_YMM[i] = XOR(state_V[i][0], _mm256_setr_epi64x(cipherblock[i], 0, 0, 0));
 				}
-
 			}
 
 			u64 m0 = _mm256_extract_epi64(plaintext_YMM[0], 0);
@@ -296,7 +277,6 @@ int crypto_aead_decrypt(
 				}
 			}
 		}
-
 
 		for (i64 i = paddedClen - 80; i >= 0; i -= 40) {
 			i64 progress = i;
@@ -325,7 +305,6 @@ int crypto_aead_decrypt(
 				//V <= C[i-1] || VC
 				__mm256_insert_epi64(state_V[i][0], data_u64[i], 0);
 			}
-
 
 			//Extract ciphertext
 			u64 m0 = _mm256_extract_epi64(plaintext_YMM[0], 0);
@@ -361,7 +340,6 @@ int crypto_aead_decrypt(
 		__mm256_insert_epi64(isEqualSec0, 0, 0);
 		__mm256_insert_epi64(isEqualSec1, 0, 3);
 
-
 		if (_mm256_extract_epi64(isEqualSec0, 1) == 0 || _mm256_extract_epi64(isEqualSec0, 2) == 0 || _mm256_extract_epi64(isEqualSec0, 3) == 0 ||
 			_mm256_extract_epi64(isEqualSec1, 0) == 0 || _mm256_extract_epi64(isEqualSec1, 1) == 0 || _mm256_extract_epi64(isEqualSec1, 2) == 0) {
 			//Not equal. Wipe data and 
@@ -370,7 +348,6 @@ int crypto_aead_decrypt(
 		}
 	}
 	return 0;
-	
 }
 
 void create_key_YMM(const u8 *k, YMM(*key)[2]) {
@@ -461,24 +438,23 @@ int load_data_into_u64(const u8 *m, u64 mlen, u64 rates[5], u64 *progress) {
 		}
 		*progress += 8;
 	}
-
 	return 0;
 }
 
 YMM expand_bits_to_bytes(int x)
 {
-	__m256i xbcast = _mm256_set1_epi32(x);    // we only use the low 32bits of each lane, but this is fine with AVX2
+	// we only use the low 32bits of each lane, but this is fine with AVX2
+	YMM xbcast = _mm256_set1_epi32(x);    
 
-											  // Each byte gets the source byte containing the corresponding bit
-	__m256i shufmask = _mm256_set_epi64x(
+	// Each byte gets the source byte containing the corresponding bit
+	YMM shufmask = _mm256_set_epi64x(
 		0x0303030303030303, 0x0202020202020202,
 		0x0101010101010101, 0x0000000000000000);
-	__m256i shuf = _mm256_shuffle_epi8(xbcast, shufmask);
+	YMM shuf = _mm256_shuffle_epi8(xbcast, shufmask);
 
-	__m256i andmask = _mm256_set1_epi64x(0x8040201008040201);  // every 8 bits -> 8 bytes, pattern repeats.
-	__m256i isolated_inverted = _mm256_andnot_si256(shuf, andmask);
+	YMM andmask = _mm256_set1_epi64x(0x8040201008040201);  // every 8 bits -> 8 bytes, pattern repeats.
+	YMM isolated_inverted = _mm256_andnot_si256(shuf, andmask);
 
 	// this is the extra step: compare each byte == 0 to produce 0 or -1
 	return _mm256_cmpeq_epi8(isolated_inverted, _mm256_setzero_si256());
 }
-

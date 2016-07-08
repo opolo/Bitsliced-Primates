@@ -2,7 +2,14 @@
 #include "Debug.h"
 #include <stdio.h>
 
+void sbox(__m256i (*x)[2]);
+void shiftrows(__m256i (*state)[2]);
+void mixcolumns(__m256i (*old)[2]);
+void T2(__m256i (*state)[2], __m256i (*new_state)[2]);
+
 static __m256i m256iAllOne;
+static YMM shuffleControlMaskFirstReg;
+static YMM shuffleControlMaskSecondReg;
 
 static YMM p1_constants_bit0[12];
 static YMM p1_constants_bit1[12];
@@ -23,18 +30,18 @@ static  YMM p3_constants_bit3[6];
 static  YMM p3_constants_bit4[6];
 
 void Initialize() {
-	/*
-	Round constants for p_1:
-	01, 02, 05, 0a, 15, 0b, 17, 0e, 1d, 1b, 16, 0c
-
-	Round constants for p_2:
-	18, 11, 03, 07, 0f, 1f
-
-	Round constants for p_3:
-	1e, 1c, 19, 13, 06, 0d
-	*/
-
 	m256iAllOne = _mm256_set1_epi64x(0xFFFFFFFFFFFFFFFF);
+
+	shuffleControlMaskFirstReg = _mm256_setr_epi8(
+		0, 1, 2, 3, 4, 5, 6, 7, //0
+		9, 10, 11, 12, 13, 14, 15, 8, //1 
+		18, 19, 20, 21, 22, 23, 16, 17, //2
+		27, 28, 29, 30, 31, 24, 25, 26); //3
+	shuffleControlMaskSecondReg = _mm256_setr_epi8(
+		4, 5, 6, 7, 0, 1, 2, 3, //4
+		13, 14, 15, 8, 9, 10, 11, 12, //5
+		23, 16, 17, 18, 19, 20, 21, 22, //7
+		255, 255, 255, 255, 255, 255, 255, 255); //Setting it to 0xFF makes shuffle zero the bits
 
 	//Set the bits to 1111'1111 in the column two, second row byte, if the roundconstant has a onebit on this indice
 	//p1
@@ -177,11 +184,6 @@ void Initialize() {
 	p3_constants_bit4[4] = _mm256_set_epi64x(0, 0, 0, 0);
 	p3_constants_bit4[5] = _mm256_set_epi64x(0, 0, 0, 0);
 }
-
-void sbox(__m256i (*x)[2]);
-void shiftrows(__m256i (*state)[2]);
-void mixcolumns(__m256i (*old)[2]);
-void T2(__m256i (*state)[2], __m256i (*new_state)[2]);
 
 void test_primates() {
 
@@ -328,19 +330,17 @@ void test_primates() {
 	}
 }
 
-
-
 void p1(YMM(*state)[2]) {
-	if (DisablePrimates) {
-		return;
-	}
 	for (int round = 0; round < p1_rounds; round++) {
 
 		//Sub Bytes
 		sbox(state);
 
 		//Shift Rows
-		shiftrows(state);
+		for (int reg = 0; reg < 5; reg++) {
+			state[reg][0] = _mm256_shuffle_epi8(state[reg][0], shuffleControlMaskFirstReg);
+			state[reg][1] = _mm256_shuffle_epi8(state[reg][1], shuffleControlMaskSecondReg);
+		}
 
 		//Mix Columns
 		mixcolumns(state);
@@ -355,16 +355,16 @@ void p1(YMM(*state)[2]) {
 }
 
 void p2(YMM(*state)[2]) {
-	if (DisablePrimates) {
-		return;
-	}
 	for (int round = 0; round < p2_rounds; round++) {
 
 		//Sub Bytes
 		sbox(state);
 
 		//Shift Rows
-		shiftrows(state);
+		for (int reg = 0; reg < 5; reg++) {
+			state[reg][0] = _mm256_shuffle_epi8(state[reg][0], shuffleControlMaskFirstReg);
+			state[reg][1] = _mm256_shuffle_epi8(state[reg][1], shuffleControlMaskSecondReg);
+		}
 
 		//Mix Columns
 		mixcolumns(state);
@@ -378,18 +378,17 @@ void p2(YMM(*state)[2]) {
 	}
 }
 
-
 void p3(YMM(*state)[2]) {
-	if (DisablePrimates) {
-		return;
-	}
 	for (int round = 0; round < p3_rounds; round++) {
 		
 		//Sub Bytes
 		sbox(state);
 
 		//Shift Rows
-		shiftrows(state);
+		for (int reg = 0; reg < 5; reg++) {
+			state[reg][0] = _mm256_shuffle_epi8(state[reg][0], shuffleControlMaskFirstReg);
+			state[reg][1] = _mm256_shuffle_epi8(state[reg][1], shuffleControlMaskSecondReg);
+		}
 
 		//Mix Columns
 		mixcolumns(state);
@@ -403,7 +402,6 @@ void p3(YMM(*state)[2]) {
 
 	}
 }
-
 
 void sbox(__m256i (*x)[2]) {
 	//YMM 0 = LSB
@@ -441,24 +439,6 @@ void sbox(__m256i (*x)[2]) {
 		x[3][i] = y[3];
 		x[4][i] = y[4];
 
-	}
-}
-
-void shiftrows(__m256i (*state)[2]) {
-	__m256i shuffleControlMaskFirstReg = _mm256_setr_epi8(
-		0, 1, 2, 3, 4, 5, 6, 7, //0
-		9, 10, 11, 12, 13, 14, 15, 8, //1 
-		18, 19, 20, 21, 22, 23, 16, 17, //2
-		27, 28, 29, 30, 31, 24, 25, 26); //3
-	__m256i shuffleControlMaskSecondReg = _mm256_setr_epi8(
-		4, 5, 6, 7, 0, 1, 2, 3, //4
-		13, 14, 15, 8, 9, 10, 11, 12, //5
-		23, 16, 17, 18, 19, 20, 21, 22, //7
-		255, 255, 255, 255, 255, 255, 255, 255); //Setting it to 0xFF makes shuffle zero the bits
-	for (int reg = 0; reg < 5; reg++) {
-
-		state[reg][0] = _mm256_shuffle_epi8(state[reg][0], shuffleControlMaskFirstReg);
-		state[reg][1] = _mm256_shuffle_epi8(state[reg][1], shuffleControlMaskSecondReg);
 	}
 }
 

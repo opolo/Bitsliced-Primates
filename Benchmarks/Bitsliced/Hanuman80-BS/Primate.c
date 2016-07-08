@@ -7,16 +7,18 @@
 void T2(__m256i (*state)[2], __m256i (*new_state)[2]);
 
 void sbox(__m256i (*state)[2]);
-void shiftrows_80bit(__m256i (*state)[2]);
 void mixcolumns_80bit(__m256i (*state)[2]);
 
 void sbox_inv(__m256i (*state)[2]);
-void shiftrows_inv_80bit(__m256i (*state)[2]);
 void mixcolumns_inv_80bit(__m256i (*state)[2]);
 
 void p1_inv(YMM(*state)[2]);
 
 static __m256i m256iAllOne;
+static YMM invShuffleControlMaskFirstReg;
+static YMM invShuffleControlMaskSecondReg;
+static YMM shuffleControlMaskFirstReg;
+static YMM shuffleControlMaskSecondReg;
 
 static YMM p1_constants_bit0[12];
 static YMM p1_constants_bit1[12];
@@ -41,6 +43,28 @@ void Initialize() {
 	Round constants for p_3:
 	1e, 1c, 19, 13, 06, 0d
 	*/
+
+	shuffleControlMaskFirstReg = _mm256_setr_epi8(
+		0, 1, 2, 3, 4, 5, 6, 7, //0
+		9, 10, 11, 12, 13, 14, 15, 8, //1 
+		18, 19, 20, 21, 22, 23, 16, 17, //2
+		28, 29, 30, 31, 24, 25, 26, 27); //4
+	shuffleControlMaskSecondReg = _mm256_setr_epi8(
+		7, 0, 1, 2, 3, 4, 5, 6, //7
+		255, 255, 255, 255, 255, 255, 255, 255, //Setting it to 0xFF makes shuffle zero the bits
+		255, 255, 255, 255, 255, 255, 255, 255, //Setting it to 0xFF makes shuffle zero the bits
+		255, 255, 255, 255, 255, 255, 255, 255); //Setting it to 0xFF makes shuffle zero the bits
+
+	invShuffleControlMaskFirstReg = _mm256_setr_epi8(
+		0, 1, 2, 3, 4, 5, 6, 7, //0
+		15, 8, 9, 10, 11, 12, 13, 14, //1 
+		22, 23, 16, 17, 18, 19, 20, 21, //2
+		28, 29, 30, 31, 24, 25, 26, 27); //4
+	invShuffleControlMaskSecondReg = _mm256_setr_epi8(
+		1, 2, 3, 4, 5, 6, 7, 0, //7
+		255, 255, 255, 255, 255, 255, 255, 255, //Setting it to 0xFF makes shuffle zero the bits
+		255, 255, 255, 255, 255, 255, 255, 255,
+		255, 255, 255, 255, 255, 255, 255, 255);
 
 	m256iAllOne = _mm256_set1_epi64x(0xFFFFFFFFFFFFFFFF);
 
@@ -110,9 +134,6 @@ void Initialize() {
 	p1_constants_bit4[9] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
 	p1_constants_bit4[10] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
 	p1_constants_bit4[11] = _mm256_set_epi64x(0, 0, 0, 0);
-
-
-
 
 	p4_constants_bit0[0] = _mm256_set_epi64x(0, 0, 0, 0);
 	p4_constants_bit0[1] = _mm256_set_epi64x(0, 0, 0b0000000000000000000000000000000000000000000000001111111100000000, 0);
@@ -186,7 +207,6 @@ void test_primates() {
 	//Prepare test vectors
 	YMM YMM_p1_input_80bit[5][2];
 
-
 	for (int i = 0; i < 5; i++) {
 		YMM_p1_input_80bit[i][0] = _mm256_setzero_si256();
 		YMM_p1_input_80bit[i][1] = _mm256_setzero_si256();
@@ -215,47 +235,10 @@ void test_primates() {
 		_mm256_extract_epi64(YMM_p1_input_80bit[4][1], 0) != 0) {
 		printf("P1 inv not working \n");
 	}
-
 }
 
 
 //******80 bit transformations******
-void shiftrows_80bit(__m256i (*state)[2]) {
-	__m256i shuffleControlMaskFirstReg = _mm256_setr_epi8(
-		0, 1, 2, 3, 4, 5, 6, 7, //0
-		9, 10, 11, 12, 13, 14, 15, 8, //1 
-		18, 19, 20, 21, 22, 23, 16, 17, //2
-		28, 29, 30, 31, 24, 25, 26, 27); //4
-	__m256i shuffleControlMaskSecondReg = _mm256_setr_epi8(
-		7, 0, 1, 2, 3, 4, 5, 6, //7
-		255, 255, 255, 255, 255, 255, 255, 255, //Setting it to 0xFF makes shuffle zero the bits
-		255, 255, 255, 255, 255, 255, 255, 255, //Setting it to 0xFF makes shuffle zero the bits
-		255, 255, 255, 255, 255, 255, 255, 255); //Setting it to 0xFF makes shuffle zero the bits
-	for (int reg = 0; reg < 5; reg++) {
-
-		state[reg][0] = _mm256_shuffle_epi8(state[reg][0], shuffleControlMaskFirstReg);
-		state[reg][1] = _mm256_shuffle_epi8(state[reg][1], shuffleControlMaskSecondReg);
-	}
-}
-
-void shiftrows_inv_80bit(__m256i (*state)[2]) {
-	__m256i shuffleControlMaskFirstReg = _mm256_setr_epi8(
-		0, 1, 2, 3, 4, 5, 6, 7, //0
-		15, 8, 9, 10, 11, 12, 13, 14, //1 
-		22, 23, 16, 17, 18, 19, 20, 21, //2
-		28, 29, 30, 31, 24, 25, 26, 27); //4
-	__m256i shuffleControlMaskSecondReg = _mm256_setr_epi8(
-		1, 2, 3, 4, 5, 6, 7, 0, //7
-		255, 255, 255, 255, 255, 255, 255, 255, //Setting it to 0xFF makes shuffle zero the bits
-		255, 255, 255, 255, 255, 255, 255, 255,
-		255, 255, 255, 255, 255, 255, 255, 255);
-	for (int reg = 0; reg < 5; reg++) {
-
-		state[reg][0] = _mm256_shuffle_epi8(state[reg][0], shuffleControlMaskFirstReg);
-		state[reg][1] = _mm256_shuffle_epi8(state[reg][1], shuffleControlMaskSecondReg);
-	}
-}
-
 void mixcolumns_80bit(__m256i (*state)[2]) {
 	/*
 	1       18      2       2       18
@@ -344,7 +327,7 @@ void mixcolumns_inv_80bit(__m256i (*state)[2]) {
 	*/
 
 	__m256i T2_regs[5][2];
-	__m256i T3_regs[5];
+	__m256i T3_regs[5][2];
 	__m256i T4_regs[5][2];
 	__m256i T5_regs[5];
 	__m256i T6_regs[5];
@@ -364,96 +347,50 @@ void mixcolumns_inv_80bit(__m256i (*state)[2]) {
 	T2(T4_regs, T8_regs); //T8
 	T2(T8_regs, T16_regs); //T16
 
-						   //T3
 	for (int i = 0; i < 5; i++) {
-		T3_regs[i] = XOR(state[i][0], T2_regs[i][0]);
-	}
+		T3_regs[i][0] = XOR(state[i][0], T2_regs[i][0]);
+		T3_regs[i][1] = XOR(state[i][1], T2_regs[i][1]);
 
-	//T5
-	for (int i = 0; i < 5; i++) {
 		T5_regs[i] = XOR(state[i][0], T4_regs[i][0]);
-	}
 
-	//T6
-	for (int i = 0; i < 5; i++) {
 		T6_regs[i] = XOR(T2_regs[i][0], T4_regs[i][0]);
-	}
 
-	//T11
-	for (int i = 0; i < 5; i++) {
-		T11_regs[i][0] = XOR3(T2_regs[i][0], T8_regs[i][0], state[i][0]);
-		T11_regs[i][1] = XOR3(T2_regs[i][1], T8_regs[i][1], state[i][1]);
-	}
+		T11_regs[i][0] = XOR(T3_regs[i][0], T8_regs[i][0]);
+		T11_regs[i][1] = XOR(T3_regs[i][1], T8_regs[i][1]);
 
-	//T15
-	for (int i = 0; i < 5; i++) {
-		T15_regs[i][0] = XOR4(T8_regs[i][0], T4_regs[i][0], T2_regs[i][0], state[i][0]);
-		T15_regs[i][1] = XOR4(T8_regs[i][1], T4_regs[i][1], T2_regs[i][1], state[i][1]);
-	}
+		T15_regs[i][0] = XOR(T11_regs[i][0], T4_regs[i][0]);
+		T15_regs[i][1] = XOR(T11_regs[i][1], T4_regs[i][1]);
 
-	//T18
-	for (int i = 0; i < 5; i++) {
 		T18_regs[i][0] = XOR(T16_regs[i][0], T2_regs[i][0]);
 		T18_regs[i][1] = XOR(T16_regs[i][1], T2_regs[i][1]);
-	}
 
-	//T19
-	for (int i = 0; i < 5; i++) {
-		T19_regs[i] = XOR3(T16_regs[i][0], T2_regs[i][0], state[i][0]);
-	}
+		T19_regs[i] = XOR(T16_regs[i][0], T3_regs[i][0]);
 
-	//T20
-	for (int i = 0; i < 5; i++) {
 		T20_regs[i][0] = XOR(T16_regs[i][0], T4_regs[i][0]);
 		T20_regs[i][1] = XOR(T16_regs[i][1], T4_regs[i][1]);
+
+		T22_regs[i] = XOR(T16_regs[i][0], T6_regs[i]);
+
+		T30_regs[i] = XOR(T22_regs[i], T8_regs[i][0]);
+
+		T31_regs[i] = XOR(T30_regs[i], state[i][0]);
 	}
 
-	//T22
-	for (int i = 0; i < 5; i++) {
-		T22_regs[i] = XOR3(T16_regs[i][0], T4_regs[i][0], T2_regs[i][0]);
-	}
-
-	//T30
-	for (int i = 0; i < 5; i++) {
-		T30_regs[i] = XOR4(T16_regs[i][0], T8_regs[i][0], T4_regs[i][0], T2_regs[i][0]);
-	}
-
-	//T31
-	for (int i = 0; i < 5; i++) {
-		T31_regs[i] = XOR5(T16_regs[i][0], T8_regs[i][0], T4_regs[i][0], T2_regs[i][0], state[i][0]);
-	}
-
-	/*
-	6       22      31      1       15
-	15      19      8       1       20
-	20      5       30      5       11
-	11      3       19      8       18
-	18      2       2       18      1
-	*/
-	//handle 2 last rows
-	YMM firststate_calculated[5];
-	YMM secondstate_calculated[5];
 	for (int i = 0; i < 5; i++) {
 
-		firststate_calculated[i] = XOR5(
+		state[i][0] = XOR5(
 			_mm256_setr_epi64x(_mm256_extract_epi64(T6_regs[i], 0), _mm256_extract_epi64(T15_regs[i][0], 0), _mm256_extract_epi64(T20_regs[i][0], 0), _mm256_extract_epi64(T11_regs[i][0], 0)),
-			_mm256_setr_epi64x(_mm256_extract_epi64(T22_regs[i], 1), _mm256_extract_epi64(T19_regs[i], 1), _mm256_extract_epi64(T5_regs[i], 1), _mm256_extract_epi64(T3_regs[i], 1)),
+			_mm256_setr_epi64x(_mm256_extract_epi64(T22_regs[i], 1), _mm256_extract_epi64(T19_regs[i], 1), _mm256_extract_epi64(T5_regs[i], 1), _mm256_extract_epi64(T3_regs[i][0], 1)),
 			_mm256_setr_epi64x(_mm256_extract_epi64(T31_regs[i], 2), _mm256_extract_epi64(T8_regs[i][0], 2), _mm256_extract_epi64(T30_regs[i], 2), _mm256_extract_epi64(T19_regs[i], 2)),
 			_mm256_setr_epi64x(_mm256_extract_epi64(state[i][0], 3), _mm256_extract_epi64(state[i][0], 3), _mm256_extract_epi64(T5_regs[i], 3), _mm256_extract_epi64(T8_regs[i][0], 3)),
 			_mm256_setr_epi64x(_mm256_extract_epi64(T15_regs[i][1], 0), _mm256_extract_epi64(T20_regs[i][1], 0), _mm256_extract_epi64(T11_regs[i][1], 0), _mm256_extract_epi64(T18_regs[i][1], 0)));
 
-		secondstate_calculated[i] = XOR5(
+		state[i][1] = XOR5(
 			_mm256_setr_epi64x(_mm256_extract_epi64(T18_regs[i][0], 0), 0, 0, 0),
 			_mm256_setr_epi64x(_mm256_extract_epi64(T2_regs[i][0], 1), 0, 0, 0),
 			_mm256_setr_epi64x(_mm256_extract_epi64(T2_regs[i][0], 2), 0, 0, 0),
 			_mm256_setr_epi64x(_mm256_extract_epi64(T18_regs[i][0], 3), 0, 0, 0),
 			_mm256_setr_epi64x(_mm256_extract_epi64(state[i][1], 0), 0, 0, 0));
-	}
-
-	//Assign data to state
-	for (int i = 0; i < 5; i++) {
-		state[i][0] = firststate_calculated[i];
-		state[i][1] = secondstate_calculated[i];
 	}
 }
 
@@ -575,16 +512,16 @@ void T2(__m256i (*state)[2], __m256i (*new_state)[2]) {
 
 //Primate calls
 void p1(YMM(*state)[2]) {
-	if (DisablePrimates) {
-		return;
-	}
 	for (int round = 0; round < p1_rounds; round++) {
 
 		//Sub Bytes
 		sbox(state);
 
 		//Shift Rows
-		shiftrows_80bit(state);
+		for (int reg = 0; reg < 5; reg++) {
+			state[reg][0] = _mm256_shuffle_epi8(state[reg][0], shuffleControlMaskFirstReg);
+			state[reg][1] = _mm256_shuffle_epi8(state[reg][1], shuffleControlMaskSecondReg);
+		}
 
 		//Mix Columns
 		mixcolumns_80bit(state);
@@ -599,16 +536,16 @@ void p1(YMM(*state)[2]) {
 }
 
 void p4(YMM(*state)[2]) {
-	if (DisablePrimates) {
-		return;
-	}
 	for (int round = 0; round < p4_rounds; round++) {
 
 		//Sub Bytes
 		sbox(state);
 
 		//Shift Rows
-		shiftrows_80bit(state);
+		for (int reg = 0; reg < 5; reg++) {
+			state[reg][0] = _mm256_shuffle_epi8(state[reg][0], shuffleControlMaskFirstReg);
+			state[reg][1] = _mm256_shuffle_epi8(state[reg][1], shuffleControlMaskSecondReg);
+		}
 
 		//Mix Columns
 		mixcolumns_80bit(state);
@@ -623,9 +560,6 @@ void p4(YMM(*state)[2]) {
 }
 
 void p1_inv(YMM(*state)[2]) {
-	if (DisablePrimates) {
-		return;
-	}
 	for (int round = 0; round < p1_rounds; round++) {
 
 		//Constant Addition
@@ -639,7 +573,10 @@ void p1_inv(YMM(*state)[2]) {
 		mixcolumns_inv_80bit(state);
 
 		//Shift Rows
-		shiftrows_inv_80bit(state);
+		for (int reg = 0; reg < 5; reg++) {
+			state[reg][0] = _mm256_shuffle_epi8(state[reg][0], invShuffleControlMaskFirstReg);
+			state[reg][1] = _mm256_shuffle_epi8(state[reg][1], invShuffleControlMaskSecondReg);
+		}
 
 		//Sub Bytes
 		sbox_inv(state);

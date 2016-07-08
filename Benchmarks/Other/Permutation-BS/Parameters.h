@@ -62,6 +62,5 @@ typedef long long i64;
 #define Debug 0
 #define OutputData 1
 #define Benchmark 0
-#define DisablePrimates 0
 
 #endif // !Parameters
