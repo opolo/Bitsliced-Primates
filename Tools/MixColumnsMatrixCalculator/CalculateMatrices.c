@@ -23,6 +23,8 @@ void printBackwardsMatrices_80bit();
 
 void main() {
 
+	//Uncomment the matrices, you want printed:
+
 	//printForwardMatrices_120bit();
 	//printBackwardsMatrices_120bit();
 

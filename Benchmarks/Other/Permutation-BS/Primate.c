@@ -1002,7 +1002,7 @@ void mixcolumns(__m256i (*state)[2]) {
 	__m256i T25_regs[5];
 	__m256i T26_regs[5][2];
 	__m256i T27_regs[5][2];
-	__m256i T28_regs[5][2];
+	__m256i T28_regs[5];
 	__m256i T29_regs[5][2];
 	__m256i T31_regs[5][2];
 
@@ -1054,21 +1054,20 @@ void mixcolumns(__m256i (*state)[2]) {
 		T27_regs[i][0] = XOR(T26_regs[i][0], state[i][0]);
 		T27_regs[i][1] = XOR(T26_regs[i][1], state[i][1]);
 
-		T28_regs[i][0] = XOR3(T16_regs[i][0], T8_regs[i][0], T4_regs[i][0]);
-		T28_regs[i][1] = XOR3(T16_regs[i][1], T8_regs[i][1], T4_regs[i][1]);
+		T28_regs[i] = XOR3(T16_regs[i][0], T8_regs[i][0], T4_regs[i][0]);
 
-		T29_regs[i][0] = XOR(T28_regs[i][0], state[i][0]);
-		T29_regs[i][1] = XOR(T28_regs[i][1], state[i][1]);
+		T29_regs[i][0] = XOR(T20_regs[i][0], T9_regs[i][0]);
+		T29_regs[i][1] = XOR(T20_regs[i][1], T9_regs[i][1]);
 
-		T31_regs[i][0] = XOR(T28_regs[i][0], T3_regs[i][0]);
-		T31_regs[i][1] = XOR(T28_regs[i][1], T3_regs[i][1]);
+		T31_regs[i][0] = XOR(T29_regs[i][0], T2_regs[i][0]);
+		T31_regs[i][1] = XOR(T29_regs[i][1], T2_regs[i][1]);
 	}
 
 	for (int i = 0; i < 5; i++) {
 		state[i][0] = XOR7(
 			_mm256_setr_epi64x(_mm256_extract_epi64(state[i][0], 0), _mm256_extract_epi64(T2_regs[i][0], 0), _mm256_extract_epi64(T11_regs[i][0], 0), _mm256_extract_epi64(state[i][0], 0)),
 			_mm256_setr_epi64x(_mm256_extract_epi64(T2_regs[i][0], 1), _mm256_extract_epi64(T5_regs[i], 1), _mm256_extract_epi64(T20_regs[i][0], 1), _mm256_extract_epi64(T9_regs[i][0], 1)),
-			_mm256_setr_epi64x(_mm256_extract_epi64(T15_regs[i][0], 2), _mm256_extract_epi64(T28_regs[i][0], 2), _mm256_extract_epi64(T3_regs[i][0], 2), _mm256_extract_epi64(T27_regs[i][0], 2)),
+			_mm256_setr_epi64x(_mm256_extract_epi64(T15_regs[i][0], 2), _mm256_extract_epi64(T28_regs[i], 2), _mm256_extract_epi64(T3_regs[i][0], 2), _mm256_extract_epi64(T27_regs[i][0], 2)),
 			_mm256_setr_epi64x(_mm256_extract_epi64(T9_regs[i][0], 3), _mm256_extract_epi64(T29_regs[i][0], 3), _mm256_extract_epi64(T5_regs[i], 3), _mm256_extract_epi64(T10_regs[i], 3)),
 			_mm256_setr_epi64x(_mm256_extract_epi64(T9_regs[i][1], 0), _mm256_extract_epi64(T27_regs[i][1], 0), _mm256_extract_epi64(T4_regs[i][1], 0), _mm256_extract_epi64(T12_regs[i], 0)),
 			_mm256_setr_epi64x(_mm256_extract_epi64(T15_regs[i][1], 1), _mm256_extract_epi64(T23_regs[i], 1), _mm256_extract_epi64(T29_regs[i][1], 1), _mm256_extract_epi64(T11_regs[i][1], 1)),

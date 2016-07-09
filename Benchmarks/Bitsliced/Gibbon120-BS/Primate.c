@@ -187,70 +187,6 @@ void Initialize() {
 
 void test_primates() {
 
-	/*
-	//Prepare test vectors
-	YMM YMM_p1_input[5][2];
-	YMM YMM_p2_input[5][2];
-	YMM YMM_p3_input[5][2];
-
-	for (int i = 0; i < 5; i++) {
-		YMM_p1_input[i][0] = _mm256_setzero_si256();
-		YMM_p2_input[i][0] = _mm256_setzero_si256();
-		YMM_p3_input[i][0] = _mm256_setzero_si256();
-
-		YMM_p1_input[i][1] = _mm256_setzero_si256();
-		YMM_p2_input[i][1] = _mm256_setzero_si256();
-		YMM_p3_input[i][1] = _mm256_setzero_si256();
-	}
-
-	//use test vectors
-	p1(YMM_p1_input);
-	p2(YMM_p2_input);
-	p3(YMM_p3_input);
-
-	//Expected values p1:
-	YMM YMM_p1_output_expected[5][2];
-	YMM_p1_output_expected[0][0] = _mm256_setr_epi64x(18374966855136771840ULL, 72056498804555775ULL, 72056494526300160ULL, 18446742978476114175ULL);
-	YMM_p1_output_expected[1][0] = _mm256_setr_epi64x(71776123339472895, 18446463698227757055, 281474959933440, 281474959998975);
-	YMM_p1_output_expected[2][0] = _mm256_setr_epi64x(18446744069414649600, 72056498804555775, 71777218572779520, 72056494526300415);
-	YMM_p1_output_expected[3][0] = _mm256_setr_epi64x(281470681743615, 18374967950370078975, 18446742974197989375, 4278255615);
-	YMM_p1_output_expected[4][0] = _mm256_setr_epi64x(280379759984895, 71776123339472895, 18374687574904996095, 18374966859414896895);
-
-	YMM_p1_output_expected[0][1] = _mm256_setr_epi64x(18446462603027808255, 18374686483949813760, 18446462598732906495, 0);
-	YMM_p1_output_expected[1][1] = _mm256_setr_epi64x(281470681808640, 18446463693949566720, 18446744073692839680, 0);
-	YMM_p1_output_expected[2][1] = _mm256_setr_epi64x(71776119061217535, 1099511562495, 18374966859414961920, 0);
-	YMM_p1_output_expected[3][1] = _mm256_setr_epi64x(18374966855136771840, 18374967950370078720, 1095216660735, 0);
-	YMM_p1_output_expected[4][1] = _mm256_setr_epi64x(18446744069414584575, 18446463698227757055, 18374967950353367295, 0);
-	
-	//Expected values p2:
-	YMM YMM_p2_output_expected[5][2];
-	YMM_p2_output_expected[0][0] = _mm256_setr_epi64x(18446463698244403455, 71776123339472895, 1095233372160, 18446742974214635520);
-	YMM_p2_output_expected[1][0] = _mm256_setr_epi64x(18374967950353432575, 72057594021150975, 18446742978492891135, 280379743338240);
-	YMM_p2_output_expected[2][0] = _mm256_setr_epi64x(0, 71777214277943040, 18446742974197989375, 72057594021216255);
-	YMM_p2_output_expected[3][0] = _mm256_setr_epi64x(71776119077994240, 72057589759672575, 18446463693966278655, 18446742978476179455);
-	YMM_p2_output_expected[4][0] = _mm256_setr_epi64x(71777218556133120, 72057589742960640, 18446462598749552895, 280375481859840);
-
-	YMM_p2_output_expected[0][1] = _mm256_setr_epi64x(280375465083135, 18446744069414584320, 18446742974214635520, 0);
-	YMM_p2_output_expected[1][1] = _mm256_setr_epi64x(18374967950370078975, 18374686483949879040, 72057589742960895, 0);
-	YMM_p2_output_expected[2][1] = _mm256_setr_epi64x(4294901760, 72057589759737855, 18446744069431296255, 0);
-	YMM_p2_output_expected[3][1] = _mm256_setr_epi64x(18446744073692774400, 18374967954648334335, 280375465083135, 0);
-	YMM_p2_output_expected[4][1] = _mm256_setr_epi64x(18374687579166474495, 1095216725760, 18374686479688335615, 0);
-
-	//Expected values p3:
-	YMM YMM_p3_output_expected[5][2]; 
-	YMM_p3_output_expected[0][0] = _mm256_setr_epi64x(18446462603011096320, 281474976645375, 281470681808895, 72057594021216000);
-	YMM_p3_output_expected[1][0] = _mm256_setr_epi64x(71776119061282560, 18374966855153418240, 72056494543011840, 18446463693949566975);
-	YMM_p3_output_expected[2][0] = _mm256_setr_epi64x(18446744069414584320, 18374687579166539775, 18446744073709486080, 18374966859414896640);
-	YMM_p3_output_expected[3][0] = _mm256_setr_epi64x(71776119061217280, 1095233372160, 18374686483949814015, 71776123356184575);
-	YMM_p3_output_expected[4][0] = _mm256_setr_epi64x(1099494915840, 18374686483966590720, 18374687579183251200, 72057589742960640);
-
-	YMM_p3_output_expected[0][1] = _mm256_setr_epi64x(71776119061217535, 71777218556067840, 18446463698244468735, 0);
-	YMM_p3_output_expected[1][1] = _mm256_setr_epi64x(18446462603027742720, 16711935, 280375465083135, 0);
-	YMM_p3_output_expected[2][1] = _mm256_setr_epi64x(18446463698227691520, 71776123339472640, 18374686483966590720, 0);
-	YMM_p3_output_expected[3][1] = _mm256_setr_epi64x(1099494850815, 281474959998975, 280379760049920, 0);
-	YMM_p3_output_expected[4][1] = _mm256_setr_epi64x(1099511562240, 281474959998975, 71776119061217280, 0);
-	*/
-
 	//Prepare test vectors
 	YMM YMM_p1_input[5][2];
 
@@ -474,7 +410,7 @@ void mixcolumns(__m256i (*state)[2]) {
 	__m256i T25_regs[5];
 	__m256i T26_regs[5][2];
 	__m256i T27_regs[5][2];
-	__m256i T28_regs[5][2];
+	__m256i T28_regs[5];
 	__m256i T29_regs[5][2];
 	__m256i T31_regs[5][2];
 
@@ -526,21 +462,20 @@ void mixcolumns(__m256i (*state)[2]) {
 		T27_regs[i][0] = XOR(T26_regs[i][0], state[i][0]);
 		T27_regs[i][1] = XOR(T26_regs[i][1], state[i][1]);
 
-		T28_regs[i][0] = XOR3(T16_regs[i][0], T8_regs[i][0], T4_regs[i][0]);
-		T28_regs[i][1] = XOR3(T16_regs[i][1], T8_regs[i][1], T4_regs[i][1]);
+		T28_regs[i] = XOR(T20_regs[i][0], T8_regs[i][0]);
 
-		T29_regs[i][0] = XOR(T28_regs[i][0], state[i][0]);
-		T29_regs[i][1] = XOR(T28_regs[i][1], state[i][1]);
+		T29_regs[i][0] = XOR(T20_regs[i][0], T9_regs[i][0]);
+		T29_regs[i][1] = XOR(T20_regs[i][1], T9_regs[i][1]);
 
-		T31_regs[i][0] = XOR(T28_regs[i][0], T3_regs[i][0]);
-		T31_regs[i][1] = XOR(T28_regs[i][1], T3_regs[i][1]);
+		T31_regs[i][0] = XOR(T29_regs[i][0], T2_regs[i][0]);
+		T31_regs[i][1] = XOR(T29_regs[i][1], T2_regs[i][1]);
 	}
 
 	for (int i = 0; i < 5; i++) {
 		state[i][0] = XOR7(
 			_mm256_setr_epi64x(_mm256_extract_epi64(state[i][0], 0), _mm256_extract_epi64(T2_regs[i][0], 0), _mm256_extract_epi64(T11_regs[i][0], 0), _mm256_extract_epi64(state[i][0], 0)),
 			_mm256_setr_epi64x(_mm256_extract_epi64(T2_regs[i][0], 1), _mm256_extract_epi64(T5_regs[i], 1), _mm256_extract_epi64(T20_regs[i][0], 1), _mm256_extract_epi64(T9_regs[i][0], 1)),
-			_mm256_setr_epi64x(_mm256_extract_epi64(T15_regs[i][0], 2), _mm256_extract_epi64(T28_regs[i][0], 2), _mm256_extract_epi64(T3_regs[i][0], 2), _mm256_extract_epi64(T27_regs[i][0], 2)),
+			_mm256_setr_epi64x(_mm256_extract_epi64(T15_regs[i][0], 2), _mm256_extract_epi64(T28_regs[i], 2), _mm256_extract_epi64(T3_regs[i][0], 2), _mm256_extract_epi64(T27_regs[i][0], 2)),
 			_mm256_setr_epi64x(_mm256_extract_epi64(T9_regs[i][0], 3), _mm256_extract_epi64(T29_regs[i][0], 3), _mm256_extract_epi64(T5_regs[i], 3), _mm256_extract_epi64(T10_regs[i], 3)),
 			_mm256_setr_epi64x(_mm256_extract_epi64(T9_regs[i][1], 0), _mm256_extract_epi64(T27_regs[i][1], 0), _mm256_extract_epi64(T4_regs[i][1], 0), _mm256_extract_epi64(T12_regs[i], 0)),
 			_mm256_setr_epi64x(_mm256_extract_epi64(T15_regs[i][1], 1), _mm256_extract_epi64(T23_regs[i], 1), _mm256_extract_epi64(T29_regs[i][1], 1), _mm256_extract_epi64(T11_regs[i][1], 1)),
