@@ -9,6 +9,7 @@ int cmpfunc(const void * a, const void * b);
 void benchmark120bit();
 void benchmark80bit();
 
+//Needed since the different compilers (and platforms...) have different ways of reading the CPU cycle counter,  which we use for benchmarks.
 #if (_MSC_VER == 1900)
 static unsigned long long cpucycles(void)
 {
@@ -22,7 +23,7 @@ static unsigned long long cpucycles(void)
 	(
 		".byte 15;.byte 49\n"
 		"shlq $32,%%rdx\n"
-		"orq %%rdx,%%rax",
+		"orq %%rdx,%%rax"
 		: "=a" (result) ::  "%rdx"
 	);
 	return result;
