@@ -16,6 +16,6 @@ This repo contains:
   - My thesis report on the subject of implementing PRIMATEs with bit slicing (located in Bitsliced-Primates/). The newest version of the thesis will always be available here.
   
   
-All the code has been written in the language C. It has been tested with the GCC, ICC and MSVC compilers for the C language, and compiles fine with all of them.
+All the code has been written in the language C. It has been tested with the GCC, ICC, and MSVC compilers for the C language and compiles fine with all of them.
 
 Feel free to open an issue, if there is any questions to be had! However, please have read the (relevant parts of the) report before opening any questions. 
