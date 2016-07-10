@@ -1,7 +1,7 @@
 # Bitsliced-Primates
 
 This repo contains:
-  - A bit sliced implementation of the permutation used in the PRIMATEs family of ciphers (http://primates.ae/) for the 80- and 120-bit security level. Both of the bit sliced permutations can process 8 PRIMATEs encryptions simultanously. 
+  - A bit sliced implementation of the permutation used in the PRIMATEs family of ciphers (http://primates.ae/) for the 80- and 120-bit security levels. Both of the bit sliced permutations can process 8 PRIMATEs encryptions simultanously. 
 
   - Three new modes of operation for PRIMATEs (APE-BS, HANUMAN-BS and GIBBON-BS), which can process input in eight parallel states to utilize the bit sliced permutation and speed up encryption. 
 
