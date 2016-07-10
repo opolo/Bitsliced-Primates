@@ -50,7 +50,7 @@ int cmpfunc(const void * a, const void * b)
 
 int main()
 {
-	printf("Hanuman-120 reference implementation v1.00 \n");
+	printf("Hanuman-80 reference implementation v1.00 \n");
 
 	if (1) {
 		const unsigned char ad[AdLength] = { DataOnes40 };
