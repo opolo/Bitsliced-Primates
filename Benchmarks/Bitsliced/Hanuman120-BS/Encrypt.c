@@ -294,7 +294,7 @@ int crypto_aead_decrypt(
 	tag_bits[4] = _mm256_movemask_epi8(XORedStates[4][0]);
 
 	//Tag is in the bits 8-23 in each of the 5 ints. 
-	u8 actual_tag[10];
+	u8 actual_tag[15];
 	actual_tag[0] = (tag_bits[0] >> 8) ^ 0xFF;
 	actual_tag[1] = (tag_bits[0] >> 16) ^ 0xFF;
 	actual_tag[2] = (tag_bits[0] >> 24) ^ 0xFF;
