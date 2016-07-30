@@ -18,4 +18,4 @@ This repo contains:
   
 All the code has been written in the language C. It has been tested with the GCC, ICC, and MSVC compilers for the C language and compiles fine with all of them.
 
-Feel free to open an issue, if there is any questions to be had! However, please have read the (relevant parts of the) report before opening any questions. 
+Feel free to open an issue, if there are any questions to be had! However, please have read the (relevant parts of the) report before opening any questions. 
