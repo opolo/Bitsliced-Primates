@@ -19,3 +19,6 @@ This repo contains:
 All the code has been written in the language C. It has been tested with the GCC, ICC, and MSVC compilers for the C language and compiles fine with all of them.
 
 Feel free to open an issue, if there are any questions to be had! However, please have read the (relevant parts of the) report before opening any questions. 
+
+EDIT:
+I have successfully defended my thesis. I will be uploading the slides in a few days, when I get the opportunity. They might be of interest, although they for the most part repeat the thesis-report. I also had the opportunity of testing GIBBON80-BS on a Skylake CPU (core-i5 mobile CPU). It yielded a 6.5% performance increase over my current results, which are from a Broadwell CPU.
