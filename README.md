@@ -22,3 +22,6 @@ Feel free to open an issue, if there are any questions to be had! However, pleas
 
 EDIT:
 I have successfully defended my thesis. I will be uploading the slides in a few days, when I get the opportunity. They might be of interest, although they for the most part repeat the thesis-report. I also had the opportunity of testing GIBBON80-BS on a Skylake CPU (core-i5 mobile CPU). It yielded a 6.5% performance increase over my current results, which are from a Broadwell CPU.
+
+EDIT:
+Wauw. Working fulltime sure does make time fly. It took a bit longer to upload the slides than anticipated, but they are uploaded now. Hope they are of some use to anyone that might find this interesting! 
